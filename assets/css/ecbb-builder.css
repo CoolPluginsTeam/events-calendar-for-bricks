@@ -1,0 +1,160 @@
+/**
+ * Bricks builder only: CONTENT | STYLE pills inside each Event parts repeater row.
+ * Content = data and behaviour; Style = typography, colours, optional hover (toggle + fields).
+ * Pills only apply while the repeater row is expanded (.open).
+ */
+
+.ecbb-parts-repeater-item.open .ecbb-repeater-tabs,
+.ecbb-parts-repeater-item.always-open .ecbb-repeater-tabs {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	margin: 6px 0 10px;
+	padding: 3px;
+	border-radius: 8px;
+	background: rgba(255, 255, 255, 0.07);
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+	animation: ecbb-tabs-in 0.2s ease-out;
+}
+
+@keyframes ecbb-tabs-in {
+	from {
+		opacity: 0;
+		transform: translateY(-4px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.ecbb-parts-repeater-item.open .ecbb-repeater-tabs__btn,
+.ecbb-parts-repeater-item.always-open .ecbb-repeater-tabs__btn {
+	margin: 0;
+	padding: 5px 12px;
+	border: 0;
+	border-radius: 6px;
+	background: transparent;
+	color: rgba(255, 255, 255, 0.42);
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	line-height: 1;
+	cursor: pointer;
+	font-family: inherit;
+	text-transform: uppercase;
+	transition:
+		color 0.18s ease,
+		background 0.18s ease,
+		box-shadow 0.18s ease;
+}
+
+.ecbb-parts-repeater-item.open .ecbb-repeater-tabs__btn:hover,
+.ecbb-parts-repeater-item.always-open .ecbb-repeater-tabs__btn:hover {
+	color: rgba(255, 255, 255, 0.82);
+}
+
+.ecbb-parts-repeater-item.open .ecbb-repeater-tabs__btn:focus-visible,
+.ecbb-parts-repeater-item.always-open .ecbb-repeater-tabs__btn:focus-visible {
+	outline: 2px solid rgba(100, 180, 255, 0.55);
+	outline-offset: 2px;
+}
+
+.ecbb-parts-repeater-item.open .ecbb-repeater-tabs__btn.is-active,
+.ecbb-parts-repeater-item.always-open .ecbb-repeater-tabs__btn.is-active {
+	background: rgba(255, 255, 255, 0.14);
+	color: #fff;
+	box-shadow:
+		0 1px 3px rgba(0, 0, 0, 0.35),
+		inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* CONTENT tab: hide style fields (expanded row only) */
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_color"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_background"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_background_inner"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_hover_color"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_use_hover"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_hover_text_decoration"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_hover_animation"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_font_size"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_font_weight"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_text_align"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_line_height"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_letter_spacing"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_image_radius"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_image_width"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_image_height"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_image_fit"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_image_border_width"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_image_border_style"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_image_border_color"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_image_object_align"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_image_object_align_hover"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="btn_bg"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="btn_text_color"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="btn_radius"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="btn_padding_y"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="btn_padding_x"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="date_text_transform"] {
+	display: none !important;
+}
+
+/* STYLE tab: hide content-only fields (keep "part" visible) */
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="tag"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="title_above_link"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="title_above_link_text"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="link"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="desc_source"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="desc_length"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="desc_words"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="date_format_preset"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="date_format_custom"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="terms_separator"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="terms_link"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="venue_link"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="detail_link_text"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="organizer_link"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="cost_currency"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="cost_prefix"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="cost_suffix"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="btn_style"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="image_size"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="image_size_hover"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="image_aspect_ratio"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="image_link"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="tickets_link_text"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="rsvp_link_text"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="read_more_text"] {
+	display: none !important;
+}
+
+/* -------------------------------------------------------------------------
+ * Events Widget: balanced vertical rhythm (main panel + expanded part rows).
+ * Panel is replaced per active element; :has() limits rules to this element only.
+ * ------------------------------------------------------------------------- */
+
+#bricks-panel-element:has([data-control-key="parts_style1"]),
+#bricks-panel-element:has([data-control-key="parts_style2"]),
+#bricks-panel-element:has([data-control-key="parts_grid"]) {
+	/* Bricks stacks .control with margin-top: 10px; we tighten that gap. */
+	--ecbb-control-stack-gap: var(--builder-spacing-s, 8px);
+}
+
+#bricks-panel-element:has([data-control-key="parts_style1"]) .control,
+#bricks-panel-element:has([data-control-key="parts_style2"]) .control,
+#bricks-panel-element:has([data-control-key="parts_grid"]) .control {
+	margin-top: var(--ecbb-control-stack-gap) !important;
+	margin-bottom: 0 !important;
+}
+
+/* Expanded Event parts row: tighter gaps between sub-fields */
+.ecbb-parts-repeater-item:is(.open, .always-open) .repeater-item-inner {
+	margin-top: 0 !important;
+	margin-bottom: var(--ecbb-control-stack-gap, var(--builder-spacing-s, 8px)) !important;
+}
+
+.ecbb-parts-repeater-item:is(.open, .always-open) .repeater-item-inner:last-child {
+	margin-bottom: 0 !important;
+}

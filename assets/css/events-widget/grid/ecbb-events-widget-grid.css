@@ -1,0 +1,248 @@
+/**
+ * Events Widget — Grid template (image + framed date badge + meta column).
+ *
+ * File: `assets/css/events-widget/grid/ecbb-events-widget-grid.css`.
+ */
+
+.ecbb-ev__list--grid .ecbb-ev__item--grid {
+	display: flex;
+	flex-direction: column;
+	background: #fff;
+	border-radius: 10px;
+	overflow: hidden;
+	box-shadow: 0 4px 20px rgba( 15, 23, 42, 0.07 );
+	border: 1px solid rgba( 15, 23, 42, 0.06 );
+	min-width: 0;
+}
+
+.ecbb-ev__item-inner--grid {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	min-width: 0;
+	overflow: hidden;
+	border-radius: inherit;
+}
+
+/* Static image: fixed frame; inner image scales down on hover (no overflow growth). */
+.ecbb-ev__grid-media {
+	position: relative;
+	width: 100%;
+	overflow: hidden;
+	border-radius: 0;
+	line-height: 0;
+	background: #e5e7eb;
+	aspect-ratio: 16 / 10;
+}
+
+.ecbb-ev__grid-media-link {
+	display: block;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+	position: relative;
+}
+
+.ecbb-ev__grid-media-inner {
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+}
+
+.ecbb-ev__grid-thumb-img {
+	width: 100%;
+	height: 100%;
+	display: block;
+	object-fit: cover;
+	transform-origin: center center;
+	transition: transform 0.45s ease;
+	will-change: transform;
+	backface-visibility: hidden;
+}
+
+.ecbb-ev__grid-media-link:hover .ecbb-ev__grid-thumb-img,
+.ecbb-ev__grid-media-link:focus-visible .ecbb-ev__grid-thumb-img {
+	transform: scale(1.06);
+}
+
+.ecbb-ev__grid-media--placeholder {
+	min-height: 160px;
+	background: linear-gradient( 145deg, #e5e7eb 0%, #f3f4f6 55%, #e8ecf0 100% );
+}
+
+/* Bottom row: badge column + repeater (aligned to top like reference). */
+.ecbb-ev__grid-meta {
+	display: flex;
+	flex-direction: row;
+	align-items: flex-start;
+	gap: 0.75rem 1rem;
+	padding: 1rem 1rem 1.2rem;
+	box-sizing: border-box;
+	min-width: 0;
+	font-family: "Open Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+.ecbb-ev__grid-date-col {
+	flex: 0 0 auto;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.35rem;
+	text-align: center;
+	min-width: 4rem;
+	margin-top: 1rem;
+}
+
+/* Outer frame: white + thin gray border (reference). */
+.ecbb-ev__grid-date-frame {
+	background: #fff;
+	border: 1px solid #d8dde3;
+	border-radius: 6px;
+	padding: 5px;
+	box-sizing: border-box;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	line-height: 0;
+}
+
+/* Inner: solid blue block, slightly rounded, day + month in white. */
+.ecbb-ev__grid-date-badge {
+	background-color: #2563eb;
+	color: #fff;
+	padding: 0.625rem 0.4rem 1rem;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	line-height: 1;
+	min-width: 4rem;
+	box-sizing: border-box;
+}
+
+.ecbb-ev__grid-date-badge-day {
+	font-size: 1.375rem;
+	font-weight: 700;
+	letter-spacing: -0.02em;
+	line-height: 1;
+}
+
+.ecbb-ev__grid-date-badge-month {
+	font-size: 0.75rem;
+	font-weight: 500;
+	text-transform: capitalize;
+	margin-top: 0.18rem;
+	letter-spacing: 0.02em;
+	line-height: 1.1;
+}
+
+/* Weekday under the framed badge — medium gray, caps. */
+.ecbb-ev__grid-date-dow {
+	font-size: 1.125rem;
+	font-weight: 600;
+	color: #6b7280;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	line-height: 1.2;
+	font-family: "Open Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+.ecbb-ev__grid-body {
+	flex: 1 1 auto;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-start;
+}
+
+/* Meta column: hierarchy like reference (time/venue muted, title + cost strong). */
+
+.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--date,
+.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--event-time {
+	display: flex;
+	align-items: center;
+	color: #6b7280;
+	font-size: 13px;
+	font-weight: 400;
+	line-height: 1.4;
+	letter-spacing: 0.01em;
+	margin: 0;
+}
+
+.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--date.ecbb-has-row-icon::before,
+.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--event-time.ecbb-has-row-icon::before {
+	content: "";
+	flex: 0 0 auto;
+	width: 14px;
+	height: 14px;
+	margin-right: 0.45rem;
+	background-color: #2563eb;
+	-webkit-mask: url( "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' d='M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2zm4.2 14.2L11 13V7h1.5v5.2l4.5 2.7l-.8 1.3z'/%3E%3C/svg%3E" ) center / contain no-repeat;
+	mask: url( "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' d='M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2zm4.2 14.2L11 13V7h1.5v5.2l4.5 2.7l-.8 1.3z'/%3E%3C/svg%3E" ) center / contain no-repeat;
+}
+
+.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--date .ecbb-event__date-day,
+.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--date .ecbb-event__date-sep {
+	display: none;
+}
+
+/* Title — prominent like reference / Style 1 list (≈20–22px) */
+.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--title {
+	margin: 0.1rem 0 0.2rem;
+	font-size: clamp( 1.0625rem, 1rem + 0.35vw, 1.625rem );
+	font-weight: 400;
+	color: #111827;
+	line-height: 1.28;
+	font-family: inherit;
+	letter-spacing: -0.01em;
+}
+
+.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--title .ecbb-event__link {
+	color: inherit;
+	text-underline-offset: 3px;
+	text-decoration-thickness: 1px;
+	transition: color 0.18s ease;
+}
+
+.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--title .ecbb-event__link:hover,
+.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--title .ecbb-event__link:focus-visible {
+	color: #2563eb;
+	text-decoration: underline;
+}
+
+/* Venue — grey text only (reference has no pin) */
+.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--venue,
+.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--venue-full-address,
+.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--venue-street,
+.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--venue-city,
+.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--venue-state,
+.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--venue-zip,
+.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--venue-country,
+.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--venue-phone {
+	position: relative;
+	padding-left: 0;
+	margin: 0;
+	color: #6b7280;
+	font-size: 14px;
+	font-weight: 400;
+	line-height: 1.45;
+}
+
+.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--venue::before,
+.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--venue-full-address::before,
+.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--venue-street::before,
+.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--venue-city::before,
+.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--venue-state::before,
+.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--venue-zip::before,
+.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--venue-country::before,
+.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--venue-phone::before {
+	display: none;
+}
+
+.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--event-cost {
+	font-size: 1.05rem;
+	font-weight: 700;
+	color: #111827;
+	margin: 0.2rem 0 0;
+	line-height: 1.35;
+}
