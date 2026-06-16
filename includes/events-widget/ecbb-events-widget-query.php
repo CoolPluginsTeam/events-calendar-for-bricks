@@ -270,5 +270,106 @@ function ecbb_events_widget_sanitize_load_more_settings( array $settings ) {
 		$out['event_range_end'] = sanitize_text_field( (string) $out['event_range_end'] );
 	}
 
+	if ( array_key_exists( 'load_more', $out ) ) {
+		$lm = $out['load_more'];
+		$out['load_more'] = ( $lm === true || $lm === 'true' || $lm === 1 || $lm === '1' );
+	}
+
+	foreach ( [ 'load_more_text', 'load_more_loading_text', 'load_more_no_more_text' ] as $text_key ) {
+		if ( isset( $out[ $text_key ] ) ) {
+			$out[ $text_key ] = sanitize_text_field( (string) $out[ $text_key ] );
+		}
+	}
+
+	if ( isset( $out['load_more_done_hide_ms'] ) ) {
+		$out['load_more_done_hide_ms'] = max( 300, (int) $out['load_more_done_hide_ms'] );
+	}
+
 	return $out;
+}
+
+/**
+ * @param array $settings Element settings.
+ * @return bool
+ */
+function ecbb_events_widget_load_more_enabled( array $settings ) {
+	if ( empty( $settings['load_more'] ) ) {
+		return false;
+	}
+	$v = $settings['load_more'];
+	return $v === true || $v === 'true' || $v === 1 || $v === '1';
+}
+
+/**
+ * Events shown per load-more batch (uses Number of events; 0 when unlimited).
+ *
+ * @param array $settings Element settings.
+ * @return int
+ */
+function ecbb_events_widget_load_more_batch_size( array $settings ) {
+	$ppp = array_key_exists( 'posts_per_page', $settings ) ? (int) $settings['posts_per_page'] : 10;
+	return $ppp > 0 ? $ppp : 0;
+}
+
+/**
+ * Query events for the initial widget render (optionally fetches one extra for pagination).
+ *
+ * @param array $settings Element settings.
+ * @return array{0:\WP_Post[],1:bool,2:int} [events, has_more, batch_size]
+ */
+function ecbb_events_widget_fetch_events_for_display( array $settings ) {
+	$batch     = ecbb_events_widget_load_more_batch_size( $settings );
+	$load_more = ecbb_events_widget_load_more_enabled( $settings ) && $batch > 0;
+
+	$args = ecbb_events_widget_query_tribe_args( $settings );
+	if ( $load_more ) {
+		$args['posts_per_page'] = $batch + 1;
+	}
+
+	$events = function_exists( 'tribe_get_events' ) ? tribe_get_events( $args ) : [];
+	if ( ! is_array( $events ) ) {
+		$events = [];
+	}
+
+	$has_more = false;
+	if ( $load_more && count( $events ) > $batch ) {
+		$has_more = true;
+		array_pop( $events );
+	}
+
+	return [ $events, $has_more, $batch ];
+}
+
+/**
+ * Register and enqueue the load-more script (once per request).
+ *
+ * @return void
+ */
+function ecbb_enqueue_load_more_assets() {
+	static $done = false;
+	if ( $done ) {
+		return;
+	}
+	$done = true;
+
+	if ( ! wp_script_is( 'ecbb-load-more', 'registered' ) ) {
+		wp_register_script(
+			'ecbb-load-more',
+			ECBB_URL . 'assets/js/events-load-more.js',
+			[],
+			ECBB_VERSION,
+			true
+		);
+
+		wp_localize_script(
+			'ecbb-load-more',
+			'ECBBEventsLoadMore',
+			[
+				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+				'nonce'   => wp_create_nonce( 'ecbb_events_load_more' ),
+			]
+		);
+	}
+
+	wp_enqueue_script( 'ecbb-load-more' );
 }

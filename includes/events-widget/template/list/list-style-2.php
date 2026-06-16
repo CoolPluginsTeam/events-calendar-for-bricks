@@ -155,16 +155,7 @@ function ecbb_list2_default_parts_rows() {
 			'part'        => 'description',
 			'desc_source' => 'content',
 			'ecbb_color'  => '',
-		],
-		[
-			'part'           => 'read_more',
-			'read_more_text' => esc_html__( 'More Details', 'ecbb' ),
-		],
-		// [
-		// 	'part'       => 'image',
-		// 	'image_link' => true,
-		// 	'image_size' => '',
-		// ],
+		]
 	];
 }
 
@@ -261,6 +252,55 @@ function ecbb_list2_maybe_month_heading_html( $post_id, &$last_month_key, $show 
 }
 
 /**
+ * Inner date stack for Style 2 rail (and grid range badge): month / day(s) / end month.
+ *
+ * @param int|false $start_ts Start timestamp.
+ * @param int|false $end_ts   End timestamp.
+ * @return string HTML fragment (no wrapper).
+ */
+function ecbb_list2_date_rail_stack_html( $start_ts, $end_ts ) {
+	if ( ! $start_ts ) {
+		return '';
+	}
+	if ( ! $end_ts ) {
+		$end_ts = $start_ts;
+	}
+
+	$top_m = strtoupper( date_i18n( 'M', $start_ts ) );
+	$bot_m = strtoupper( date_i18n( 'M', $end_ts ) );
+
+	$same_day   = ( date_i18n( 'Ymd', $start_ts ) === date_i18n( 'Ymd', $end_ts ) );
+	$same_month = ( date_i18n( 'Ym', $start_ts ) === date_i18n( 'Ym', $end_ts ) );
+
+	if ( $same_day ) {
+		return '<div class="ecbb-style2-rail-stack ecbb-style2-rail-stack--single-day">'
+			. '<span class="ecbb-style2-rail-t">' . esc_html( $top_m ) . '</span>'
+			. '<span class="ecbb-style2-rail-d1">' . esc_html( date_i18n( 'd', $start_ts ) ) . '</span>'
+			. '</div>';
+	}
+
+	$d_start = date_i18n( 'd', $start_ts );
+	$d_end   = date_i18n( 'd', $end_ts );
+
+	if ( $same_month ) {
+		return '<div class="ecbb-style2-rail-stack ecbb-style2-rail-stack--same-month">'
+			. '<span class="ecbb-style2-rail-t">' . esc_html( $top_m ) . '</span>'
+			. '<span class="ecbb-style2-rail-n ecbb-style2-rail-n--start">' . esc_html( $d_start ) . '</span>'
+			. '<span class="ecbb-style2-rail-s" aria-hidden="true">-</span>'
+			. '<span class="ecbb-style2-rail-n ecbb-style2-rail-n--end">' . esc_html( $d_end ) . '</span>'
+			. '</div>';
+	}
+
+	return '<div class="ecbb-style2-rail-stack ecbb-style2-rail-stack--cross-month">'
+		. '<span class="ecbb-style2-rail-t">' . esc_html( $top_m ) . '</span>'
+		. '<span class="ecbb-style2-rail-n ecbb-style2-rail-n--start">' . esc_html( $d_start ) . '</span>'
+		. '<span class="ecbb-style2-rail-s" aria-hidden="true">-</span>'
+		. '<span class="ecbb-style2-rail-n ecbb-style2-rail-n--end">' . esc_html( $d_end ) . '</span>'
+		. '<span class="ecbb-style2-rail-b">' . esc_html( $bot_m ) . '</span>'
+		. '</div>';
+}
+
+/**
  * Left column: start month / day range / end month (static, not from repeater).
  *
  * @param \WP_Post $post Event post.
@@ -276,34 +316,11 @@ function ecbb_list2_date_rail_html( $post ) {
 		return '<aside class="ecbb-style2-rail" aria-hidden="true"><div class="ecbb-style2-rail-in"></div></aside>';
 	}
 
-	$top_m = strtoupper( date_i18n( 'M', $start_ts ) );
-	$bot_m = strtoupper( date_i18n( 'M', $end_ts ) );
-
-	$same_day   = ( date_i18n( 'Ymd', $start_ts ) === date_i18n( 'Ymd', $end_ts ) );
-	$same_month = ( date_i18n( 'Ym', $start_ts ) === date_i18n( 'Ym', $end_ts ) );
-	$bot_disp   = $same_month ? '' : $bot_m;
-
-	if ( $same_day ) {
-		$days_html = '<span class="ecbb-style2-rail-d1">'
-			. esc_html( date_i18n( 'd', $start_ts ) )
-			. '</span>';
-	} else {
-		$d_start = date_i18n( 'd', $start_ts );
-		$d_end   = date_i18n( 'd', $end_ts );
-		$days_html = '<span class="ecbb-style2-rail-drg">'
-			. '<span class="ecbb-style2-rail-n">' . esc_html( $d_start ) . '</span>'
-			. '<span class="ecbb-style2-rail-s">-</span>'
-			. '<span class="ecbb-style2-rail-n">' . esc_html( $d_end ) . '</span>'
-			. '</span>';
-	}
-
-	$top_html = '<span class="ecbb-style2-rail-t">' . esc_html( $top_m ) . '</span>';
+	$stack = ecbb_list2_date_rail_stack_html( $start_ts, $end_ts );
 
 	return '<aside class="ecbb-style2-rail" aria-hidden="true">'
 		. '<div class="ecbb-style2-rail-in">'
-		. $top_html
-		. $days_html
-		. '<span class="ecbb-style2-rail-b">' . ( $bot_disp !== '' ? esc_html( $bot_disp ) : '&nbsp;' ) . '</span>'
+		. $stack
 		. '</div></aside>';
 }
 

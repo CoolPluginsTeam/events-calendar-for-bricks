@@ -236,26 +236,6 @@ class ECBB_Plugin {
      */
     public function ecbb_enqueue_scripts() {
         $this->ecbb_enqueue_events_widget_styles();
-
-        // Load more UI removed from Dynamic Messages for now; keep script registration for legacy elements if re-enabled later.
-        if ( apply_filters( 'ecbb_enqueue_load_more_script', false ) ) {
-            wp_enqueue_script(
-                'ecbb-load-more',
-                ECBB_URL . 'assets/js/events-load-more.js',
-                [],
-                ECBB_VERSION,
-                true
-            );
-
-            wp_localize_script(
-                'ecbb-load-more',
-                'ECBBEventsLoadMore',
-                [
-                    'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-                    'nonce'   => wp_create_nonce( 'ecbb_events_load_more' ),
-                ]
-            );
-        }
     }
 
     /**
@@ -325,8 +305,21 @@ class ECBB_Plugin {
         );
 
         wp_localize_script( 'ecbb-builder', 'ECBBBuilder', [
-            'tabContent' => esc_html__( 'CONTENT', 'ecbb' ),
-            'tabStyle'   => esc_html__( 'STYLE', 'ecbb' ),
+            'tabContent'  => esc_html__( 'CONTENT', 'ecbb' ),
+            'tabStyle'    => esc_html__( 'STYLE', 'ecbb' ),
+            'hoverParts'  => function_exists( 'ecbb_events_widget_repeater_hover_part_slugs' )
+                ? ecbb_events_widget_repeater_hover_part_slugs()
+                : [ 'title', 'read_more', 'event_tickets', 'event_rsvp', 'image' ],
+            'hoverKeys'   => function_exists( 'ecbb_events_widget_repeater_hover_control_keys' )
+                ? ecbb_events_widget_repeater_hover_control_keys()
+                : [
+                    'ecbb_use_hover',
+                    'ecbb_hover_color',
+                    'ecbb_hover_text_decoration',
+                    'ecbb_hover_animation',
+                    'image_size_hover',
+                    'ecbb_image_object_align_hover',
+                ],
         ] );
     }
 
@@ -353,69 +346,16 @@ class ECBB_Plugin {
     }
 
     private function ecbb_build_inline_style_attr( array $item, $allow_radius = false ) {
-        $styles = [];
-
-        // Text color: scoped rules on the loop root (initial render) — avoid inline !important so hover can win.
-
-        $size = $this->ecbb_normalize_css_size( $item['ecbb_font_size'] ?? '', 'px' );
-        if ( $size !== '' ) {
-            $styles[] = 'font-size:' . $size;
+        if ( function_exists( 'ecbb_events_widget_build_inline_style_attr' ) ) {
+            return ecbb_events_widget_build_inline_style_attr( $item, $allow_radius );
         }
-
-        if ( isset( $item['ecbb_font_weight'] ) && $item['ecbb_font_weight'] !== '' && is_numeric( $item['ecbb_font_weight'] ) ) {
-            $styles[] = 'font-weight:' . (int) $item['ecbb_font_weight'];
-        }
-
-        if ( ! empty( $item['ecbb_text_align'] ) && is_string( $item['ecbb_text_align'] ) && in_array( $item['ecbb_text_align'], [ 'left', 'center', 'right' ], true ) ) {
-            $styles[] = 'text-align:' . $item['ecbb_text_align'];
-        }
-
-        if ( isset( $item['ecbb_line_height'] ) && is_string( $item['ecbb_line_height'] ) && trim( $item['ecbb_line_height'] ) !== '' ) {
-            $styles[] = 'line-height:' . trim( $item['ecbb_line_height'] );
-        }
-
-        if ( isset( $item['ecbb_letter_spacing'] ) && is_string( $item['ecbb_letter_spacing'] ) && trim( $item['ecbb_letter_spacing'] ) !== '' ) {
-            $styles[] = 'letter-spacing:' . trim( $item['ecbb_letter_spacing'] );
-        }
-
-        if ( $allow_radius ) {
-            if ( ! empty( $item['image_aspect_ratio'] ) && is_string( $item['image_aspect_ratio'] ) && preg_match( '/^\\d+\\/\\d+$/', $item['image_aspect_ratio'] ) ) {
-                $styles[] = 'aspect-ratio:' . $item['image_aspect_ratio'];
-            }
-
-            $radius = $this->ecbb_normalize_css_size( $item['ecbb_image_radius'] ?? '', 'px' );
-            if ( $radius !== '' ) {
-                $styles[] = 'border-radius:' . $radius;
-            }
-
-            $bw = $this->ecbb_normalize_css_size( $item['ecbb_image_border_width'] ?? '', 'px' );
-            $bc = $this->ecbb_normalize_color_value( $item['ecbb_image_border_color'] ?? '' );
-            $bs = isset( $item['ecbb_image_border_style'] ) ? (string) $item['ecbb_image_border_style'] : 'solid';
-            $bs = in_array( $bs, [ 'solid', 'dashed', 'dotted' ], true ) ? $bs : 'solid';
-            if ( $bw !== '' && $bw !== '0px' && $bc !== '' ) {
-                $styles[] = 'border:' . $bw . ' ' . $bs . ' ' . $bc;
-            }
-
-            $w = $this->ecbb_normalize_css_size( $item['ecbb_image_width'] ?? '', '%' );
-            if ( $w !== '' ) {
-                $styles[] = 'width:' . $w;
-            }
-
-            $h = $this->ecbb_normalize_css_size( $item['ecbb_image_height'] ?? '', 'px' );
-            if ( $h !== '' ) {
-                $styles[] = 'height:' . $h;
-            }
-
-            $fit = isset( $item['ecbb_image_fit'] ) ? (string) $item['ecbb_image_fit'] : '';
-            if ( $fit !== '' && in_array( $fit, [ 'cover', 'contain', 'fill', 'none', 'scale-down' ], true ) ) {
-                $styles[] = 'object-fit:' . $fit;
-            }
-        }
-
-        return empty( $styles ) ? '' : implode( ';', $styles ) . ';';
+        return '';
     }
 
     private function ecbb_render_part_html( \WP_Post $post, array $item, int $idx, string $skin = '' ): string {
+        if ( function_exists( 'ecbb_events_widget_normalize_part_item' ) ) {
+            $item = ecbb_events_widget_normalize_part_item( $item );
+        }
         $part = isset( $item['part'] ) ? (string) $item['part'] : 'title';
         $skin = (string) $skin;
         $wrap = function_exists( 'ecbb_events_widget_part_wrap_classes' )
@@ -767,7 +707,7 @@ class ECBB_Plugin {
                     $parts_to_use,
                     $gap_inner,
                     function ( $ev, $item, $idx ) use ( $self ) {
-                        echo $self->ecbb_render_part_html( $ev, $item, $idx );
+                        echo $self->ecbb_render_part_html( $ev, $item, $idx, 'style1' );
                     },
                     $style1_date_fmt
                 );

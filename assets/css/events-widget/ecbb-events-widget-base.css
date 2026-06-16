@@ -46,11 +46,15 @@
 	display: inline-block;
 	box-sizing: border-box;
 	margin: 0;
-	font-size: 1rem;
-	line-height: 1.5;
 	color: rgba(0, 0, 0, 0.65);
 	text-align: center;
 	transition: opacity 0.2s ease, transform 0.2s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Plain text tags only — headings (default h2) keep theme heading styles. */
+.ecbb-ev__empty-message:is(p, div) {
+	font-size: 1rem;
+	line-height: 1.5;
 }
 
 /* Load more — layout/behavior defaults; colors & typography come from Dynamic Messages (Style). */

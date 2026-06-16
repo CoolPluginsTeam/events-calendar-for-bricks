@@ -81,6 +81,8 @@ function ecbb_check_dependencies() {
 
 require_once ECBB_DIR . 'includes/events-widget/ecbb-events-widget-query.php';
 require_once ECBB_DIR . 'includes/events-widget/ecbb-events-widget-loop-markup.php';
+require_once ECBB_DIR . 'includes/events-widget/ecbb-events-widget-part-styles.php';
+require_once ECBB_DIR . 'includes/events-widget/ecbb-events-widget-controls.php';
 require_once ECBB_DIR . 'includes/events-widget/template/list/list-style-1.php';
 require_once ECBB_DIR . 'includes/events-widget/grid/ecbb-events-widget-grid-markup.php';
 require_once ECBB_DIR . 'includes/events-widget/template/list/list-style-2.php';

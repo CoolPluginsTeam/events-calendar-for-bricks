@@ -46,11 +46,7 @@ function ecbb_list1_default_parts_rows() {
 			'part'        => 'description',
 			'desc_source' => 'content',
 			'desc_length' => 'short',
-		],
-		[
-			'part'           => 'read_more',
-			'read_more_text' => esc_html__( 'Find Out More', 'ecbb' ),
-		],
+		]
 	];
 }
 
@@ -88,6 +84,16 @@ function ecbb_list1_normalize_parts( array $parts ) {
 			return ecbb_list1_default_parts_rows();
 		}
 	}
+
+	// Style 1 CTA is a fixed template column (not a repeater row).
+	$clean = array_values(
+		array_filter(
+			$clean,
+			static function ( $row ) {
+				return is_array( $row ) && ( (string) ( $row['part'] ?? '' ) !== 'read_more' );
+			}
+		)
+	);
 
 	return $clean;
 }
@@ -388,11 +394,10 @@ function ecbb_list1_skip_middle_part( $part ) {
  *
  * Layout:
  *   - aside (left)   : static date block (day / month / year)
- *   - body (middle)  : repeater rows in order, minus the first read_more
- *   - aside (right)  : the first read_more row, rendered as a solid cyan CTA
+ *   - body (middle)  : repeater rows in order, minus any read_more rows
+ *   - aside (right)  : static CTA column (always shown; not part of repeater)
  *
- * When the repeater has no read_more row, the CTA column is omitted entirely
- * and the inner element collapses to two columns.
+ * CTA mirrors the date column: it’s a fixed part of the Style 1 template.
  *
  * @param \WP_Post $post            Event post.
  * @param array    $parts           Full repeater settings (order preserved).
@@ -408,15 +413,8 @@ function ecbb_list1_item_inner_markup( $post, array $parts, $gap_style_value, ca
 
 	ob_start();
 
-	$cta_info = ecbb_list1_find_first_read_more_row( $parts );
-	$has_cta  = $cta_info['index'] >= 0;
-
 	$inner_class = 'ecbb-ev__item-inner ecbb-ev__item-inner--style1';
-	if ( $has_cta ) {
-		$inner_class .= ' ecbb-ev__item-inner--style1-has-cta';
-	} else {
-		$inner_class .= ' ecbb-ev__item-inner--style1-no-cta';
-	}
+	$inner_class .= ' ecbb-ev__item-inner--style1-has-cta';
 
 	echo '<div class="' . esc_attr( $inner_class ) . '">';
 	echo ecbb_list1_date_block_html( $post, $date_format ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- builder-internal HTML, fields escaped at source.
@@ -439,11 +437,19 @@ function ecbb_list1_item_inner_markup( $post, array $parts, $gap_style_value, ca
 
 	echo '</div>';
 
-	if ( $has_cta ) {
-		echo '<aside class="ecbb-ev__style1-cta">';
-		$emit_part( $post, $cta_info['row'], $cta_info['index'] );
-		echo '</aside>';
+	// Static CTA column (not driven by repeater).
+	echo '<aside class="ecbb-ev__style1-cta">';
+	// Reuse the same markup classes the CSS expects (read_more part wrapper).
+	$cta_row = [ 'part' => 'read_more' ];
+	if ( function_exists( 'ecbb_events_widget_part_wrap_classes' ) ) {
+		$cta_wrap = ecbb_events_widget_part_wrap_classes( 'read_more', 999, 'style1' );
+	} else {
+		$cta_wrap = 'ecbb-event-part ecbb-event-part--read-more ecbb-p999';
 	}
+	echo '<div class="' . esc_attr( $cta_wrap ) . '">';
+	echo '<a class="ecbb-event__link" href="' . esc_url( get_permalink( $post->ID ) ) . '">' . esc_html__( 'Find Out More', 'ecbb' ) . '</a>';
+	echo '</div>';
+	echo '</aside>';
 
 	echo '</div>';
 

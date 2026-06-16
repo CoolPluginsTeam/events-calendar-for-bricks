@@ -102,15 +102,86 @@
 	line-height: 1.2;
 }
 
-.ecbb-style2-rail-d1 {
+.ecbb-style2-rail-stack {
+	width: 100%;
+}
+
+.ecbb-style2-rail-stack--single-day {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.15rem;
+}
+
+.ecbb-style2-rail-stack--same-month,
+.ecbb-style2-rail-stack--cross-month {
+	display: grid;
+	grid-template-columns: auto auto auto;
+	grid-template-rows: auto auto;
+	justify-content: center;
+	align-items: baseline;
+	column-gap: 0.2rem;
+	row-gap: 0.05rem;
+}
+
+.ecbb-style2-rail-stack--cross-month {
+	grid-template-rows: auto auto auto;
+}
+
+.ecbb-style2-rail-stack--same-month .ecbb-style2-rail-t,
+.ecbb-style2-rail-stack--cross-month .ecbb-style2-rail-t {
+	grid-column: 1;
+	grid-row: 1;
+	justify-self: center;
+}
+
+.ecbb-style2-rail-stack--same-month .ecbb-style2-rail-n--start,
+.ecbb-style2-rail-stack--cross-month .ecbb-style2-rail-n--start {
+	grid-column: 1;
+	grid-row: 2;
+}
+
+.ecbb-style2-rail-stack--same-month .ecbb-style2-rail-s,
+.ecbb-style2-rail-stack--cross-month .ecbb-style2-rail-s {
+	grid-column: 2;
+	grid-row: 2;
+}
+
+.ecbb-style2-rail-stack--same-month .ecbb-style2-rail-n--end,
+.ecbb-style2-rail-stack--cross-month .ecbb-style2-rail-n--end {
+	grid-column: 3;
+	grid-row: 2;
+}
+
+.ecbb-style2-rail-stack--cross-month .ecbb-style2-rail-b {
+	grid-column: 3;
+	grid-row: 3;
+	justify-self: center;
+}
+
+.ecbb-style2-rail-d1,
+.ecbb-style2-rail-n {
 	font-size: 1.75rem;
 	font-weight: 700;
 	color: #111827;
 	line-height: 1.05;
-	margin: 0.2rem 0;
 	letter-spacing: -0.02em;
 }
 
+.ecbb-style2-rail-stack--same-month .ecbb-style2-rail-n,
+.ecbb-style2-rail-stack--cross-month .ecbb-style2-rail-n {
+	font-size: 1.65rem;
+	line-height: 1;
+}
+
+.ecbb-style2-rail-s {
+	font-size: 1.05rem;
+	font-weight: 600;
+	color: #6b7280;
+	line-height: 1;
+}
+
+/* Legacy flex range wrapper (unused; kept for saved markup compatibility). */
 .ecbb-style2-rail-drg {
 	display: flex;
 	flex-direction: row;
@@ -412,6 +483,11 @@
 		padding-bottom: 0.75rem;
 		border-right: none;
 		border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+	}
+
+	.ecbb-style2-rail-stack--same-month,
+	.ecbb-style2-rail-stack--cross-month {
+		justify-content: flex-start;
 	}
 
 	.ecbb-style2-rail-t,

@@ -431,11 +431,28 @@ function ecbb_event_part_button_style_attr( array $item ) {
 	$styles = [];
 
 	if ( ! empty( $item['btn_bg'] ) ) {
-		$styles[] = 'background-color:' . esc_attr( (string) $item['btn_bg'] );
+		$bg = function_exists( 'ecbb_normalize_bricks_color' )
+			? ecbb_normalize_bricks_color( $item['btn_bg'] )
+			: (string) $item['btn_bg'];
+		if ( $bg !== '' ) {
+			$styles[] = 'background-color:' . esc_attr( $bg );
+		}
 	}
 
 	if ( ! empty( $item['btn_text_color'] ) ) {
-		$styles[] = 'color:' . esc_attr( (string) $item['btn_text_color'] ) . ' !important';
+		$tc = function_exists( 'ecbb_normalize_bricks_color' )
+			? ecbb_normalize_bricks_color( $item['btn_text_color'] )
+			: (string) $item['btn_text_color'];
+		if ( $tc !== '' ) {
+			$styles[] = 'color:' . esc_attr( $tc ) . ' !important';
+		}
+	}
+
+	if ( ! empty( $item['btn_border'] ) && function_exists( 'ecbb_events_widget_border_to_css' ) ) {
+		$border = ecbb_events_widget_border_to_css( $item['btn_border'] );
+		if ( $border !== '' ) {
+			$styles[] = 'border:' . esc_attr( $border );
+		}
 	}
 
 	$radius = isset( $item['btn_radius'] ) ? trim( (string) $item['btn_radius'] ) : '';
@@ -443,10 +460,19 @@ function ecbb_event_part_button_style_attr( array $item ) {
 		$styles[] = 'border-radius:' . esc_attr( $radius );
 	}
 
-	$py = isset( $item['btn_padding_y'] ) ? trim( (string) $item['btn_padding_y'] ) : '';
-	$px = isset( $item['btn_padding_x'] ) ? trim( (string) $item['btn_padding_x'] ) : '';
-	if ( $py !== '' || $px !== '' ) {
-		$styles[] = 'padding:' . esc_attr( ($py !== '' ? $py : '10px') . ' ' . ($px !== '' ? $px : '14px') );
+	$padding_css = '';
+	if ( ! empty( $item['btn_padding'] ) && function_exists( 'ecbb_events_widget_spacing_to_css' ) ) {
+		$padding_css = ecbb_events_widget_spacing_to_css( $item['btn_padding'] );
+	}
+	if ( $padding_css === '' ) {
+		$py = isset( $item['btn_padding_y'] ) ? trim( (string) $item['btn_padding_y'] ) : '';
+		$px = isset( $item['btn_padding_x'] ) ? trim( (string) $item['btn_padding_x'] ) : '';
+		if ( $py !== '' || $px !== '' ) {
+			$padding_css = ( $py !== '' ? $py : '10px' ) . ' ' . ( $px !== '' ? $px : '14px' );
+		}
+	}
+	if ( $padding_css !== '' ) {
+		$styles[] = 'padding:' . esc_attr( $padding_css );
 	}
 
 	$styles[] = 'display:inline-flex';
@@ -571,6 +597,9 @@ function ecbb_events_widget_part_wrap_classes( $part, $idx, $skin = '' ) {
  * @return string|false      Markup, empty string when nothing to show, false if not an extended part.
  */
 function ecbb_event_part_extended_markup( $post, array $item, $idx, $style, $skin = '' ) {
+	if ( function_exists( 'ecbb_events_widget_normalize_part_item' ) ) {
+		$item = ecbb_events_widget_normalize_part_item( $item );
+	}
 	$part = isset( $item['part'] ) ? (string) $item['part'] : '';
 	$idx  = absint( $idx );
 	$skin = (string) $skin;
@@ -768,9 +797,15 @@ function ecbb_event_part_extended_markup( $post, array $item, $idx, $style, $ski
 	}
 
 	if ( $part === 'read_more' ) {
-		$label = isset( $item['read_more_text'] ) ? trim( (string) $item['read_more_text'] ) : '';
+		// We don't expose this text in the UI anymore; keep output consistent per template.
+		// If legacy saved data includes read_more_text, ignore it for style skins we control.
+		$label = ( $skin === 'style1' || $skin === 'style2' ) ? '' : ( isset( $item['read_more_text'] ) ? trim( (string) $item['read_more_text'] ) : '' );
 		if ( $label === '' ) {
-			$label = esc_html__( 'Read more', 'ecbb' );
+			if ( $skin === 'style2' ) {
+				$label = esc_html__( 'More Details', 'ecbb' );
+			} else {
+				$label = esc_html__( 'Find Out More', 'ecbb' );
+			}
 		} else {
 			$label = sanitize_text_field( $label );
 		}
@@ -880,12 +915,69 @@ function ecbb_object_position_from_image_align( $key ) {
 }
 
 /**
- * Part types that show Style-tab hover controls (color, decoration, animation, image swap/align).
+ * Load-more button markup (AJAX appends into `.ecbb-ev__list`).
+ *
+ * @param array $settings  Full element settings (JSON-encoded on the button).
+ * @param int   $offset    Next query offset.
+ * @param int   $limit     Batch size.
+ * @param bool  $has_more  Whether more events exist beyond the current list.
+ * @return string HTML or empty string.
+ */
+function ecbb_events_widget_render_load_more_markup( array $settings, $offset, $limit, $has_more ) {
+	if ( ! $has_more || $limit < 1 ) {
+		return '';
+	}
+	if ( ! function_exists( 'ecbb_events_widget_load_more_enabled' ) || ! ecbb_events_widget_load_more_enabled( $settings ) ) {
+		return '';
+	}
+
+	$text = isset( $settings['load_more_text'] ) ? trim( (string) $settings['load_more_text'] ) : '';
+	if ( $text === '' ) {
+		$text = __( 'Load more', 'ecbb' );
+	}
+
+	$loading = isset( $settings['load_more_loading_text'] ) ? trim( (string) $settings['load_more_loading_text'] ) : '';
+	if ( $loading === '' ) {
+		$loading = __( 'Loading...', 'ecbb' );
+	}
+
+	$no_more = isset( $settings['load_more_no_more_text'] ) ? trim( (string) $settings['load_more_no_more_text'] ) : '';
+	if ( $no_more === '' ) {
+		$no_more = __( 'No more events', 'ecbb' );
+	}
+
+	$hide_ms = isset( $settings['load_more_done_hide_ms'] ) ? max( 300, (int) $settings['load_more_done_hide_ms'] ) : 1500;
+
+	$settings_json = wp_json_encode( $settings );
+	if ( ! is_string( $settings_json ) ) {
+		$settings_json = '{}';
+	}
+
+	$html  = '<div class="ecbb-load-more">';
+	$html .= '<button type="button" class="ecbb-load-more__btn"';
+	$html .= ' data-settings="' . esc_attr( $settings_json ) . '"';
+	$html .= ' data-limit="' . esc_attr( (string) $limit ) . '"';
+	$html .= ' data-offset="' . esc_attr( (string) (int) $offset ) . '"';
+	$html .= ' data-text="' . esc_attr( $text ) . '"';
+	$html .= ' data-loading="' . esc_attr( $loading ) . '"';
+	$html .= ' data-no-more="' . esc_attr( $no_more ) . '"';
+	$html .= ' data-hide-ms="' . esc_attr( (string) $hide_ms ) . '"';
+	$html .= '>' . esc_html( $text ) . '</button>';
+	$html .= '<span class="ecbb-load-more__done" style="display:none" aria-live="polite"></span>';
+	$html .= '</div>';
+
+	return $html;
+}
+
+/**
+ * Part types that show Style-tab hover controls (links, buttons, image swap).
+ *
+ * Non-interactive parts (description, date/time, venue text, cost, etc.) are excluded.
  *
  * @return string[]
  */
 function ecbb_event_part_types_with_hover_style_controls() {
-	return [ 'title', 'read_more', 'event_tickets', 'event_rsvp', 'venue', 'categories', 'tags', 'image' ];
+	return [ 'title', 'read_more', 'event_tickets', 'event_rsvp', 'image' ];
 }
 
 /**

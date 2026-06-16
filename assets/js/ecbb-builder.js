@@ -4,13 +4,70 @@
 	var L = typeof ECBBBuilder !== "undefined" ? ECBBBuilder : {};
 	var TAB_CONTENT = L.tabContent || "CONTENT";
 	var TAB_STYLE = L.tabStyle || "STYLE";
+	var HOVER_PARTS = Array.isArray(L.hoverParts) ? L.hoverParts : [
+		"title",
+		"read_more",
+		"event_tickets",
+		"event_rsvp",
+		"image",
+	];
+
+	function readPartValue(item) {
+		var partInner = item.querySelector(
+			'.repeater-item-inner[data-control-key="part"]'
+		);
+		if (!partInner) {
+			return "";
+		}
+
+		var select = partInner.querySelector("select");
+		if (select && select.value) {
+			return select.value;
+		}
+
+		var input = partInner.querySelector('input[type="hidden"]');
+		if (input && input.value) {
+			return input.value;
+		}
+
+		var option = partInner.querySelector(
+			".select-option.active, .select-option.is-active, .option.active"
+		);
+		if (option) {
+			return (
+				option.getAttribute("data-value") ||
+				option.getAttribute("value") ||
+				option.textContent.trim()
+			);
+		}
+
+		return "";
+	}
+
+	function partSupportsHover(part) {
+		return part !== "" && HOVER_PARTS.indexOf(part) !== -1;
+	}
+
+	function syncHoverVisibility(item) {
+		if (!item || !item.classList.contains("ecbb-parts-repeater-item")) {
+			return;
+		}
+
+		var part = readPartValue(item);
+		item.setAttribute("data-ecbb-part", part);
+		item.classList.toggle("ecbb-part-no-hover", !partSupportsHover(part));
+	}
 
 	function isECBBPartsRow(item) {
 		return (
 			item &&
 			item.querySelector &&
 			item.querySelector('.repeater-item-inner[data-control-key="part"]') &&
-			item.querySelector('.repeater-item-inner[data-control-key="ecbb_color"]')
+			(
+				item.querySelector('.repeater-item-inner[data-control-key="ecbb_typography"]') ||
+				item.querySelector('.repeater-item-inner[data-control-key="ecbb_sep_style"]') ||
+				item.querySelector('.repeater-item-inner[data-control-key="ecbb_color"]')
+			)
 		);
 	}
 
@@ -58,6 +115,7 @@
 		partEl.insertAdjacentElement("afterend", wrap);
 
 		syncButtons(item);
+		syncHoverVisibility(item);
 	}
 
 	function syncButtons(item) {
@@ -106,7 +164,10 @@
 	}
 
 	function scan() {
-		document.querySelectorAll(".repeater-item").forEach(ensureTabs);
+		document.querySelectorAll(".repeater-item").forEach(function (item) {
+			ensureTabs(item);
+			syncHoverVisibility(item);
+		});
 	}
 
 	var t = null;
@@ -119,6 +180,21 @@
 			scan();
 		}, 80);
 	}
+
+	document.addEventListener(
+		"change",
+		function (e) {
+			var item = e.target.closest(".ecbb-parts-repeater-item");
+			if (
+				!item ||
+				!e.target.closest('.repeater-item-inner[data-control-key="part"]')
+			) {
+				return;
+			}
+			syncHoverVisibility(item);
+		},
+		true
+	);
 
 	document.addEventListener(
 		"click",
