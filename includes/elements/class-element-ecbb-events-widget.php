@@ -17,7 +17,7 @@ class Element_ECBB_Events_Widget extends \Bricks\Element {
 	}
 
 	public function get_keywords() {
-		return [ 'event', 'events', 'loop', 'query', 'tec', 'tribe' ];
+		return [ 'event', 'events', 'loop', 'query', 'tec', 'tribe', 'widget', 'calendar' ];
 	}
 
 	public function set_control_groups() {
@@ -678,14 +678,14 @@ class Element_ECBB_Events_Widget extends \Bricks\Element {
 			echo '<div class="' . esc_attr( $item_classes ) . '">';
 
 			if ( $use_style1_shell && function_exists( 'ecbb_list1_item_inner_markup' ) ) {
-				$gap_inner = 'display:flex;flex-direction:column;gap:12px;';
+				$gap_inner = 'display:flex;flex-direction:column;gap:8px;';
 				$self      = $this;
 				$emit      = function ( $ev, $item, $idx ) use ( $self ) {
 					$self->ecbb_render_part( $ev, $item, $idx, 'style1' );
 				};
 				echo ecbb_list1_item_inner_markup( $post, $parts, $gap_inner, $emit, $style1_date_format );
 			} elseif ( $use_style2_shell ) {
-				$gap_inner = ecbb_list2_body_stack_gap_style( 12, 'px' );
+				$gap_inner = ecbb_list2_body_stack_gap_style( 8, 'px' );
 				$self      = $this;
 				$emit      = function ( $ev, $item, $idx ) use ( $self ) {
 					$self->ecbb_render_part( $ev, $item, $idx, 'style2' );

@@ -339,6 +339,14 @@ function ecbb_events_widget_get_repeater_fields() {
 			'default'  => false,
 			'required' => [ 'part', '=', [ 'event_tickets', 'event_rsvp', 'read_more' ] ],
 		],
+		'btn_sep_style' => [
+			'label'    => esc_html__( 'Button styling', 'ecbb' ),
+			'type'     => 'separator',
+			'required' => [
+				[ 'part', '=', [ 'event_tickets', 'event_rsvp', 'read_more' ] ],
+				[ 'btn_style', '=', true ],
+			],
+		],
 		'btn_bg' => [
 			'label'       => esc_html__( 'Button background', 'ecbb' ),
 			'type'        => 'color',

@@ -63,6 +63,45 @@
 		item.classList.toggle("ecbb-part-no-hover", part !== "" && !partSupportsHover(part));
 	}
 
+	function ensureAccordionState(item) {
+		if (!item || !item.classList || !item.classList.contains("ecbb-parts-repeater-item")) {
+			return;
+		}
+		if (!item.hasAttribute("data-ecbb-hover-open")) {
+			item.setAttribute("data-ecbb-hover-open", "true");
+		}
+		if (!item.hasAttribute("data-ecbb-btn-open")) {
+			item.setAttribute("data-ecbb-btn-open", "true");
+		}
+	}
+
+	function bindAccordionToggle(item, sepKey, attrName) {
+		var sep = item.querySelector('.repeater-item-inner[data-control-key="' + sepKey + '"]');
+		if (!sep || sep.getAttribute("data-ecbb-accordion-bound") === "1") {
+			return;
+		}
+		sep.setAttribute("data-ecbb-accordion-bound", "1");
+		sep.classList.add("ecbb-accordion-sep");
+		sep.addEventListener(
+			"click",
+			function (e) {
+				// Don't toggle when user interacts with an actual form input.
+				if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "SELECT" || e.target.tagName === "TEXTAREA")) {
+					return;
+				}
+				var open = item.getAttribute(attrName);
+				item.setAttribute(attrName, open === "false" ? "true" : "false");
+			},
+			true
+		);
+	}
+
+	function ensureAccordions(item) {
+		ensureAccordionState(item);
+		bindAccordionToggle(item, "ecbb_sep_hover", "data-ecbb-hover-open");
+		bindAccordionToggle(item, "btn_sep_style", "data-ecbb-btn-open");
+	}
+
 	function isECBBPartsRow(item) {
 		return (
 			item &&
@@ -121,6 +160,7 @@
 
 		syncButtons(item);
 		syncHoverVisibility(item);
+		ensureAccordions(item);
 	}
 
 	function syncButtons(item) {
@@ -161,6 +201,7 @@
 
 		if (item.querySelector(".ecbb-repeater-tabs")) {
 			syncHoverVisibility(item);
+			ensureAccordions(item);
 			return;
 		}
 
@@ -171,6 +212,7 @@
 		document.querySelectorAll(".repeater-item").forEach(function (item) {
 			ensureTabs(item);
 			syncHoverVisibility(item);
+			ensureAccordions(item);
 		});
 	}
 

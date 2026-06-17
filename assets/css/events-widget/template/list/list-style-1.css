@@ -38,8 +38,9 @@
 
 /* Base: 2 columns (date | body). The CTA modifier expands to 3 columns. */
 .ecbb-ev__item-inner--style1 {
+	--ecbb-style1-date-width: 18rem;
 	display: grid;
-	grid-template-columns: 11rem minmax(0, 1fr);
+	grid-template-columns: var(--ecbb-style1-date-width) minmax(0, 1fr);
 	align-items: stretch;
 	overflow: hidden;
 	border-radius: 6px;
@@ -47,13 +48,13 @@
 }
 
 .ecbb-ev__item-inner--style1-has-cta {
-	grid-template-columns: 11rem minmax(0, 1fr) 12.5rem;
+	grid-template-columns: var(--ecbb-style1-date-width) minmax(0, 1fr) 18rem;
 }
 
 /* ─────────────────────────── Left date column ─────────────────────────── */
 
 .ecbb-ev__style1-date {
-	background-color: #1ac8e8;
+	background-color: #1d9aee;
 	color: #ffffff;
 	padding: 1.75rem 0.75rem;
 	display: flex;
@@ -282,7 +283,7 @@
 }
 
 .ecbb-ev__style1-cta:hover{
-	background-color: #1ac8e8;
+	background-color: #1d9aee;
 }
 
 .ecbb-ev__style1-cta .ecbb-event-part--read-more {
