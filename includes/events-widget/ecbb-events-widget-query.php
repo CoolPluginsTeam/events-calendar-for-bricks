@@ -353,11 +353,12 @@ function ecbb_enqueue_load_more_assets() {
 	$done = true;
 
 	if ( ! wp_script_is( 'ecbb-load-more', 'registered' ) ) {
+		$lm_path = ECBB_DIR . 'assets/js/events-load-more.js';
 		wp_register_script(
 			'ecbb-load-more',
 			ECBB_URL . 'assets/js/events-load-more.js',
 			[],
-			ECBB_VERSION,
+			file_exists( $lm_path ) ? (string) filemtime( $lm_path ) : ECBB_VERSION,
 			true
 		);
 

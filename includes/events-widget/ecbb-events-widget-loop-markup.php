@@ -448,15 +448,28 @@ function ecbb_event_part_button_style_attr( array $item ) {
 		}
 	}
 
-	if ( ! empty( $item['btn_border'] ) && function_exists( 'ecbb_events_widget_border_to_css' ) ) {
+	$has_border_radius = false;
+	if ( ! empty( $item['btn_border'] ) && function_exists( 'ecbb_events_widget_border_declarations' ) ) {
+		$border_decls = ecbb_events_widget_border_declarations( $item['btn_border'] );
+		if ( ! empty( $border_decls ) ) {
+			foreach ( $border_decls as $decl ) {
+				$styles[] = $decl;
+				if ( strpos( $decl, 'border-radius:' ) === 0 ) {
+					$has_border_radius = true;
+				}
+			}
+			$styles[] = 'box-sizing:border-box';
+		}
+	} elseif ( ! empty( $item['btn_border'] ) && function_exists( 'ecbb_events_widget_border_to_css' ) ) {
 		$border = ecbb_events_widget_border_to_css( $item['btn_border'] );
 		if ( $border !== '' ) {
 			$styles[] = 'border:' . esc_attr( $border );
+			$styles[] = 'box-sizing:border-box';
 		}
 	}
 
 	$radius = isset( $item['btn_radius'] ) ? trim( (string) $item['btn_radius'] ) : '';
-	if ( $radius !== '' ) {
+	if ( $radius !== '' && ! $has_border_radius ) {
 		$styles[] = 'border-radius:' . esc_attr( $radius );
 	}
 
@@ -797,9 +810,7 @@ function ecbb_event_part_extended_markup( $post, array $item, $idx, $style, $ski
 	}
 
 	if ( $part === 'read_more' ) {
-		// We don't expose this text in the UI anymore; keep output consistent per template.
-		// If legacy saved data includes read_more_text, ignore it for style skins we control.
-		$label = ( $skin === 'style1' || $skin === 'style2' ) ? '' : ( isset( $item['read_more_text'] ) ? trim( (string) $item['read_more_text'] ) : '' );
+		$label = isset( $item['read_more_text'] ) ? trim( (string) $item['read_more_text'] ) : '';
 		if ( $label === '' ) {
 			if ( $skin === 'style2' ) {
 				$label = esc_html__( 'More Details', 'ecbb' );
@@ -970,6 +981,15 @@ function ecbb_events_widget_render_load_more_markup( array $settings, $offset, $
 }
 
 /**
+ * Interactive parts with hover controls (title, chips, buttons). Excludes image.
+ *
+ * @return string[]
+ */
+function ecbb_event_part_interactive_hover_part_slugs() {
+	return [ 'title', 'categories', 'tags', 'read_more', 'event_tickets', 'event_rsvp' ];
+}
+
+/**
  * Part types that show Style-tab hover controls (links, buttons, image swap).
  *
  * Non-interactive parts (description, date/time, venue text, cost, etc.) are excluded.
@@ -977,7 +997,10 @@ function ecbb_events_widget_render_load_more_markup( array $settings, $offset, $
  * @return string[]
  */
 function ecbb_event_part_types_with_hover_style_controls() {
-	return [ 'title', 'read_more', 'event_tickets', 'event_rsvp', 'image' ];
+	return array_merge(
+		ecbb_event_part_interactive_hover_part_slugs(),
+		[ 'image' ]
+	);
 }
 
 /**
@@ -1110,7 +1133,36 @@ function ecbb_render_loop_featured_images( $thumb_id, array $item, $shared_style
 }
 
 /**
- * Scoped CSS for Bricks-style “fade / zoom” motion on hover.
+ * Append :hover to one or more comma-separated selectors.
+ *
+ * @param string $scope_sel
+ * @return string
+ */
+function ecbb_event_part_hover_state_selectors( $scope_sel ) {
+	$scope_sel = trim( (string) $scope_sel );
+	if ( $scope_sel === '' ) {
+		return '';
+	}
+	if ( strpos( $scope_sel, ',' ) === false ) {
+		return $scope_sel . ':hover';
+	}
+	$parts = array_filter( array_map( 'trim', explode( ',', $scope_sel ) ) );
+	if ( empty( $parts ) ) {
+		return $scope_sel . ':hover';
+	}
+	return implode(
+		',',
+		array_map(
+			static function ( $part ) {
+				return $part . ':hover';
+			},
+			$parts
+		)
+	);
+}
+
+/**
+ * Scoped CSS for hover motion that animates in place (rest = natural position).
  *
  * @param string $scope_sel Full selector (e.g. .scope .ecbb-p0).
  * @param string $anim      One of fade_in_up, fade_in_right, …
@@ -1125,36 +1177,39 @@ function ecbb_event_part_hover_animation_css( $scope_sel, $anim ) {
 		return [ 'base' => '', 'hover' => '' ];
 	}
 
+	$base  = "{$scope_sel}{transition:transform {$dur} {$ease};transform:none;transform-origin:center center;}";
+	$hover = ecbb_event_part_hover_state_selectors( $scope_sel );
+
 	switch ( $anim ) {
 		case 'fade_in_up':
 			return [
-				'base'  => "{$scope_sel}{transition:opacity {$dur} {$ease},transform {$dur} {$ease};opacity:.88;transform:translateY(14px);}",
-				'hover' => "{$scope_sel}:hover{opacity:1;transform:translateY(0);}",
+				'base'  => $base,
+				'hover' => $hover . '{transform:translateY(-8px);}',
 			];
 		case 'fade_in_right':
 			return [
-				'base'  => "{$scope_sel}{transition:opacity {$dur} {$ease},transform {$dur} {$ease};opacity:.88;transform:translateX(-14px);}",
-				'hover' => "{$scope_sel}:hover{opacity:1;transform:translateX(0);}",
+				'base'  => $base,
+				'hover' => $hover . '{transform:translateX(8px);}',
 			];
 		case 'fade_in_down':
 			return [
-				'base'  => "{$scope_sel}{transition:opacity {$dur} {$ease},transform {$dur} {$ease};opacity:.88;transform:translateY(-14px);}",
-				'hover' => "{$scope_sel}:hover{opacity:1;transform:translateY(0);}",
+				'base'  => $base,
+				'hover' => $hover . '{transform:translateY(8px);}',
 			];
 		case 'fade_in_left':
 			return [
-				'base'  => "{$scope_sel}{transition:opacity {$dur} {$ease},transform {$dur} {$ease};opacity:.88;transform:translateX(14px);}",
-				'hover' => "{$scope_sel}:hover{opacity:1;transform:translateX(0);}",
+				'base'  => $base,
+				'hover' => $hover . '{transform:translateX(-8px);}',
 			];
 		case 'zoom_in':
 			return [
-				'base'  => "{$scope_sel}{transition:opacity {$dur} {$ease},transform {$dur} {$ease};opacity:.9;transform:scale(0.94);transform-origin:center center;}",
-				'hover' => "{$scope_sel}:hover{opacity:1;transform:scale(1);}",
+				'base'  => $base,
+				'hover' => $hover . '{transform:scale(1.06);}',
 			];
 		case 'zoom_out':
 			return [
-				'base'  => "{$scope_sel}{transition:opacity {$dur} {$ease},transform {$dur} {$ease};opacity:.92;transform:scale(1.06);transform-origin:center center;}",
-				'hover' => "{$scope_sel}:hover{opacity:1;transform:scale(1);}",
+				'base'  => $base,
+				'hover' => $hover . '{transform:scale(0.94);}',
 			];
 		default:
 			return [ 'base' => '', 'hover' => '' ];

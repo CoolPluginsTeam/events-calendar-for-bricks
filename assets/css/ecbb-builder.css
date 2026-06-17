@@ -80,18 +80,17 @@
 
 /* CONTENT tab: hide style fields */
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_sep_style"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_sep_hover"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_hover_color"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_hover_background"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_hover_text_decoration"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_hover_animation"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_typography"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_text_align"],
-.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_color"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_background"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_background_inner"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_margin"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_padding"],
-.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_border"],
-.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_hover_color"],
-.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_use_hover"],
-.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_hover_text_decoration"],
-.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_hover_animation"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_image_radius"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_image_border"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_image_width"],
@@ -103,13 +102,16 @@
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="btn_text_color"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="btn_border"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="btn_padding"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="read_more_text"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="date_text_transform"] {
 	display: none !important;
 }
 
-/* Hide hover controls on non-interactive parts (description, date/time, venue, etc.). */
+/* Hide hover toggle + style fields on parts that do not support hover. */
 .ecbb-parts-repeater-item.ecbb-part-no-hover .repeater-item-inner[data-control-key="ecbb_use_hover"],
+.ecbb-parts-repeater-item.ecbb-part-no-hover .repeater-item-inner[data-control-key="ecbb_sep_hover"],
 .ecbb-parts-repeater-item.ecbb-part-no-hover .repeater-item-inner[data-control-key="ecbb_hover_color"],
+.ecbb-parts-repeater-item.ecbb-part-no-hover .repeater-item-inner[data-control-key="ecbb_hover_background"],
 .ecbb-parts-repeater-item.ecbb-part-no-hover .repeater-item-inner[data-control-key="ecbb_hover_text_decoration"],
 .ecbb-parts-repeater-item.ecbb-part-no-hover .repeater-item-inner[data-control-key="ecbb_hover_animation"],
 .ecbb-parts-repeater-item.ecbb-part-no-hover .repeater-item-inner[data-control-key="image_size_hover"],
@@ -118,6 +120,7 @@
 }
 
 /* STYLE tab: hide content-only fields (keep "part" visible) */
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="ecbb_use_hover"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="date_display"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="venue_display"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="organizer_display"],
@@ -125,8 +128,6 @@
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="tag"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="link"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="desc_source"],
-.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="desc_length"],
-.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="desc_words"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="date_format_preset"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="date_format_custom"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="terms_separator"],

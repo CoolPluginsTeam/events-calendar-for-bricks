@@ -45,7 +45,6 @@ function ecbb_list1_default_parts_rows() {
 		[
 			'part'        => 'description',
 			'desc_source' => 'content',
-			'desc_length' => 'short',
 		]
 	];
 }

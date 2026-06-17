@@ -6,6 +6,8 @@
 	var TAB_STYLE = L.tabStyle || "STYLE";
 	var HOVER_PARTS = Array.isArray(L.hoverParts) ? L.hoverParts : [
 		"title",
+		"categories",
+		"tags",
 		"read_more",
 		"event_tickets",
 		"event_rsvp",
@@ -25,20 +27,23 @@
 			return select.value;
 		}
 
-		var input = partInner.querySelector('input[type="hidden"]');
-		if (input && input.value) {
-			return input.value;
+		var inputs = partInner.querySelectorAll("input");
+		var i;
+		for (i = 0; i < inputs.length; i++) {
+			if (inputs[i].value) {
+				return inputs[i].value;
+			}
 		}
 
 		var option = partInner.querySelector(
 			".select-option.active, .select-option.is-active, .option.active"
 		);
 		if (option) {
-			return (
-				option.getAttribute("data-value") ||
-				option.getAttribute("value") ||
-				option.textContent.trim()
-			);
+			var fromData =
+				option.getAttribute("data-value") || option.getAttribute("value");
+			if (fromData) {
+				return fromData;
+			}
 		}
 
 		return "";
@@ -55,7 +60,7 @@
 
 		var part = readPartValue(item);
 		item.setAttribute("data-ecbb-part", part);
-		item.classList.toggle("ecbb-part-no-hover", !partSupportsHover(part));
+		item.classList.toggle("ecbb-part-no-hover", part !== "" && !partSupportsHover(part));
 	}
 
 	function isECBBPartsRow(item) {
@@ -64,9 +69,9 @@
 			item.querySelector &&
 			item.querySelector('.repeater-item-inner[data-control-key="part"]') &&
 			(
-				item.querySelector('.repeater-item-inner[data-control-key="ecbb_typography"]') ||
 				item.querySelector('.repeater-item-inner[data-control-key="ecbb_sep_style"]') ||
-				item.querySelector('.repeater-item-inner[data-control-key="ecbb_color"]')
+				item.querySelector('.repeater-item-inner[data-control-key="ecbb_sep_hover"]') ||
+				item.querySelector('.repeater-item-inner[data-control-key="ecbb_typography"]')
 			)
 		);
 	}
@@ -129,9 +134,6 @@
 		});
 	}
 
-	/**
-	 * Tabs only while row is expanded; removed when collapsed so nothing shows "from outside".
-	 */
 	function ensureTabs(item) {
 		if (!item || !item.classList || !item.classList.contains("repeater-item")) {
 			return;
@@ -142,6 +144,7 @@
 				removeTabs(item);
 				item.classList.remove("ecbb-parts-repeater-item");
 				item.removeAttribute("data-ecbb-tab");
+				item.removeAttribute("data-ecbb-part");
 			}
 			return;
 		}
@@ -157,6 +160,7 @@
 		}
 
 		if (item.querySelector(".ecbb-repeater-tabs")) {
+			syncHoverVisibility(item);
 			return;
 		}
 

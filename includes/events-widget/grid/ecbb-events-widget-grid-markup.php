@@ -137,36 +137,20 @@ function ecbb_events_widget_grid_date_block_html( $post ) {
 	}
 
 	$start_ts = false;
-	$end_ts   = false;
 	if ( function_exists( 'ecbb_list2_date_bounds' ) ) {
-		list( $start_ts, $end_ts ) = ecbb_list2_date_bounds( $post->ID );
+		list( $start_ts ) = ecbb_list2_date_bounds( $post->ID );
 	} else {
 		$raw      = (string) get_post_meta( $post->ID, '_EventStartDate', true );
 		$start_ts = $raw ? strtotime( $raw ) : false;
-		$end_ts   = $start_ts;
 	}
 
 	if ( ! $start_ts ) {
 		return '<div class="ecbb-ev__grid-date-col" aria-hidden="true"></div>';
 	}
 
-	if ( ! $end_ts ) {
-		$end_ts = $start_ts;
-	}
-
-	$same_day = ( date_i18n( 'Ymd', $start_ts ) === date_i18n( 'Ymd', $end_ts ) );
-
-	if ( ! $same_day && function_exists( 'ecbb_list2_date_rail_stack_html' ) ) {
-		return '<div class="ecbb-ev__grid-date-col ecbb-ev__grid-date-col--range" aria-hidden="true">'
-			. '<div class="ecbb-ev__grid-date-rail">'
-			. ecbb_list2_date_rail_stack_html( $start_ts, $end_ts )
-			. '</div>'
-			. '</div>';
-	}
-
-	$day        = date_i18n( 'd', $start_ts );
-	$month      = date_i18n( 'M', $start_ts );
-	$day_of_wk  = strtoupper( date_i18n( 'D', $start_ts ) );
+	$day       = date_i18n( 'd', $start_ts );
+	$month     = date_i18n( 'M', $start_ts );
+	$day_of_wk = strtoupper( date_i18n( 'D', $start_ts ) );
 
 	return '<div class="ecbb-ev__grid-date-col" aria-hidden="true">'
 		. '<div class="ecbb-ev__grid-date-frame">'

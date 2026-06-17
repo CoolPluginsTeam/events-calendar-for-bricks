@@ -85,6 +85,7 @@
 	display: flex;
 	flex-direction: column;
 	align-items: center;
+	justify-content: center;
 	flex: 1 1 auto;
 	width: 100%;
 	min-height: 100%;
@@ -93,116 +94,111 @@
 	box-sizing: border-box;
 }
 
-.ecbb-style2-rail-t,
-.ecbb-style2-rail-b {
-	font-size: 0.6875rem;
-	font-weight: 600;
-	letter-spacing: 0.12em;
-	color: #6b7280;
-	line-height: 1.2;
-}
-
-.ecbb-style2-rail-stack {
-	width: 100%;
-}
-
-.ecbb-style2-rail-stack--single-day {
+/* Date rail: start month (top) → days row (start | end block with sep, end day, end month). */
+.ecbb-style2-rail-date {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	gap: 0.15rem;
+	row-gap: 0.1rem;
 }
 
-.ecbb-style2-rail-stack--same-month,
-.ecbb-style2-rail-stack--cross-month {
-	display: grid;
-	grid-template-columns: auto auto auto;
-	grid-template-rows: auto auto;
-	justify-content: center;
-	align-items: baseline;
-	column-gap: 0.2rem;
-	row-gap: 0.05rem;
+.ecbb-style2-rail-date--single {
+	row-gap: 0.12rem;
 }
 
-.ecbb-style2-rail-stack--cross-month {
-	grid-template-rows: auto auto auto;
-}
-
-.ecbb-style2-rail-stack--same-month .ecbb-style2-rail-t,
-.ecbb-style2-rail-stack--cross-month .ecbb-style2-rail-t {
-	grid-column: 1;
-	grid-row: 1;
-	justify-self: center;
-}
-
-.ecbb-style2-rail-stack--same-month .ecbb-style2-rail-n--start,
-.ecbb-style2-rail-stack--cross-month .ecbb-style2-rail-n--start {
-	grid-column: 1;
-	grid-row: 2;
-}
-
-.ecbb-style2-rail-stack--same-month .ecbb-style2-rail-s,
-.ecbb-style2-rail-stack--cross-month .ecbb-style2-rail-s {
-	grid-column: 2;
-	grid-row: 2;
-}
-
-.ecbb-style2-rail-stack--same-month .ecbb-style2-rail-n--end,
-.ecbb-style2-rail-stack--cross-month .ecbb-style2-rail-n--end {
-	grid-column: 3;
-	grid-row: 2;
-}
-
-.ecbb-style2-rail-stack--cross-month .ecbb-style2-rail-b {
-	grid-column: 3;
-	grid-row: 3;
-	justify-self: center;
-}
-
-.ecbb-style2-rail-d1,
-.ecbb-style2-rail-n {
-	font-size: 1.75rem;
-	font-weight: 700;
-	color: #111827;
-	line-height: 1.05;
-	letter-spacing: -0.02em;
-}
-
-.ecbb-style2-rail-stack--same-month .ecbb-style2-rail-n,
-.ecbb-style2-rail-stack--cross-month .ecbb-style2-rail-n {
-	font-size: 1.65rem;
-	line-height: 1;
-}
-
-.ecbb-style2-rail-s {
-	font-size: 1.05rem;
-	font-weight: 600;
+.ecbb-style2-rail-month {
+	font-family: "Open Sans", Sans-serif;
+    font-size: 16px;
+    font-weight: 400;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
 	color: #6b7280;
-	line-height: 1;
+	line-height: 1.2;
+	white-space: nowrap;
 }
 
-/* Legacy flex range wrapper (unused; kept for saved markup compatibility). */
-.ecbb-style2-rail-drg {
+.ecbb-style2-rail-month-end {
+	font-family: "Open Sans", Sans-serif;
+    font-size: 10px;
+    font-weight: 400;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: #6b7280;
+}
+
+.ecbb-style2-rail-date--range .ecbb-style2-rail-month,
+.ecbb-style2-rail-date--single .ecbb-style2-rail-month {
+	width: 100%;
+	text-align: center;
+}
+
+.ecbb-style2-rail-range {
+	display: flex;
+}
+
+.ecbb-style2-rail-days-row {
 	display: flex;
 	flex-direction: row;
-	align-items: baseline;
+	align-items: flex-start;
 	justify-content: center;
-	gap: 0.25rem;
-	margin: 0.2rem 0;
+	column-gap: 0.22rem;
+	white-space: nowrap;
 }
 
-.ecbb-style2-rail-drg .ecbb-style2-rail-n {
-	font-size: 1.65rem;
+.ecbb-style2-rail-end {
+	display: grid;
+}
+
+.ecbb-style2-rail-end .ecbb-style2-rail-sep {
+	grid-column: 1;
+	grid-row: 1;
+}
+
+.ecbb-style2-rail-end .ecbb-style2-rail-day-end {
+	grid-column: 2;
+	grid-row: 1;
+}
+
+.ecbb-style2-rail-end .ecbb-style2-rail-month-end {
+	grid-column: 2;
+	grid-row: 2;
+	justify-self: end;
+	text-align: right;
+}
+
+.ecbb-style2-rail-day-start {
+	font-family: "Open Sans", Sans-serif;
+    font-size: 18px;
 	font-weight: 700;
 	color: #111827;
 	line-height: 1;
 	letter-spacing: -0.02em;
+	white-space: nowrap;
 }
 
-.ecbb-style2-rail-drg .ecbb-style2-rail-s {
-	font-size: 1.05rem;
-	font-weight: 600;
-	color: #6b7280;
+.ecbb-style2-rail-day-end {
+	font-family: "Open Sans", Sans-serif;
+    font-size: 14px;
+	font-weight: 700;
+	color: #111827;
+	line-height: 1;
+	white-space: nowrap;
+}
+
+.ecbb-style2-rail-date--same-month .ecbb-style2-rail-day-end {
+	font-size: 18px;
+	letter-spacing: -0.02em;
+}
+
+.ecbb-style2-rail-date--single .ecbb-style2-rail-day-start {
+	font-size: 1.75rem;
+	line-height: 1.05;
+}
+
+.ecbb-style2-rail-sep {
+	font-size: 1.65rem;
+	font-weight: 700;
+	color: #111827;
 	line-height: 1;
 }
 
@@ -485,15 +481,18 @@
 		border-bottom: 1px solid rgba(0, 0, 0, 0.12);
 	}
 
-	.ecbb-style2-rail-stack--same-month,
-	.ecbb-style2-rail-stack--cross-month {
+	.ecbb-style2-rail-date--range {
+		align-items: flex-start;
+	}
+
+	.ecbb-style2-rail-range {
+		align-items: flex-start;
+	}
+
+	.ecbb-style2-rail-days-row {
 		justify-content: flex-start;
 	}
 
-	.ecbb-style2-rail-t,
-	.ecbb-style2-rail-b {
-		font-size: 0.75rem;
-	}
 
 	.ecbb-style2-media {
 		max-width: 100%;

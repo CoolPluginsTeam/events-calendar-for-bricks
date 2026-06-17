@@ -15,20 +15,36 @@ if ( ! defined( 'ABSPATH' ) ) {
 function ecbb_events_widget_repeater_hover_part_slugs() {
 	return function_exists( 'ecbb_event_part_types_with_hover_style_controls' )
 		? ecbb_event_part_types_with_hover_style_controls()
-		: [ 'title', 'read_more', 'event_tickets', 'event_rsvp', 'image' ];
+		: [ 'title', 'categories', 'tags', 'read_more', 'event_tickets', 'event_rsvp', 'image' ];
 }
 
 /**
- * @return array<int,array{0:string,1:string,2:mixed}>
+ * Interactive parts that support hover (title, chips, buttons). Excludes image.
+ *
+ * @return string[]
+ */
+function ecbb_events_widget_repeater_interactive_hover_part_slugs() {
+	return [ 'title', 'categories', 'tags', 'read_more', 'event_tickets', 'event_rsvp' ];
+}
+
+/**
+ * @return array<int,array{0:string,1:string,2:mixed}>|array{0:string,1:string,2:mixed}
+ */
+function ecbb_events_widget_repeater_required_interactive_hover() {
+	return [ 'part', '=', ecbb_events_widget_repeater_interactive_hover_part_slugs() ];
+}
+
+/**
+ * @return array{0:string,1:string,2:mixed}
  */
 function ecbb_events_widget_repeater_required_hover_toggle_visible() {
-	return [ [ 'part', '=', ecbb_events_widget_repeater_hover_part_slugs() ] ];
+	return [ 'part', '=', ecbb_events_widget_repeater_hover_part_slugs() ];
 }
 
 /**
- * @return array<int,array{0:string,1:string,2:mixed}>
+ * @return array<int,array{0:string,1:string,2:mixed>>
  */
-function ecbb_events_widget_repeater_required_hover_details() {
+function ecbb_events_widget_repeater_required_hover_style_group() {
 	return [
 		[ 'part', '=', ecbb_events_widget_repeater_hover_part_slugs() ],
 		[ 'ecbb_use_hover', '=', true ],
@@ -36,10 +52,30 @@ function ecbb_events_widget_repeater_required_hover_details() {
 }
 
 /**
- * @return string[]
+ * @return array<int,array{0:string,1:string,2:mixed>>
  */
-function ecbb_events_widget_repeater_hover_text_decoration_part_slugs() {
-	return [ 'title', 'read_more', 'event_tickets', 'event_rsvp' ];
+function ecbb_events_widget_repeater_required_hover_details() {
+	return ecbb_events_widget_repeater_required_hover_style_group();
+}
+
+/**
+ * @return array<int,array{0:string,1:string,2:mixed>>
+ */
+function ecbb_events_widget_repeater_required_hover_background() {
+	return [
+		[ 'part', '=', ecbb_events_widget_repeater_hover_background_part_slugs() ],
+		[ 'ecbb_use_hover', '=', true ],
+	];
+}
+
+/**
+ * @return array<int,array{0:string,1:string,2:mixed>>
+ */
+function ecbb_events_widget_repeater_required_hover_text_decoration() {
+	return [
+		[ 'part', '=', ecbb_events_widget_repeater_hover_text_decoration_part_slugs() ],
+		[ 'ecbb_use_hover', '=', true ],
+	];
 }
 
 /**
@@ -50,7 +86,9 @@ function ecbb_events_widget_repeater_hover_text_decoration_part_slugs() {
 function ecbb_events_widget_repeater_hover_control_keys() {
 	return [
 		'ecbb_use_hover',
+		'ecbb_sep_hover',
 		'ecbb_hover_color',
+		'ecbb_hover_background',
 		'ecbb_hover_text_decoration',
 		'ecbb_hover_animation',
 		'image_size_hover',
@@ -59,13 +97,26 @@ function ecbb_events_widget_repeater_hover_control_keys() {
 }
 
 /**
+ * @return string[]
+ */
+function ecbb_events_widget_repeater_hover_text_decoration_part_slugs() {
+	return ecbb_events_widget_repeater_interactive_hover_part_slugs();
+}
+
+/**
+ * Part types that show hover background.
+ *
+ * @return string[]
+ */
+function ecbb_events_widget_repeater_hover_background_part_slugs() {
+	return ecbb_events_widget_repeater_interactive_hover_part_slugs();
+}
+
+/**
  * @return array<int,array{0:string,1:string,2:mixed}>
  */
-function ecbb_events_widget_repeater_required_hover_text_decoration() {
-	return [
-		[ 'part', '=', ecbb_events_widget_repeater_hover_text_decoration_part_slugs() ],
-		[ 'ecbb_use_hover', '=', true ],
-	];
+function ecbb_events_widget_repeater_required_inner_background() {
+	return [ [ 'part', '=', 'title' ] ];
 }
 
 /**
@@ -170,29 +221,6 @@ function ecbb_events_widget_get_repeater_fields() {
 			],
 			'default'  => 'auto',
 			'required' => [ 'part', '=', 'description' ],
-		],
-		'desc_length' => [
-			'label'    => esc_html__( 'Content length', 'ecbb' ),
-			'type'     => 'select',
-			'options'  => [
-				'short'  => esc_html__( 'Short', 'ecbb' ),
-				'full'   => esc_html__( 'Full', 'ecbb' ),
-				'custom' => esc_html__( 'Custom words', 'ecbb' ),
-			],
-			'default'  => 'short',
-			'required' => [ 'part', '=', 'description' ],
-		],
-		'desc_words' => [
-			'label'       => esc_html__( 'Words', 'ecbb' ),
-			'type'        => 'number',
-			'min'         => 5,
-			'step'        => 1,
-			'placeholder' => '55',
-			'default'     => 55,
-			'required'    => [
-				[ 'part', '=', 'description' ],
-				[ 'desc_length', '=', 'custom' ],
-			],
 		],
 		'date_format_preset' => [
 			'label'       => esc_html__( 'PHP date preset', 'ecbb' ),
@@ -351,6 +379,21 @@ function ecbb_events_widget_get_repeater_fields() {
 				[ 'btn_style', '=', true ],
 			],
 		],
+		'read_more_text' => [
+			'label'       => esc_html__( 'Read more text', 'ecbb' ),
+			'type'        => 'text',
+			'placeholder' => esc_html__( 'More Details', 'ecbb' ),
+			'required'    => [
+				[ 'part', '=', 'read_more' ],
+			],
+		],
+		'ecbb_use_hover' => [
+			'label'    => esc_html__( 'Enable hover effects', 'ecbb' ),
+			'type'     => 'checkbox',
+			'inline'   => true,
+			'default'  => true,
+			'required' => ecbb_events_widget_repeater_required_hover_toggle_visible(),
+		],
 		'image_aspect_ratio' => [
 			'label'    => esc_html__( 'Aspect ratio', 'ecbb' ),
 			'type'     => 'select',
@@ -383,10 +426,7 @@ function ecbb_events_widget_get_repeater_fields() {
 					: [ 'large' => 'large', 'full' => 'full' ]
 			),
 			'default'  => '',
-			'required' => [
-				[ 'part', '=', 'image' ],
-				[ 'ecbb_use_hover', '=', true ],
-			],
+			'required' => [ 'part', '=', 'image' ],
 		],
 		'ecbb_image_object_align' => [
 			'label'    => esc_html__( 'Image alignment', 'ecbb' ),
@@ -405,10 +445,7 @@ function ecbb_events_widget_get_repeater_fields() {
 					: []
 			),
 			'default'  => '',
-			'required' => [
-				[ 'part', '=', 'image' ],
-				[ 'ecbb_use_hover', '=', true ],
-			],
+			'required' => [ 'part', '=', 'image' ],
 		],
 		'image_link' => [
 			'label'    => esc_html__( 'Link image to event', 'ecbb' ),
@@ -461,20 +498,16 @@ function ecbb_events_widget_get_repeater_fields() {
 			'responsive' => true,
 			'required'   => [ 'part', '!=', 'image' ],
 		],
-		'ecbb_color' => [
-			'label'       => esc_html__( 'Text color', 'ecbb' ),
-			'type'        => 'color',
-			'placeholder' => '#333333',
-		],
 		'ecbb_background' => [
 			'label'       => esc_html__( 'Background', 'ecbb' ),
 			'type'        => 'color',
-			'placeholder' => 'transparent',
+			'placeholder' => '#666666',
 		],
 		'ecbb_background_inner' => [
 			'label'       => esc_html__( 'Inner background', 'ecbb' ),
 			'type'        => 'color',
-			'placeholder' => 'transparent',
+			'placeholder' => '#666666',
+			'required'    => ecbb_events_widget_repeater_required_inner_background(),
 		],
 		'ecbb_margin' => [
 			'label'      => esc_html__( 'Margin', 'ecbb' ),
@@ -486,35 +519,22 @@ function ecbb_events_widget_get_repeater_fields() {
 			'type'       => 'spacing',
 			'responsive' => true,
 		],
-		'ecbb_border' => [
-			'label'      => esc_html__( 'Border', 'ecbb' ),
-			'type'       => 'border',
-			'responsive' => true,
-			'required'   => [ 'part', '!=', 'image' ],
-		],
-		'ecbb_image_border' => [
-			'label'    => esc_html__( 'Image border', 'ecbb' ),
-			'type'     => 'border',
-			'required' => [ 'part', '=', 'image' ],
-		],
-		'ecbb_image_radius' => [
-			'label'       => esc_html__( 'Image radius', 'ecbb' ),
-			'type'        => 'dimensions',
-			'placeholder' => '0px',
-			'required'    => [ 'part', '=', 'image' ],
-		],
-		'ecbb_use_hover' => [
-			'label'    => esc_html__( 'Enable hover styles', 'ecbb' ),
-			'type'     => 'checkbox',
-			'inline'   => true,
-			'default'  => false,
-			'required' => ecbb_events_widget_repeater_required_hover_toggle_visible(),
+		'ecbb_sep_hover' => [
+			'type'     => 'separator',
+			'label'    => esc_html__( 'Hover effects', 'ecbb' ),
+			'required' => ecbb_events_widget_repeater_required_hover_style_group(),
 		],
 		'ecbb_hover_color' => [
 			'label'       => esc_html__( 'Hover color', 'ecbb' ),
 			'type'        => 'color',
 			'placeholder' => '#000000',
 			'required'    => ecbb_events_widget_repeater_required_hover_details(),
+		],
+		'ecbb_hover_background' => [
+			'label'       => esc_html__( 'Hover background', 'ecbb' ),
+			'type'        => 'color',
+			'placeholder' => '#666666',
+			'required'    => ecbb_events_widget_repeater_required_hover_background(),
 		],
 		'ecbb_hover_text_decoration' => [
 			'label'    => esc_html__( 'Text decoration (hover)', 'ecbb' ),
@@ -530,10 +550,10 @@ function ecbb_events_widget_get_repeater_fields() {
 			'required' => ecbb_events_widget_repeater_required_hover_text_decoration(),
 		],
 		'ecbb_hover_animation' => [
-			'label'    => esc_html__( 'Fade in animation (hover)', 'ecbb' ),
+			'label'    => esc_html__( 'Hover animation', 'ecbb' ),
 			'type'     => 'select',
 			'options'  => [
-				''              => esc_html__( 'Default', 'ecbb' ),
+				''              => esc_html__( 'None', 'ecbb' ),
 				'fade_in_up'    => esc_html__( 'Fade in up', 'ecbb' ),
 				'fade_in_right' => esc_html__( 'Fade in right', 'ecbb' ),
 				'fade_in_down'  => esc_html__( 'Fade in down', 'ecbb' ),
@@ -543,6 +563,17 @@ function ecbb_events_widget_get_repeater_fields() {
 			],
 			'default'  => '',
 			'required' => ecbb_events_widget_repeater_required_hover_details(),
+		],
+		'ecbb_image_border' => [
+			'label'    => esc_html__( 'Image border', 'ecbb' ),
+			'type'     => 'border',
+			'required' => [ 'part', '=', 'image' ],
+		],
+		'ecbb_image_radius' => [
+			'label'       => esc_html__( 'Image radius', 'ecbb' ),
+			'type'        => 'dimensions',
+			'placeholder' => '0px',
+			'required'    => [ 'part', '=', 'image' ],
 		],
 	];
 }

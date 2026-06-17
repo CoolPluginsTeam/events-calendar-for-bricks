@@ -255,29 +255,36 @@ class ECBB_Plugin {
      * Front-end CSS for the Events Widget (base + list styles under template/list + grid).
      */
     private function ecbb_enqueue_events_widget_styles() {
+        $base_path = ECBB_DIR . 'assets/css/events-widget/ecbb-events-widget-base.css';
         wp_enqueue_style(
             'ecbb-events-widget-base',
             ECBB_URL . 'assets/css/events-widget/ecbb-events-widget-base.css',
             [],
-            ECBB_VERSION
+            file_exists( $base_path ) ? (string) filemtime( $base_path ) : ECBB_VERSION
         );
+
+        $list1_path = ECBB_DIR . 'assets/css/events-widget/template/list/list-style-1.css';
         wp_enqueue_style(
             'ecbb-list-1',
             ECBB_URL . 'assets/css/events-widget/template/list/list-style-1.css',
             [ 'ecbb-events-widget-base' ],
-            ECBB_VERSION
+            file_exists( $list1_path ) ? (string) filemtime( $list1_path ) : ECBB_VERSION
         );
+
+        $list2_path = ECBB_DIR . 'assets/css/events-widget/template/list/list-style-2.css';
         wp_enqueue_style(
             'ecbb-list-2',
             ECBB_URL . 'assets/css/events-widget/template/list/list-style-2.css',
             [ 'ecbb-events-widget-base' ],
-            ECBB_VERSION
+            file_exists( $list2_path ) ? (string) filemtime( $list2_path ) : ECBB_VERSION
         );
+
+        $grid_path = ECBB_DIR . 'assets/css/events-widget/grid/ecbb-events-widget-grid.css';
         wp_enqueue_style(
             'ecbb-events-widget-grid',
             ECBB_URL . 'assets/css/events-widget/grid/ecbb-events-widget-grid.css',
             [ 'ecbb-events-widget-base', 'ecbb-list-1' ],
-            ECBB_VERSION
+            file_exists( $grid_path ) ? (string) filemtime( $grid_path ) : ECBB_VERSION
         );
     }
 
@@ -289,18 +296,20 @@ class ECBB_Plugin {
             return;
         }
 
+        $builder_css_path = ECBB_DIR . 'assets/css/ecbb-builder.css';
         wp_enqueue_style(
             'ecbb-builder',
             ECBB_URL . 'assets/css/ecbb-builder.css',
             [ 'bricks-builder' ],
-            ECBB_VERSION
+            file_exists( $builder_css_path ) ? (string) filemtime( $builder_css_path ) : ECBB_VERSION
         );
 
+        $builder_js_path = ECBB_DIR . 'assets/js/ecbb-builder.js';
         wp_enqueue_script(
             'ecbb-builder',
             ECBB_URL . 'assets/js/ecbb-builder.js',
             [],
-            ECBB_VERSION,
+            file_exists( $builder_js_path ) ? (string) filemtime( $builder_js_path ) : ECBB_VERSION,
             true
         );
 
@@ -309,12 +318,24 @@ class ECBB_Plugin {
             'tabStyle'    => esc_html__( 'STYLE', 'ecbb' ),
             'hoverParts'  => function_exists( 'ecbb_events_widget_repeater_hover_part_slugs' )
                 ? ecbb_events_widget_repeater_hover_part_slugs()
-                : [ 'title', 'read_more', 'event_tickets', 'event_rsvp', 'image' ],
+                : [ 'title', 'categories', 'tags', 'read_more', 'event_tickets', 'event_rsvp', 'image' ],
+            'interactiveHoverParts' => function_exists( 'ecbb_events_widget_repeater_interactive_hover_part_slugs' )
+                ? ecbb_events_widget_repeater_interactive_hover_part_slugs()
+                : [ 'title', 'categories', 'tags', 'read_more', 'event_tickets', 'event_rsvp' ],
+            'interactiveHoverKeys' => [
+                'ecbb_sep_hover',
+                'ecbb_hover_color',
+                'ecbb_hover_background',
+                'ecbb_hover_text_decoration',
+                'ecbb_hover_animation',
+            ],
             'hoverKeys'   => function_exists( 'ecbb_events_widget_repeater_hover_control_keys' )
                 ? ecbb_events_widget_repeater_hover_control_keys()
                 : [
+                    'ecbb_sep_hover',
                     'ecbb_use_hover',
                     'ecbb_hover_color',
+                    'ecbb_hover_background',
                     'ecbb_hover_text_decoration',
                     'ecbb_hover_animation',
                     'image_size_hover',

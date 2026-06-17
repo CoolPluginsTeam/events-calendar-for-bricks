@@ -252,13 +252,15 @@ function ecbb_list2_maybe_month_heading_html( $post_id, &$last_month_key, $show 
 }
 
 /**
- * Inner date stack for Style 2 rail (and grid range badge): month / day(s) / end month.
+ * Inner date stack for Style 2 LEFT rail (list template only).
+ *
+ * Markup: start month → days row (start | end block with sep, end day, end month).
  *
  * @param int|false $start_ts Start timestamp.
  * @param int|false $end_ts   End timestamp.
  * @return string HTML fragment (no wrapper).
  */
-function ecbb_list2_date_rail_stack_html( $start_ts, $end_ts ) {
+function ecbb_list2_date_rail_stack_html_style2( $start_ts, $end_ts ) {
 	if ( ! $start_ts ) {
 		return '';
 	}
@@ -266,37 +268,42 @@ function ecbb_list2_date_rail_stack_html( $start_ts, $end_ts ) {
 		$end_ts = $start_ts;
 	}
 
-	$top_m = strtoupper( date_i18n( 'M', $start_ts ) );
-	$bot_m = strtoupper( date_i18n( 'M', $end_ts ) );
+	$start_month = strtoupper( date_i18n( 'M', $start_ts ) );
+	$end_month   = strtoupper( date_i18n( 'M', $end_ts ) );
 
 	$same_day   = ( date_i18n( 'Ymd', $start_ts ) === date_i18n( 'Ymd', $end_ts ) );
 	$same_month = ( date_i18n( 'Ym', $start_ts ) === date_i18n( 'Ym', $end_ts ) );
 
 	if ( $same_day ) {
-		return '<div class="ecbb-style2-rail-stack ecbb-style2-rail-stack--single-day">'
-			. '<span class="ecbb-style2-rail-t">' . esc_html( $top_m ) . '</span>'
-			. '<span class="ecbb-style2-rail-d1">' . esc_html( date_i18n( 'd', $start_ts ) ) . '</span>'
+		return '<div class="ecbb-style2-rail-date ecbb-style2-rail-date--single">'
+			. '<div class="ecbb-style2-rail-month">' . esc_html( $start_month ) . '</div>'
+			. '<div class="ecbb-style2-rail-day-start">' . esc_html( date_i18n( 'd', $start_ts ) ) . '</div>'
 			. '</div>';
 	}
 
 	$d_start = date_i18n( 'd', $start_ts );
 	$d_end   = date_i18n( 'd', $end_ts );
 
-	if ( $same_month ) {
-		return '<div class="ecbb-style2-rail-stack ecbb-style2-rail-stack--same-month">'
-			. '<span class="ecbb-style2-rail-t">' . esc_html( $top_m ) . '</span>'
-			. '<span class="ecbb-style2-rail-n ecbb-style2-rail-n--start">' . esc_html( $d_start ) . '</span>'
-			. '<span class="ecbb-style2-rail-s" aria-hidden="true">-</span>'
-			. '<span class="ecbb-style2-rail-n ecbb-style2-rail-n--end">' . esc_html( $d_end ) . '</span>'
-			. '</div>';
-	}
+	$modifier = $same_month ? 'same-month' : 'cross-month';
 
-	return '<div class="ecbb-style2-rail-stack ecbb-style2-rail-stack--cross-month">'
-		. '<span class="ecbb-style2-rail-t">' . esc_html( $top_m ) . '</span>'
-		. '<span class="ecbb-style2-rail-n ecbb-style2-rail-n--start">' . esc_html( $d_start ) . '</span>'
-		. '<span class="ecbb-style2-rail-s" aria-hidden="true">-</span>'
-		. '<span class="ecbb-style2-rail-n ecbb-style2-rail-n--end">' . esc_html( $d_end ) . '</span>'
-		. '<span class="ecbb-style2-rail-b">' . esc_html( $bot_m ) . '</span>'
+	$end_month_html = $same_month
+		? ''
+		: '<span class="ecbb-style2-rail-month-end">' . esc_html( $end_month ) . '</span>';
+
+	$end_block = '<div class="ecbb-style2-rail-end">'
+		. '<span class="ecbb-style2-rail-sep" aria-hidden="true">-</span>'
+		. '<span class="ecbb-style2-rail-day-end">' . esc_html( $d_end ) . '</span>'
+		. $end_month_html
+		. '</div>';
+
+	return '<div class="ecbb-style2-rail-date ecbb-style2-rail-date--range ecbb-style2-rail-date--' . esc_attr( $modifier ) . '">'
+		. '<div class="ecbb-style2-rail-month">' . esc_html( $start_month ) . '</div>'
+		. '<div class="ecbb-style2-rail-range">'
+		. '<div class="ecbb-style2-rail-days-row">'
+		. '<span class="ecbb-style2-rail-day-start">' . esc_html( $d_start ) . '</span>'
+		. $end_block
+		. '</div>'
+		. '</div>'
 		. '</div>';
 }
 
@@ -316,7 +323,7 @@ function ecbb_list2_date_rail_html( $post ) {
 		return '<aside class="ecbb-style2-rail" aria-hidden="true"><div class="ecbb-style2-rail-in"></div></aside>';
 	}
 
-	$stack = ecbb_list2_date_rail_stack_html( $start_ts, $end_ts );
+	$stack = ecbb_list2_date_rail_stack_html_style2( $start_ts, $end_ts );
 
 	return '<aside class="ecbb-style2-rail" aria-hidden="true">'
 		. '<div class="ecbb-style2-rail-in">'

@@ -70,28 +70,159 @@ function ecbb_events_widget_spacing_to_css( $spacing ) {
 }
 
 /**
- * @param mixed $border Bricks border control value.
- * @return string border shorthand or empty.
+ * @param mixed $radius Bricks border radius value.
+ * @return string CSS border-radius or empty.
  */
-function ecbb_events_widget_border_to_css( $border ) {
-	if ( ! is_array( $border ) ) {
-		return is_string( $border ) ? trim( $border ) : '';
+function ecbb_events_widget_border_radius_to_css( $radius ) {
+	if ( ! is_array( $radius ) ) {
+		return is_string( $radius ) ? trim( $radius ) : '';
 	}
-	$width = isset( $border['width'] ) ? trim( (string) $border['width'] ) : '';
+	$box = [];
+	foreach ( [ 'top', 'right', 'bottom', 'left' ] as $side ) {
+		if ( ! isset( $radius[ $side ] ) || $radius[ $side ] === '' || $radius[ $side ] === null ) {
+			continue;
+		}
+		$box[ $side ] = ecbb_events_widget_normalize_css_size( $radius[ $side ], 'px' );
+	}
+	if ( empty( $box ) ) {
+		return '';
+	}
+	return ecbb_events_widget_spacing_to_css( $box );
+}
+
+/**
+ * @param mixed $border Bricks border control value.
+ * @return string[] CSS declarations (border-*, border-radius).
+ */
+function ecbb_events_widget_border_declarations( $border ) {
+	if ( ! is_array( $border ) ) {
+		if ( is_string( $border ) && trim( $border ) !== '' ) {
+			return [ 'border:' . trim( $border ) ];
+		}
+		return [];
+	}
+
 	$style = isset( $border['style'] ) ? trim( (string) $border['style'] ) : 'solid';
+	if ( ! in_array( $style, [ 'solid', 'dashed', 'dotted', 'double', 'none', 'groove', 'ridge', 'inset', 'outset' ], true ) ) {
+		$style = 'solid';
+	}
+
 	$color = '';
 	if ( isset( $border['color'] ) ) {
 		$color = function_exists( 'ecbb_normalize_bricks_color' )
 			? ecbb_normalize_bricks_color( $border['color'] )
 			: ( is_string( $border['color'] ) ? trim( $border['color'] ) : '' );
 	}
-	if ( $width === '' || $width === '0' || $width === '0px' ) {
-		return '';
-	}
 	if ( $color === '' ) {
-		return '';
+		$color = 'currentColor';
 	}
-	return $width . ' ' . $style . ' ' . $color;
+
+	$decl  = [];
+	$width = $border['width'] ?? null;
+
+	if ( is_array( $width ) ) {
+		$sides  = [ 'top', 'right', 'bottom', 'left' ];
+		$values = [];
+		foreach ( $sides as $side ) {
+			if ( ! array_key_exists( $side, $width ) ) {
+				continue;
+			}
+			$values[ $side ] = ecbb_events_widget_normalize_css_size( $width[ $side ], 'px' );
+		}
+		if ( ! empty( $values ) ) {
+			$nonzero = array_filter(
+				$values,
+				static function ( $w ) {
+					return $w !== '' && $w !== '0' && $w !== '0px';
+				}
+			);
+			if ( count( $nonzero ) === 4 && count( array_unique( $nonzero ) ) === 1 ) {
+				$decl[] = 'border:' . reset( $nonzero ) . ' ' . $style . ' ' . $color;
+			} else {
+				foreach ( $sides as $side ) {
+					if ( ! isset( $values[ $side ] ) || $values[ $side ] === '' || $values[ $side ] === '0' || $values[ $side ] === '0px' ) {
+						continue;
+					}
+					$decl[] = 'border-' . $side . ':' . $values[ $side ] . ' ' . $style . ' ' . $color;
+				}
+			}
+		}
+	} elseif ( $width !== null && $width !== '' ) {
+		$w = ecbb_events_widget_normalize_css_size( $width, 'px' );
+		if ( $w !== '' && $w !== '0' && $w !== '0px' ) {
+			$decl[] = 'border:' . $w . ' ' . $style . ' ' . $color;
+		}
+	}
+
+	if ( ! empty( $border['radius'] ) ) {
+		$radius_css = ecbb_events_widget_border_radius_to_css( $border['radius'] );
+		if ( $radius_css !== '' ) {
+			$decl[] = 'border-radius:' . $radius_css;
+		}
+	}
+
+	return $decl;
+}
+
+/**
+ * @param mixed $border Bricks border control value.
+ * @return string border shorthand or empty.
+ */
+function ecbb_events_widget_border_to_css( $border ) {
+	$decl = ecbb_events_widget_border_declarations( $border );
+	foreach ( $decl as $d ) {
+		if ( strpos( $d, 'border:' ) === 0 ) {
+			return substr( $d, 7 );
+		}
+	}
+	return '';
+}
+
+/**
+ * Event parts whose hover styles target inner links/terms (not the wrapper).
+ *
+ * @return string[]
+ */
+function ecbb_events_widget_hover_child_link_part_slugs() {
+	return [ 'tags', 'read_more', 'event_tickets', 'event_rsvp' ];
+}
+
+/**
+ * Build :hover selectors for a scoped event part.
+ *
+ * @param string $scope_sel  e.g. .ecbb-ev--abc .ecbb-p0
+ * @param string $part_type  Part slug.
+ * @return string Comma-separated selectors.
+ */
+function ecbb_events_widget_hover_interaction_selectors( $scope_sel, $part_type ) {
+	if ( function_exists( 'ecbb_events_widget_hover_child_link_part_slugs' )
+		&& in_array( $part_type, ecbb_events_widget_hover_child_link_part_slugs(), true ) ) {
+		return $scope_sel . ' .ecbb-event__link:hover,'
+			. $scope_sel . ' .ecbb-event__term:hover';
+	}
+
+	return $scope_sel . ':hover,'
+		. $scope_sel . ':hover *,'
+		. $scope_sel . ' a:hover,'
+		. $scope_sel . ' a:hover *,'
+		. $scope_sel . ' .ecbb-event__term:hover';
+}
+
+/**
+ * Selector used for hover motion (animation base state).
+ *
+ * @param string $scope_sel
+ * @param string $part_type
+ * @return string
+ */
+function ecbb_events_widget_hover_animation_scope( $scope_sel, $part_type ) {
+	if ( function_exists( 'ecbb_events_widget_hover_child_link_part_slugs' )
+		&& in_array( $part_type, ecbb_events_widget_hover_child_link_part_slugs(), true ) ) {
+		return $scope_sel . ' .ecbb-event__link,'
+			. $scope_sel . ' .ecbb-event__term';
+	}
+
+	return $scope_sel;
 }
 
 /**
@@ -259,9 +390,7 @@ function ecbb_events_widget_typography_color_from_item( array $item ) {
 			? ecbb_normalize_bricks_color( $item['ecbb_typography']['color'] )
 			: '';
 	}
-	return function_exists( 'ecbb_normalize_bricks_color' )
-		? ecbb_normalize_bricks_color( $item['ecbb_color'] ?? ( $item['color'] ?? '' ) )
-		: '';
+	return '';
 }
 
 /**
@@ -441,6 +570,7 @@ function ecbb_events_widget_build_parts_scoped_css( array $parts, $scope_class, 
 			: 'ecbb-p' . absint( $idx ) );
 		$scope_sel = '.' . $scope_class . ' ' . $idx_class;
 		$typo      = isset( $p['ecbb_typography'] ) && is_array( $p['ecbb_typography'] ) ? $p['ecbb_typography'] : [];
+		$part_type = isset( $p['part'] ) ? (string) $p['part'] : '';
 
 		foreach ( $breakpoints as $device => $mq ) {
 			$decl = ecbb_events_widget_typography_declarations( $typo, $device );
@@ -490,16 +620,6 @@ function ecbb_events_widget_build_parts_scoped_css( array $parts, $scope_class, 
 				$decl[] = 'padding:' . $padding;
 			}
 
-			$border = '';
-			if ( ! empty( $p['ecbb_border'] ) ) {
-				$border = ecbb_events_widget_border_to_css(
-					ecbb_events_widget_responsive_pick( $p['ecbb_border'], $device )
-				);
-			}
-			if ( $border !== '' ) {
-				$decl[] = 'border:' . $border;
-			}
-
 			if ( ! empty( $decl ) ) {
 				$rule = $scope_sel . '{' . implode( ';', $decl ) . ';}';
 				$style_css[] = ( $mq !== '' ? $mq . '{' . $rule . '}' : $rule );
@@ -507,34 +627,51 @@ function ecbb_events_widget_build_parts_scoped_css( array $parts, $scope_class, 
 		}
 
 		$color = ecbb_events_widget_typography_color_from_item( $p );
-		if ( $color === '' ) {
-			$color = $color_fn( $p['ecbb_color'] ?? ( $p['color'] ?? '' ) );
-		}
 		if ( $color !== '' ) {
 			$style_css[] = $scope_sel . ', ' . $scope_sel . ' * { color: ' . $color . ' !important; }';
 		}
 
-		$part_type      = isset( $p['part'] ) ? (string) $p['part'] : '';
 		$hover_style_on = function_exists( 'ecbb_event_part_hover_style_active' ) && ecbb_event_part_hover_style_active( $p );
 
 		if ( $hover_style_on ) {
+			$hover_sel = ecbb_events_widget_hover_interaction_selectors( $scope_sel, $part_type );
+
 			$hover = $color_fn( $p['ecbb_hover_color'] ?? ( $p['hover_color'] ?? '' ) );
 			if ( $hover !== '' ) {
-				$hover_css[] = $scope_sel . ':hover,'
-					. $scope_sel . ':hover *,'
-					. $scope_sel . ' a:hover,'
-					. $scope_sel . ' a:hover *{color:' . $hover . ' !important;}';
+				$hover_css[] = $hover_sel . '{color:' . $hover . ' !important;}';
+			}
+
+			$hover_bg = $color_fn( $p['ecbb_hover_background'] ?? '' );
+			if ( $hover_bg !== '' ) {
+				if ( function_exists( 'ecbb_events_widget_hover_child_link_part_slugs' )
+					&& in_array( $part_type, ecbb_events_widget_hover_child_link_part_slugs(), true ) ) {
+					$hover_css[] = $scope_sel . ' .ecbb-event__link:hover,'
+						. $scope_sel . ' .ecbb-event__term:hover{background-color:' . $hover_bg . ' !important;}';
+				} elseif ( $part_type === 'title' ) {
+					$hover_css[] = $scope_sel . ':hover,'
+						. $scope_sel . ' .ecbb-event__link:hover{background-color:' . $hover_bg . ' !important;}';
+				} else {
+					$hover_css[] = $scope_sel . ':hover{background-color:' . $hover_bg . ' !important;}';
+				}
 			}
 
 			$hover_td = isset( $p['ecbb_hover_text_decoration'] ) ? (string) $p['ecbb_hover_text_decoration'] : '';
 			if ( $hover_td !== '' && in_array( $hover_td, [ 'none', 'underline', 'overline', 'line-through' ], true ) ) {
-				$hover_css[] = $scope_sel . ':hover,'
-					. $scope_sel . ' a:hover{text-decoration:' . $hover_td . ' !important;}';
+				if ( function_exists( 'ecbb_events_widget_hover_child_link_part_slugs' )
+					&& in_array( $part_type, ecbb_events_widget_hover_child_link_part_slugs(), true ) ) {
+					$hover_css[] = $scope_sel . ' .ecbb-event__link:hover,'
+						. $scope_sel . ' .ecbb-event__term:hover{text-decoration:' . $hover_td . ' !important;}';
+				} else {
+					$hover_css[] = $scope_sel . ':hover,'
+						. $scope_sel . ' a:hover,'
+						. $scope_sel . ' .ecbb-event__term:hover{text-decoration:' . $hover_td . ' !important;}';
+				}
 			}
 
 			$hover_anim = isset( $p['ecbb_hover_animation'] ) ? (string) $p['ecbb_hover_animation'] : '';
 			if ( $hover_anim !== '' && function_exists( 'ecbb_event_part_hover_animation_css' ) ) {
-				$anim_blocks = ecbb_event_part_hover_animation_css( $scope_sel, $hover_anim );
+				$anim_scope  = ecbb_events_widget_hover_animation_scope( $scope_sel, $part_type );
+				$anim_blocks = ecbb_event_part_hover_animation_css( $anim_scope, $hover_anim );
 				if ( ! empty( $anim_blocks['base'] ) ) {
 					$style_css[] = $anim_blocks['base'];
 				}
@@ -545,16 +682,16 @@ function ecbb_events_widget_build_parts_scoped_css( array $parts, $scope_class, 
 		}
 
 		$bg = $color_fn( $p['ecbb_background'] ?? '' );
-		if ( $bg === '' ) {
-			$bg = $color_fn( $p['ecbb_hover_background'] ?? '' );
-		}
 		if ( $bg !== '' ) {
 			$style_css[] = $scope_sel . '{background-color:' . $bg . ' !important;}';
 		}
 
-		$bg_in = $color_fn( $p['ecbb_background_inner'] ?? '' );
-		if ( $bg_in === '' ) {
-			$bg_in = $color_fn( $p['ecbb_hover_background_inner'] ?? '' );
+		$bg_in = '';
+		if ( $part_type === 'title' ) {
+			$bg_in = $color_fn( $p['ecbb_background_inner'] ?? '' );
+			if ( $bg_in === '' ) {
+				$bg_in = $color_fn( $p['ecbb_hover_background_inner'] ?? '' );
+			}
 		}
 		if ( $bg_in !== '' ) {
 			$style_css[] = $scope_sel . ' > .ecbb-event__link,'
