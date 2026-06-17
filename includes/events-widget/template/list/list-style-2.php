@@ -380,7 +380,7 @@ function ecbb_list2_body_stack_gap_style( $part_gap, $part_gap_unit ) {
 	$part_gap = is_numeric( $part_gap ) ? (float) $part_gap : 0.0;
 	$unit     = in_array( (string) $part_gap_unit, [ 'px', 'rem', 'em' ], true ) ? (string) $part_gap_unit : 'px';
 	if ( 'px' === $unit ) {
-		$g = max( 5, min( $part_gap, 9 ) );
+		$g = max( 4, min( $part_gap, 7 ) );
 	} else {
 		$g = max( 0.3, min( $part_gap, 0.5625 ) );
 	}

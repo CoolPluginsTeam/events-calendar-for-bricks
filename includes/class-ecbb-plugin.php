@@ -721,7 +721,7 @@ class ECBB_Plugin {
             $html_items .= '<div class="' . esc_attr( $item_classes ) . '">';
 
             if ( $use_style1 && function_exists( 'ecbb_list1_item_inner_markup' ) ) {
-                $gap_inner = 'display:flex;flex-direction:column;gap:12px;';
+                $gap_inner = 'display:flex;flex-direction:column;gap:8px;';
                 $self      = $this;
                 $html_items .= ecbb_list1_item_inner_markup(
                     $p,
@@ -733,7 +733,7 @@ class ECBB_Plugin {
                     $style1_date_fmt
                 );
             } elseif ( $use_style2 ) {
-                $gap_inner = ecbb_list2_body_stack_gap_style( 12, 'px' );
+                $gap_inner = ecbb_list2_body_stack_gap_style( 8, 'px' );
                 $self      = $this;
                 $html_items .= ecbb_list2_item_inner_markup(
                     $p,
@@ -744,7 +744,7 @@ class ECBB_Plugin {
                     }
                 );
             } elseif ( $use_grid && function_exists( 'ecbb_events_widget_grid_item_inner_markup' ) ) {
-                $gap_inner = 'display:flex;flex-direction:column;gap:8px;';
+                $gap_inner = 'display:flex;flex-direction:column;gap:3px;';
                 $self      = $this;
                 $html_items .= ecbb_events_widget_grid_item_inner_markup(
                     $p,
