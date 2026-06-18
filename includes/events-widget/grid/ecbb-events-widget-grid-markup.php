@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @return array<int,array<string,mixed>>
  */
 function ecbb_events_widget_grid_default_parts_rows() {
-	return [
+	$rows = [
 		[
 			'part'                => 'date',
 			'date_text_transform' => 'none',
@@ -31,10 +31,14 @@ function ecbb_events_widget_grid_default_parts_rows() {
 			'part' => 'venue',
 		],
 		[
-			'part'            => 'event_cost',
-			'cost_currency'   => 'symbol',
+			'part'          => 'event_cost',
+			'cost_currency' => 'symbol',
 		],
 	];
+
+	return function_exists( 'ecbb_events_widget_parts_rows_assign_ids' )
+		? ecbb_events_widget_parts_rows_assign_ids( $rows )
+		: $rows;
 }
 
 /**

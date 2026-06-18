@@ -590,6 +590,7 @@ function ecbb_events_widget_terms_list_html( array $terms, array $item, $style_a
 	$part       = sanitize_key( (string) $part );
 	$link_style = $style_attr !== '' ? ' style="' . esc_attr( $style_attr ) . '"' : '';
 	$chip_each  = ( 'style1' === $skin && 'categories' === $part );
+	$link_terms = ! function_exists( 'ecbb_event_part_hover_style_active' ) || ecbb_event_part_hover_style_active( $item );
 
 	$sep = isset( $item['terms_separator'] ) ? (string) $item['terms_separator'] : ', ';
 	$sep = $sep !== '' ? $sep : ', ';
@@ -603,11 +604,15 @@ function ecbb_events_widget_terms_list_html( array $terms, array $item, $style_a
 			continue;
 		}
 
-		$url = get_term_link( $t );
-		if ( is_wp_error( $url ) ) {
-			continue;
+		if ( $link_terms ) {
+			$url = get_term_link( $t );
+			if ( is_wp_error( $url ) ) {
+				continue;
+			}
+			$inner = '<a class="ecbb-event__link" href="' . esc_url( $url ) . '"' . $link_style . '>' . esc_html( $t->name ) . '</a>';
+		} else {
+			$inner = '<span class="ecbb-event__term">' . esc_html( $t->name ) . '</span>';
 		}
-		$inner = '<a class="ecbb-event__link" href="' . esc_url( $url ) . '"' . $link_style . '>' . esc_html( $t->name ) . '</a>';
 
 		if ( $chip_each ) {
 			$links[] = '<span class="ecbb-event__term-chip">' . $inner . '</span>';
@@ -636,18 +641,101 @@ function ecbb_events_widget_part_idx_class( $idx ) {
 /**
  * Outer classes for a rendered part wrapper.
  *
- * @param string $part  Part slug.
- * @param int    $idx   Row index.
- * @param string $skin  '' or 'style2'.
+ * @param string              $part  Part slug.
+ * @param int                 $idx   Row index.
+ * @param string              $skin  '' or 'style2'.
+ * @param array<string,mixed> $item  Repeater row (optional; used for hover class).
  * @return string        Space-separated classes (not escaped).
  */
-function ecbb_events_widget_part_wrap_classes( $part, $idx, $skin = '' ) {
+function ecbb_events_widget_part_wrap_classes( $part, $idx, $skin = '', array $item = [] ) {
 	$idx_c = ecbb_events_widget_part_idx_class( $idx );
 	if ( (string) $skin === 'style2' ) {
-		return ecbb_list2_part_class( $part ) . ' ' . $idx_c;
+		$classes = 'ecbb-event-part ' . ecbb_list2_part_class( $part ) . ' ' . $idx_c;
+	} else {
+		$bem     = 'ecbb-event-part--' . str_replace( '_', '-', (string) $part );
+		$classes = 'ecbb-event-part ' . $bem . ' ' . $idx_c;
 	}
-	$bem = 'ecbb-event-part--' . str_replace( '_', '-', (string) $part );
-	return 'ecbb-event-part ' . $bem . ' ' . $idx_c;
+	if ( $item !== [] ) {
+		$row = $item;
+		if ( function_exists( 'ecbb_events_widget_normalize_part_item' ) ) {
+			$row = ecbb_events_widget_normalize_part_item( $row );
+		}
+		$ui_part = isset( $item['part'] ) ? (string) $item['part'] : (string) $part;
+		if (
+			function_exists( 'ecbb_event_part_hover_style_active' )
+			&& function_exists( 'ecbb_event_part_supports_hover_style_controls' )
+			&& ecbb_event_part_supports_hover_style_controls( $ui_part )
+			&& ! ecbb_event_part_hover_style_active( $row )
+		) {
+			$classes .= ' ecbb-no-hover';
+		}
+	}
+	return $classes;
+}
+
+/**
+ * Stable repeater row id for Bricks fieldId CSS (matches Bricks\Assets::generate_inline_css_from_repeater).
+ *
+ * @param array<string,mixed> $item Repeater row.
+ * @param int                 $idx  Row index fallback.
+ * @return string
+ */
+function ecbb_events_widget_part_field_id( array $item, $idx ) {
+	if ( ! empty( $item['id'] ) ) {
+		return (string) $item['id'];
+	}
+	return (string) absint( $idx );
+}
+
+/**
+ * data-field-id attribute for Bricks live repeater styling in the builder.
+ *
+ * @param array<string,mixed> $item Repeater row.
+ * @param int                 $idx  Row index.
+ * @return string HTML attribute fragment (leading space + data-field-id), or empty.
+ */
+function ecbb_events_widget_part_field_id_attr( array $item, $idx ) {
+	$id = ecbb_events_widget_part_field_id( $item, $idx );
+	if ( $id === '' ) {
+		return '';
+	}
+	return ' data-field-id="' . esc_attr( $id ) . '"';
+}
+
+/**
+ * Optional inline style + Bricks field id attributes for a part wrapper.
+ *
+ * @param array<string,mixed> $item  Repeater row.
+ * @param int                 $idx   Row index.
+ * @param string              $style Inline style declaration string (no style="" wrapper).
+ * @return string HTML attribute fragment.
+ */
+function ecbb_events_widget_part_wrapper_attrs( array $item, $idx, $style = '' ) {
+	$attrs = ecbb_events_widget_part_field_id_attr( $item, $idx );
+	if ( $style !== '' ) {
+		$attrs .= ' style="' . esc_attr( $style ) . '"';
+	}
+	return $attrs;
+}
+
+/**
+ * Assign Bricks repeater row ids when missing (new defaults + legacy rows).
+ *
+ * @param array<int,array<string,mixed>> $rows Repeater rows.
+ * @return array<int,array<string,mixed>>
+ */
+function ecbb_events_widget_parts_rows_assign_ids( array $rows ) {
+	foreach ( $rows as $index => $row ) {
+		if ( ! is_array( $row ) || ! empty( $row['id'] ) ) {
+			continue;
+		}
+		if ( class_exists( '\Bricks\Helpers' ) && method_exists( '\Bricks\Helpers', 'generate_random_id' ) ) {
+			$rows[ $index ]['id'] = \Bricks\Helpers::generate_random_id( false );
+		} else {
+			$rows[ $index ]['id'] = 'ecbb-part-' . absint( $index );
+		}
+	}
+	return $rows;
 }
 
 /**
@@ -665,8 +753,10 @@ function ecbb_event_part_extended_markup( $post, array $item, $idx, $style, $ski
 	$part = isset( $item['part'] ) ? (string) $item['part'] : '';
 	$idx  = absint( $idx );
 	$skin = (string) $skin;
-	$attr      = $style !== '' ? ' style="' . esc_attr( $style ) . '"' : '';
-	$link_attr = $style !== '' ? ' style="' . esc_attr( $style ) . '"' : '';
+	$attr = function_exists( 'ecbb_events_widget_part_wrapper_attrs' )
+		? ecbb_events_widget_part_wrapper_attrs( $item, $idx, $style )
+		: ( $style !== '' ? ' style="' . esc_attr( $style ) . '"' : '' );
+	$link_attr = '';
 	$detail_parts = [
 		'venue_full_address',
 		'venue_street',
@@ -688,8 +778,8 @@ function ecbb_event_part_extended_markup( $post, array $item, $idx, $style, $ski
 		return false;
 	}
 
-	$wrap = function ( $slug ) use ( $skin, $idx ) {
-		return esc_attr( ecbb_events_widget_part_wrap_classes( $slug, $idx, $skin ) );
+	$wrap = function ( $slug ) use ( $skin, $idx, $item ) {
+		return esc_attr( ecbb_events_widget_part_wrap_classes( $slug, $idx, $skin, $item ) );
 	};
 
 	$format = ( $part === 'event_date' || $part === 'event_time' )
@@ -834,10 +924,12 @@ function ecbb_event_part_extended_markup( $post, array $item, $idx, $style, $ski
 		} else {
 			$label = sanitize_text_field( $label );
 		}
-		$btn_attr = ecbb_event_part_button_style_attr( $item );
-		return '<div class="' . $wrap( 'event_tickets' ) . '"' . $attr . '>'
-			. '<a class="ecbb-event__link" href="' . esc_url( $url ) . '" rel="noopener noreferrer" target="_blank"' . ( $btn_attr !== '' ? $btn_attr : $link_attr ) . '>' . esc_html( $label ) . '</a>'
-			. '</div>';
+		$btn_attr  = ecbb_event_part_button_style_attr( $item );
+		$hover_on  = ! function_exists( 'ecbb_event_part_hover_style_active' ) || ecbb_event_part_hover_style_active( $item );
+		$inner_el  = $hover_on
+			? '<a class="ecbb-event__link" href="' . esc_url( $url ) . '" rel="noopener noreferrer" target="_blank"' . ( $btn_attr !== '' ? $btn_attr : $link_attr ) . '>' . esc_html( $label ) . '</a>'
+			: '<span class="ecbb-event__plain">' . esc_html( $label ) . '</span>';
+		return '<div class="' . $wrap( 'event_tickets' ) . '"' . $attr . '>' . $inner_el . '</div>';
 	}
 
 	if ( $part === 'event_rsvp' ) {
@@ -853,9 +945,11 @@ function ecbb_event_part_extended_markup( $post, array $item, $idx, $style, $ski
 			$url = $url . $frag;
 		}
 		$btn_attr = ecbb_event_part_button_style_attr( $item );
-		return '<div class="' . $wrap( 'event_rsvp' ) . '"' . $attr . '>'
-			. '<a class="ecbb-event__link" href="' . esc_url( $url ) . '"' . ( $btn_attr !== '' ? $btn_attr : $link_attr ) . '>' . esc_html( $label ) . '</a>'
-			. '</div>';
+		$hover_on = ! function_exists( 'ecbb_event_part_hover_style_active' ) || ecbb_event_part_hover_style_active( $item );
+		$inner_el = $hover_on
+			? '<a class="ecbb-event__link" href="' . esc_url( $url ) . '"' . ( $btn_attr !== '' ? $btn_attr : $link_attr ) . '>' . esc_html( $label ) . '</a>'
+			: '<span class="ecbb-event__plain">' . esc_html( $label ) . '</span>';
+		return '<div class="' . $wrap( 'event_rsvp' ) . '"' . $attr . '>' . $inner_el . '</div>';
 	}
 
 	if ( $part === 'read_more' ) {
@@ -870,9 +964,11 @@ function ecbb_event_part_extended_markup( $post, array $item, $idx, $style, $ski
 			$label = sanitize_text_field( $label );
 		}
 		$btn_attr = ecbb_event_part_button_style_attr( $item );
-		return '<div class="' . $wrap( 'read_more' ) . '"' . $attr . '>'
-			. '<a class="ecbb-event__link" href="' . esc_url( get_permalink( $post->ID ) ) . '"' . ( $btn_attr !== '' ? $btn_attr : $link_attr ) . '>' . esc_html( $label ) . '</a>'
-			. '</div>';
+		$hover_on = ! function_exists( 'ecbb_event_part_hover_style_active' ) || ecbb_event_part_hover_style_active( $item );
+		$inner_el = $hover_on
+			? '<a class="ecbb-event__link" href="' . esc_url( get_permalink( $post->ID ) ) . '"' . ( $btn_attr !== '' ? $btn_attr : $link_attr ) . '>' . esc_html( $label ) . '</a>'
+			: '<span class="ecbb-event__plain">' . esc_html( $label ) . '</span>';
+		return '<div class="' . $wrap( 'read_more' ) . '"' . $attr . '>' . $inner_el . '</div>';
 	}
 
 	return false;
@@ -1061,29 +1157,130 @@ function ecbb_event_part_supports_hover_style_controls( $part ) {
 }
 
 /**
+ * Saved values that mean hover styling is enabled (checkbox legacy + select).
+ *
+ * @return array<int|string|bool>
+ */
+function ecbb_events_widget_hover_toggle_on_values() {
+	return [ 'yes', true, 1, '1' ];
+}
+
+/**
+ * Whether a saved hover-toggle value means hover is on.
+ *
+ * @param mixed $value Raw `ecbb_use_hover` from a repeater row.
+ * @return bool
+ */
+function ecbb_events_widget_hover_toggle_value_is_on( $value ) {
+	if ( in_array( $value, ecbb_events_widget_hover_toggle_on_values(), true ) ) {
+		return true;
+	}
+	if ( $value === false || $value === 0 || $value === '0' || $value === 'no' ) {
+		return false;
+	}
+	if ( $value === null || $value === '' ) {
+		return false;
+	}
+	return ecbb_events_widget_is_truthy_setting( $value, true );
+}
+
+/**
+ * Coerce legacy checkbox values to yes/no so Bricks always persists hover state.
+ *
+ * @param array<string,mixed> $row Repeater row.
+ * @return array<string,mixed>
+ */
+function ecbb_events_widget_normalize_part_hover_toggle_row( array $row ) {
+	if ( ! array_key_exists( 'ecbb_use_hover', $row ) ) {
+		return $row;
+	}
+	$row['ecbb_use_hover'] = ecbb_events_widget_hover_toggle_value_is_on( $row['ecbb_use_hover'] ) ? 'yes' : 'no';
+	return $row;
+}
+
+/**
+ * @param array<int,array<string,mixed>> $rows Repeater rows.
+ * @return array<int,array<string,mixed>>
+ */
+function ecbb_events_widget_normalize_parts_repeater_rows_hover( array $rows ) {
+	foreach ( $rows as $index => $row ) {
+		if ( ! is_array( $row ) ) {
+			continue;
+		}
+		$part = isset( $row['part'] ) ? (string) $row['part'] : '';
+		if (
+			$part === ''
+			|| ! function_exists( 'ecbb_event_part_supports_hover_style_controls' )
+			|| ! ecbb_event_part_supports_hover_style_controls( $part )
+		) {
+			continue;
+		}
+		$rows[ $index ] = ecbb_events_widget_normalize_part_hover_toggle_row( $row );
+	}
+	return $rows;
+}
+
+/**
+ * @param array<string,mixed> $settings Element settings.
+ * @return array<string,mixed>
+ */
+function ecbb_events_widget_normalize_element_parts_hover_toggles( array $settings ) {
+	foreach ( [ 'parts_style1', 'parts_style2', 'parts_grid', 'parts' ] as $key ) {
+		if ( empty( $settings[ $key ] ) || ! is_array( $settings[ $key ] ) ) {
+			continue;
+		}
+		$settings[ $key ] = ecbb_events_widget_normalize_parts_repeater_rows_hover( $settings[ $key ] );
+	}
+	return $settings;
+}
+
+/**
  * Whether hover styling is enabled for this row (legacy rows without the key stay on).
  *
  * @param array $item Repeater row.
  * @return bool
  */
 function ecbb_event_part_hover_style_active( array $item ) {
-	if ( ! ecbb_event_part_supports_hover_style_controls( $item['part'] ?? '' ) ) {
+	$ui_part = isset( $item['part'] ) ? (string) $item['part'] : '';
+	if ( ! ecbb_event_part_supports_hover_style_controls( $ui_part ) ) {
 		return false;
 	}
 	if ( ! array_key_exists( 'ecbb_use_hover', $item ) ) {
 		return true;
 	}
-	$v = $item['ecbb_use_hover'];
-	if ( is_bool( $v ) ) {
-		return $v;
+	return ecbb_events_widget_hover_toggle_value_is_on( $item['ecbb_use_hover'] );
+}
+
+/**
+ * Normalize Bricks checkbox / toggle values saved on repeater rows.
+ *
+ * @param mixed $value   Raw setting.
+ * @param bool  $default Default when value is null (not when key is absent).
+ * @return bool
+ */
+function ecbb_events_widget_is_truthy_setting( $value, $default = false ) {
+	if ( $value === null ) {
+		return $default;
 	}
-	if ( $v === 'true' || $v === 1 || $v === '1' ) {
-		return true;
+	if ( is_bool( $value ) ) {
+		return $value;
 	}
-	if ( $v === 'false' || $v === 0 || $v === '0' || $v === '' ) {
-		return false;
+	if ( is_numeric( $value ) ) {
+		return (int) $value === 1;
 	}
-	return (bool) $v;
+	if ( is_string( $value ) ) {
+		$value = strtolower( trim( $value ) );
+		if ( $value === '' ) {
+			return false;
+		}
+		if ( in_array( $value, [ '1', 'true', 'yes', 'on' ], true ) ) {
+			return true;
+		}
+		if ( in_array( $value, [ '0', 'false', 'no', 'off' ], true ) ) {
+			return false;
+		}
+	}
+	return (bool) $value;
 }
 
 /**
@@ -1342,6 +1539,19 @@ function ecbb_events_widget_parts_array_is_effectively_empty( array $parts ) {
  * @return array<int,array<string,mixed>>
  */
 function ecbb_events_widget_resolve_event_parts_for_context( array $settings, $template, $item_chrome ) {
+	$prepare = static function ( $parts ) {
+		if ( ! is_array( $parts ) ) {
+			return [];
+		}
+		if ( function_exists( 'ecbb_events_widget_parts_rows_assign_ids' ) ) {
+			$parts = ecbb_events_widget_parts_rows_assign_ids( $parts );
+		}
+		if ( function_exists( 'ecbb_events_widget_normalize_parts_repeater_rows_hover' ) ) {
+			$parts = ecbb_events_widget_normalize_parts_repeater_rows_hover( $parts );
+		}
+		return $parts;
+	};
+
 	$template = is_string( $template ) ? trim( $template ) : '';
 	if ( $template === 'carousel' ) {
 		$template = 'list';
@@ -1369,11 +1579,11 @@ function ecbb_events_widget_resolve_event_parts_for_context( array $settings, $t
 	if ( 'grid' === $template ) {
 		$g = $non_empty( 'parts_grid' );
 		if ( null !== $g ) {
-			return $g;
+			return $prepare( $g );
 		}
 		$legacy = $non_empty( 'parts' );
 		if ( null !== $legacy ) {
-			return $legacy;
+			return $prepare( $legacy );
 		}
 		return [];
 	}
@@ -1381,22 +1591,22 @@ function ecbb_events_widget_resolve_event_parts_for_context( array $settings, $t
 	if ( 'style-2' === $item_chrome ) {
 		$s2 = $non_empty( 'parts_style2' );
 		if ( null !== $s2 ) {
-			return $s2;
+			return $prepare( $s2 );
 		}
 		$legacy = $non_empty( 'parts' );
 		if ( null !== $legacy ) {
-			return $legacy;
+			return $prepare( $legacy );
 		}
 		return [];
 	}
 
 	$s1 = $non_empty( 'parts_style1' );
 	if ( null !== $s1 ) {
-		return $s1;
+		return $prepare( $s1 );
 	}
 	$legacy = $non_empty( 'parts' );
 	if ( null !== $legacy ) {
-		return $legacy;
+		return $prepare( $legacy );
 	}
 	return [];
 }

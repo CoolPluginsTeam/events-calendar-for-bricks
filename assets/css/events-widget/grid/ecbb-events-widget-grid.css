@@ -206,8 +206,8 @@
 	transition: color 0.18s ease;
 }
 
-.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--title .ecbb-event__link:hover,
-.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--title .ecbb-event__link:focus-visible {
+.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--title:not(.ecbb-no-hover) .ecbb-event__link:hover,
+.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--title:not(.ecbb-no-hover) .ecbb-event__link:focus-visible {
 	color: #2563eb;
 	text-decoration: underline;
 }

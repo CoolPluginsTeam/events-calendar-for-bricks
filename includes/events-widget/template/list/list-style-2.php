@@ -133,7 +133,7 @@ function ecbb_list2_is_legacy_stack( array $clean ) {
  * @return array<int,array<string,mixed>>
  */
 function ecbb_list2_default_parts_rows() {
-	return [
+	$rows = [
 		[
 			'part'                  => 'date',
 			'date_text_transform'   => 'uppercase',
@@ -155,8 +155,12 @@ function ecbb_list2_default_parts_rows() {
 			'part'        => 'description',
 			'desc_source' => 'content',
 			'ecbb_color'  => '',
-		]
+		],
 	];
+
+	return function_exists( 'ecbb_events_widget_parts_rows_assign_ids' )
+		? ecbb_events_widget_parts_rows_assign_ids( $rows )
+		: $rows;
 }
 
 /**

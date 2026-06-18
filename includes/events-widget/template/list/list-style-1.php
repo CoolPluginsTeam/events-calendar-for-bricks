@@ -24,27 +24,51 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @return array<int,array<string,mixed>>
  */
 function ecbb_list1_default_parts_rows() {
-	return [
-		[
-			'part' => 'categories',
-		],
-		[
-			'part' => 'title',
-			'tag'  => 'h3',
-			'link' => true,
-		],
-		[
-			'part'                => 'date',
-			'date_text_transform' => 'none',
-		],
-		[
-			'part' => 'venue',
-		],
-		[
-			'part'        => 'description',
-			'desc_source' => 'content',
-		]
-	];
+	return function_exists( 'ecbb_events_widget_parts_rows_assign_ids' )
+		? ecbb_events_widget_parts_rows_assign_ids(
+			[
+				[
+					'part' => 'categories',
+				],
+				[
+					'part' => 'title',
+					'tag'  => 'h3',
+					'link' => true,
+				],
+				[
+					'part'                => 'date',
+					'date_text_transform' => 'none',
+				],
+				[
+					'part' => 'venue',
+				],
+				[
+					'part'        => 'description',
+					'desc_source' => 'content',
+				],
+			]
+		)
+		: [
+			[
+				'part' => 'categories',
+			],
+			[
+				'part' => 'title',
+				'tag'  => 'h3',
+				'link' => true,
+			],
+			[
+				'part'                => 'date',
+				'date_text_transform' => 'none',
+			],
+			[
+				'part' => 'venue',
+			],
+			[
+				'part'        => 'description',
+				'desc_source' => 'content',
+			],
+		];
 }
 
 /**

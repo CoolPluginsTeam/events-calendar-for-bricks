@@ -568,66 +568,20 @@ function ecbb_events_widget_typography_color_from_item( array $item ) {
 }
 
 /**
- * Build inline style attr for a part row (non-color typography + image sizing).
+ * Build inline style attr for a part row (image sizing only; typography uses Bricks repeater CSS).
  *
  * @param array<string,mixed> $item
  * @param bool                $allow_radius Image part.
  * @return string
  */
 function ecbb_events_widget_build_inline_style_attr( array $item, $allow_radius = false ) {
+	if ( ! $allow_radius ) {
+		return '';
+	}
+
 	$styles = [];
-	$typo   = isset( $item['ecbb_typography'] ) && is_array( $item['ecbb_typography'] ) ? $item['ecbb_typography'] : [];
 
-	$size = '';
-	if ( ! empty( $typo['font-size'] ) ) {
-		$size = ecbb_events_widget_normalize_css_size(
-			ecbb_events_widget_responsive_pick( $typo['font-size'], 'desktop' ),
-			'px'
-		);
-	}
-	if ( $size === '' ) {
-		$size = ecbb_events_widget_normalize_css_size( $item['ecbb_font_size'] ?? '', 'px' );
-	}
-	if ( $size !== '' ) {
-		$styles[] = 'font-size:' . $size;
-	}
-
-	$weight = $typo['font-weight'] ?? ( $item['ecbb_font_weight'] ?? '' );
-	if ( $weight !== '' && is_numeric( $weight ) ) {
-		$styles[] = 'font-weight:' . (int) $weight;
-	}
-
-	$family = isset( $typo['font-family'] ) ? trim( (string) $typo['font-family'] ) : '';
-	if ( $family === '' && ! empty( $item['ecbb_font_family'] ) ) {
-		$family = trim( (string) $item['ecbb_font_family'] );
-	}
-	$family = ecbb_events_widget_sanitize_css_font_family( $family );
-	if ( $family !== '' ) {
-		$styles[] = 'font-family:' . $family;
-	}
-
-	$align = $typo['text-align'] ?? ( $item['ecbb_text_align'] ?? '' );
-	if ( is_array( $align ) ) {
-		$align = ecbb_events_widget_responsive_pick( $align, 'desktop' );
-	}
-	if ( is_string( $align ) && in_array( $align, [ 'left', 'center', 'right', 'justify' ], true ) ) {
-		$styles[] = 'text-align:' . $align;
-	}
-
-	$lh = $typo['line-height'] ?? ( $item['ecbb_line_height'] ?? '' );
-	$lh = ecbb_events_widget_sanitize_typography_value( 'line-height', $lh );
-	if ( '' !== $lh ) {
-		$styles[] = 'line-height:' . $lh;
-	}
-
-	$ls = $typo['letter-spacing'] ?? ( $item['ecbb_letter_spacing'] ?? '' );
-	$ls = ecbb_events_widget_sanitize_typography_value( 'letter-spacing', $ls );
-	if ( '' !== $ls ) {
-		$styles[] = 'letter-spacing:' . $ls;
-	}
-
-	if ( $allow_radius ) {
-		if ( ! empty( $item['image_aspect_ratio'] ) && is_string( $item['image_aspect_ratio'] ) && preg_match( '/^\d+\/\d+$/', $item['image_aspect_ratio'] ) ) {
+	if ( ! empty( $item['image_aspect_ratio'] ) && is_string( $item['image_aspect_ratio'] ) && preg_match( '/^\d+\/\d+$/', $item['image_aspect_ratio'] ) ) {
 			$styles[] = 'aspect-ratio:' . $item['image_aspect_ratio'];
 		}
 
@@ -673,7 +627,6 @@ function ecbb_events_widget_build_inline_style_attr( array $item, $allow_radius 
 		if ( $fit !== '' && in_array( $fit, [ 'cover', 'contain', 'fill', 'none', 'scale-down' ], true ) ) {
 			$styles[] = 'object-fit:' . $fit;
 		}
-	}
 
 	return empty( $styles ) ? '' : implode( ';', $styles ) . ';';
 }
@@ -731,8 +684,7 @@ function ecbb_events_widget_build_parts_scoped_css( array $parts, $scope_class, 
 		return [ $style_css, $hover_css ];
 	}
 
-	$breakpoints = ecbb_events_widget_style_breakpoints();
-	$idx         = 0;
+	$idx = 0;
 
 	foreach ( $parts as $p ) {
 		if ( ! is_array( $p ) ) {
@@ -744,7 +696,6 @@ function ecbb_events_widget_build_parts_scoped_css( array $parts, $scope_class, 
 			? ecbb_events_widget_part_idx_class( absint( $idx ) )
 			: 'ecbb-p' . absint( $idx ) );
 		$scope_sel = '.' . $scope_class . ' ' . $idx_class;
-		$typo      = isset( $p['ecbb_typography'] ) && is_array( $p['ecbb_typography'] ) ? $p['ecbb_typography'] : [];
 		$part_type = isset( $p['part'] ) ? (string) $p['part'] : '';
 		$chip_surface = function_exists( 'ecbb_events_widget_part_chip_surface_part_slugs' )
 			&& in_array( $part_type, ecbb_events_widget_part_chip_surface_part_slugs(), true );
@@ -752,45 +703,7 @@ function ecbb_events_widget_build_parts_scoped_css( array $parts, $scope_class, 
 			? ecbb_events_widget_part_chip_surface_selectors( $scope_sel )
 			: $scope_sel;
 
-		foreach ( $breakpoints as $device => $mq ) {
-			$decl = ecbb_events_widget_typography_declarations( $typo, $device );
-
-			if ( empty( $decl ) ) {
-				$fs = ecbb_events_widget_normalize_css_size(
-					ecbb_events_widget_responsive_pick( $p['ecbb_font_size'] ?? '', $device ),
-					'px'
-				);
-				if ( $fs !== '' ) {
-					$decl[] = 'font-size:' . $fs;
-				}
-				if ( isset( $p['ecbb_font_weight'] ) && $p['ecbb_font_weight'] !== '' && is_numeric( $p['ecbb_font_weight'] ) ) {
-					$decl[] = 'font-weight:' . (int) $p['ecbb_font_weight'];
-				}
-				$ff = isset( $p['ecbb_font_family'] ) ? trim( (string) $p['ecbb_font_family'] ) : '';
-				$ff = ecbb_events_widget_sanitize_css_font_family( $ff );
-				if ( $ff !== '' ) {
-					$decl[] = 'font-family:' . $ff;
-				}
-			}
-
-			$align = $p['ecbb_text_align'] ?? '';
-			if ( is_array( $align ) ) {
-				$align = ecbb_events_widget_responsive_pick( $align, $device );
-			}
-			if ( is_string( $align ) && in_array( $align, [ 'left', 'center', 'right', 'justify' ], true ) ) {
-				$decl[] = 'text-align:' . $align;
-			}
-
-			$margin = '';
-			if ( ! empty( $p['ecbb_margin'] ) ) {
-				$margin = ecbb_events_widget_spacing_to_css(
-					ecbb_events_widget_responsive_pick( $p['ecbb_margin'], $device )
-				);
-			}
-			if ( $margin !== '' ) {
-				$decl[] = 'margin:' . $margin;
-			}
-
+		foreach ( ecbb_events_widget_style_breakpoints() as $device => $mq ) {
 			$padding = '';
 			if ( ! empty( $p['ecbb_padding'] ) ) {
 				$padding = ecbb_events_widget_spacing_to_css(
@@ -802,19 +715,10 @@ function ecbb_events_widget_build_parts_scoped_css( array $parts, $scope_class, 
 					$surface_rule = $chip_sel . '{padding:' . $padding . ';}';
 					$style_css[]  = ( $mq !== '' ? $mq . '{' . $surface_rule . '}' : $surface_rule );
 				} else {
-					$decl[] = 'padding:' . $padding;
+					$rule        = $scope_sel . '{padding:' . $padding . ';}';
+					$style_css[] = ( $mq !== '' ? $mq . '{' . $rule . '}' : $rule );
 				}
 			}
-
-			if ( ! empty( $decl ) ) {
-				$rule = $scope_sel . '{' . implode( ';', $decl ) . ';}';
-				$style_css[] = ( $mq !== '' ? $mq . '{' . $rule . '}' : $rule );
-			}
-		}
-
-		$color = ecbb_events_widget_typography_color_from_item( $p );
-		if ( $color !== '' ) {
-			$style_css[] = $scope_sel . ', ' . $scope_sel . ' * { color: ' . $color . ' !important; }';
 		}
 
 		$hover_style_on = function_exists( 'ecbb_event_part_hover_style_active' ) && ecbb_event_part_hover_style_active( $p );
@@ -869,15 +773,6 @@ function ecbb_events_widget_build_parts_scoped_css( array $parts, $scope_class, 
 			}
 		}
 
-		$bg = $color_fn( $p['ecbb_background'] ?? '' );
-		if ( $bg !== '' ) {
-			if ( $chip_surface ) {
-				$style_css[] = $chip_sel . '{background-color:' . $bg . ' !important;}';
-			} else {
-				$style_css[] = $scope_sel . '{background-color:' . $bg . ' !important;}';
-			}
-		}
-
 		$bg_in = '';
 		if ( $part_type === 'title' ) {
 			$bg_in = $color_fn( $p['ecbb_background_inner'] ?? '' );
@@ -891,6 +786,18 @@ function ecbb_events_widget_build_parts_scoped_css( array $parts, $scope_class, 
 				. $scope_sel . ' .ecbb-event__link-wrapper,'
 				. $scope_sel . ' .ecbb-event__link-wrapper a,'
 				. $scope_sel . ' > a{background-color:' . $bg_in . ' !important;}';
+		}
+
+		if ( $chip_surface ) {
+			$bg = $color_fn( $p['ecbb_background'] ?? '' );
+			if ( $bg !== '' ) {
+				$style_css[] = $chip_sel . '{background-color:' . $bg . ' !important;}';
+			}
+		} else {
+			$bg = $color_fn( $p['ecbb_background'] ?? '' );
+			if ( $bg !== '' ) {
+				$style_css[] = $scope_sel . '{background-color:' . $bg . ' !important;}';
+			}
 		}
 
 		if ( $part_type === 'image' && $hover_style_on && function_exists( 'ecbb_loop_image_uses_dual_layer' ) && function_exists( 'ecbb_object_position_from_image_align' ) ) {

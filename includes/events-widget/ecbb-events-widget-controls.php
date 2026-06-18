@@ -42,12 +42,27 @@ function ecbb_events_widget_repeater_required_hover_toggle_visible() {
 }
 
 /**
+ * Bricks `required` rule: hover toggle is on.
+ *
+ * @return array{0:string,1:string,2:array<int|string|bool>}
+ */
+function ecbb_events_widget_repeater_required_hover_on() {
+	return [
+		'ecbb_use_hover',
+		'=',
+		function_exists( 'ecbb_events_widget_hover_toggle_on_values' )
+			? ecbb_events_widget_hover_toggle_on_values()
+			: [ 'yes', true, 1, '1' ],
+	];
+}
+
+/**
  * @return array<int,array{0:string,1:string,2:mixed>>
  */
 function ecbb_events_widget_repeater_required_hover_style_group() {
 	return [
 		[ 'part', '=', ecbb_events_widget_repeater_hover_part_slugs() ],
-		[ 'ecbb_use_hover', '=', true ],
+		ecbb_events_widget_repeater_required_hover_on(),
 	];
 }
 
@@ -64,7 +79,7 @@ function ecbb_events_widget_repeater_required_hover_details() {
 function ecbb_events_widget_repeater_required_hover_background() {
 	return [
 		[ 'part', '=', ecbb_events_widget_repeater_hover_background_part_slugs() ],
-		[ 'ecbb_use_hover', '=', true ],
+		ecbb_events_widget_repeater_required_hover_on(),
 	];
 }
 
@@ -74,7 +89,7 @@ function ecbb_events_widget_repeater_required_hover_background() {
 function ecbb_events_widget_repeater_required_hover_text_decoration() {
 	return [
 		[ 'part', '=', ecbb_events_widget_repeater_hover_text_decoration_part_slugs() ],
-		[ 'ecbb_use_hover', '=', true ],
+		ecbb_events_widget_repeater_required_hover_on(),
 	];
 }
 
@@ -117,6 +132,21 @@ function ecbb_events_widget_repeater_hover_background_part_slugs() {
  */
 function ecbb_events_widget_repeater_required_inner_background() {
 	return [ [ 'part', '=', 'title' ] ];
+}
+
+/**
+ * Bricks `css` rule for a repeater sub-field (live builder preview + frontend).
+ *
+ * @param string $property CSS property or Bricks shorthand (e.g. font, typography).
+ * @param string $selector Optional selector relative to the repeater field target.
+ * @return array<int,array<string,string>>
+ */
+function ecbb_events_widget_repeater_control_css( $property, $selector = '' ) {
+	$rule = [ 'property' => (string) $property ];
+	if ( $selector !== '' ) {
+		$rule['selector'] = $selector;
+	}
+	return [ $rule ];
 }
 
 /**
@@ -389,13 +419,6 @@ function ecbb_events_widget_get_repeater_fields() {
 				[ 'part', '=', 'read_more' ],
 			],
 		],
-		'ecbb_use_hover' => [
-			'label'    => esc_html__( 'Enable hover effects', 'ecbb' ),
-			'type'     => 'checkbox',
-			'inline'   => true,
-			'default'  => true,
-			'required' => ecbb_events_widget_repeater_required_hover_toggle_visible(),
-		],
 		'image_aspect_ratio' => [
 			'label'    => esc_html__( 'Aspect ratio', 'ecbb' ),
 			'type'     => 'select',
@@ -428,7 +451,10 @@ function ecbb_events_widget_get_repeater_fields() {
 					: [ 'large' => 'large', 'full' => 'full' ]
 			),
 			'default'  => '',
-			'required' => [ 'part', '=', 'image' ],
+			'required' => [
+				[ 'part', '=', 'image' ],
+				ecbb_events_widget_repeater_required_hover_on(),
+			],
 		],
 		'ecbb_image_object_align' => [
 			'label'    => esc_html__( 'Image alignment', 'ecbb' ),
@@ -447,7 +473,10 @@ function ecbb_events_widget_get_repeater_fields() {
 					: []
 			),
 			'default'  => '',
-			'required' => [ 'part', '=', 'image' ],
+			'required' => [
+				[ 'part', '=', 'image' ],
+				ecbb_events_widget_repeater_required_hover_on(),
+			],
 		],
 		'image_link' => [
 			'label'    => esc_html__( 'Link image to event', 'ecbb' ),
@@ -493,12 +522,14 @@ function ecbb_events_widget_get_repeater_fields() {
 			'exclude'    => [ 'text-align' ],
 			'responsive' => true,
 			'required'   => [ 'part', '!=', 'image' ],
+			'css'        => ecbb_events_widget_repeater_control_css( 'font' ),
 		],
 		'ecbb_text_align' => [
 			'label'      => esc_html__( 'Text align', 'ecbb' ),
 			'type'     => 'text-align',
 			'responsive' => true,
 			'required'   => [ 'part', '!=', 'image' ],
+			'css'        => ecbb_events_widget_repeater_control_css( 'text-align' ),
 		],
 		'ecbb_background' => [
 			'label'       => esc_html__( 'Background', 'ecbb' ),
@@ -510,16 +541,32 @@ function ecbb_events_widget_get_repeater_fields() {
 			'type'        => 'color',
 			'placeholder' => '#666666',
 			'required'    => ecbb_events_widget_repeater_required_inner_background(),
+			'css'         => ecbb_events_widget_repeater_control_css(
+				'background-color',
+				'& > .ecbb-event__link, & .ecbb-event__link, & .ecbb-event__link-wrapper, & > a'
+			),
 		],
 		'ecbb_margin' => [
 			'label'      => esc_html__( 'Margin', 'ecbb' ),
 			'type'       => 'spacing',
 			'responsive' => true,
+			'css'        => ecbb_events_widget_repeater_control_css( 'margin' ),
 		],
 		'ecbb_padding' => [
 			'label'      => esc_html__( 'Padding', 'ecbb' ),
 			'type'       => 'spacing',
 			'responsive' => true,
+		],
+		'ecbb_use_hover' => [
+			'label'    => esc_html__( 'Enable hover effects', 'ecbb' ),
+			'type'     => 'select',
+			'options'  => [
+				'yes' => esc_html__( 'Yes', 'ecbb' ),
+				'no'  => esc_html__( 'No', 'ecbb' ),
+			],
+			'default'  => 'yes',
+			'rerender' => true,
+			'required' => ecbb_events_widget_repeater_required_hover_toggle_visible(),
 		],
 		'ecbb_sep_hover' => [
 			'type'     => 'separator',
@@ -1346,6 +1393,7 @@ function ecbb_events_widget_element_set_controls( $element ) {
 		'tab'           => 'content',
 		'group'         => 'elements',
 		'type'          => 'repeater',
+		'selector'      => 'fieldId',
 		'label'         => esc_html__( 'Event parts — Style 1 (list)', 'ecbb' ),
 		'description'   => esc_html__( 'Drag rows to reorder. Expand a row to edit content and style.', 'ecbb' ),
 		'titleProperty' => 'part',
@@ -1364,6 +1412,7 @@ function ecbb_events_widget_element_set_controls( $element ) {
 		'tab'           => 'content',
 		'group'         => 'elements',
 		'type'          => 'repeater',
+		'selector'      => 'fieldId',
 		'label'         => esc_html__( 'Event parts — Style 2 (list)', 'ecbb' ),
 		'description'   => esc_html__( 'Drag rows to reorder. Expand a row to edit content and style.', 'ecbb' ),
 		'titleProperty' => 'part',
@@ -1382,6 +1431,7 @@ function ecbb_events_widget_element_set_controls( $element ) {
 		'tab'           => 'content',
 		'group'         => 'elements',
 		'type'          => 'repeater',
+		'selector'      => 'fieldId',
 		'label'         => esc_html__( 'Event parts — Grid', 'ecbb' ),
 		'description'   => esc_html__( 'Card image and framed date are fixed; this repeater drives the body column.', 'ecbb' ),
 		'titleProperty' => 'part',

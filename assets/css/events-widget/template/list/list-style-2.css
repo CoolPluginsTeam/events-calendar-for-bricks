@@ -236,7 +236,7 @@
 	line-height: 1.25;
 }
 
-.ecbb-ev__item--style-2 .ecbb-style2-body > .ecbb-style2-title:hover {
+.ecbb-ev__item--style-2 .ecbb-style2-body > .ecbb-style2-title:not(.ecbb-no-hover):hover {
 	font-size: 24px;
 	color: #2563eb;
 	text-decoration: underline;
@@ -378,7 +378,7 @@
 	content: " \2192";
 }
 
-.ecbb-ev__item--style-2 .ecbb-style2-read-more .ecbb-event__link:hover {
+.ecbb-ev__item--style-2 .ecbb-style2-read-more:not(.ecbb-no-hover) .ecbb-event__link:hover {
 	color: #000;
 	text-decoration: underline;
 }
@@ -441,7 +441,7 @@
 	will-change: transform;
 }
 
-.ecbb-ev__item--style-2 .ecbb-style2-media .ecbb-style2-image:hover .ecbb-event__image {
+.ecbb-ev__item--style-2 .ecbb-style2-media .ecbb-style2-image:not(.ecbb-no-hover):hover .ecbb-event__image {
 	transform: scale(1.06);
 }
 

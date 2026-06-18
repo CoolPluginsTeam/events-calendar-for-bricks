@@ -141,12 +141,20 @@
 	line-height: 1.25;
 }
 
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--title .ecbb-event__link {
+.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--title:not(.ecbb-no-hover) .ecbb-event__link {
 	color: inherit;
 	text-decoration: underline;
 	text-underline-offset: 3px;
 	text-decoration-thickness: 1px;
 	transition: color 0.18s ease;
+}
+
+.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--title.ecbb-no-hover {
+	text-decoration: none;
+}
+
+.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--title.ecbb-no-hover .ecbb-event__link {
+	text-decoration: none;
 }
 
 /* Category chips — one outlined pill per term. */
@@ -325,7 +333,7 @@
 	font-weight: 600;
 }
 
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--read-more .ecbb-event__link:hover {
+.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--read-more:not(.ecbb-no-hover) .ecbb-event__link:hover {
 	color: #1ac8e8;
 }
 

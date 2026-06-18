@@ -53,6 +53,53 @@
 		return part !== "" && HOVER_PARTS.indexOf(part) !== -1;
 	}
 
+	function readUseHoverValue(item) {
+		if (!item) {
+			return true;
+		}
+
+		var inner = item.querySelector(
+			'.repeater-item-inner[data-control-key="ecbb_use_hover"]'
+		);
+		if (!inner) {
+			return true;
+		}
+
+		var select = inner.querySelector("select");
+		if (select) {
+			return select.value !== "no" && select.value !== "0";
+		}
+
+		var cb = inner.querySelector('input[type="checkbox"]');
+		if (cb) {
+			return cb.checked;
+		}
+
+		var toggle = inner.querySelector("[aria-checked]");
+		if (toggle) {
+			return toggle.getAttribute("aria-checked") === "true";
+		}
+
+		return true;
+	}
+
+	function syncUseHoverEnabled(item) {
+		if (!item || !item.classList.contains("ecbb-parts-repeater-item")) {
+			return;
+		}
+
+		var part = readPartValue(item);
+		if (!partSupportsHover(part)) {
+			item.removeAttribute("data-ecbb-use-hover");
+			return;
+		}
+
+		item.setAttribute(
+			"data-ecbb-use-hover",
+			readUseHoverValue(item) ? "true" : "false"
+		);
+	}
+
 	function syncHoverVisibility(item) {
 		if (!item || !item.classList.contains("ecbb-parts-repeater-item")) {
 			return;
@@ -61,6 +108,7 @@
 		var part = readPartValue(item);
 		item.setAttribute("data-ecbb-part", part);
 		item.classList.toggle("ecbb-part-no-hover", part !== "" && !partSupportsHover(part));
+		syncUseHoverEnabled(item);
 	}
 
 	function ensureAccordionState(item) {
@@ -231,13 +279,33 @@
 		"change",
 		function (e) {
 			var item = e.target.closest(".ecbb-parts-repeater-item");
-			if (
-				!item ||
-				!e.target.closest('.repeater-item-inner[data-control-key="part"]')
-			) {
+			if (!item) {
 				return;
 			}
-			syncHoverVisibility(item);
+			if (e.target.closest('.repeater-item-inner[data-control-key="part"]')) {
+				syncHoverVisibility(item);
+				return;
+			}
+			if (e.target.closest('.repeater-item-inner[data-control-key="ecbb_use_hover"]')) {
+				syncUseHoverEnabled(item);
+			}
+		},
+		true
+	);
+
+	document.addEventListener(
+		"click",
+		function (e) {
+			if (!e.target.closest('.repeater-item-inner[data-control-key="ecbb_use_hover"]')) {
+				return;
+			}
+			var item = e.target.closest(".ecbb-parts-repeater-item");
+			if (!item) {
+				return;
+			}
+			setTimeout(function () {
+				syncUseHoverEnabled(item);
+			}, 0);
 		},
 		true
 	);
