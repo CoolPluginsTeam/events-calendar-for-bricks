@@ -487,28 +487,15 @@ class ECBB_Plugin {
                 return '';
             }
 
-            $style      = $this->ecbb_build_inline_style_attr( $item );
-            $link_style = $style ? ' style="' . esc_attr( $style ) . '"' : '';
-            $sep        = isset( $item['terms_separator'] ) ? (string) $item['terms_separator'] : ', ';
-            $sep        = $sep !== '' ? $sep : ', ';
-            $link_terms = ! array_key_exists( 'terms_link', $item ) ? true : (bool) $item['terms_link'];
-            $links = [];
-            foreach ( $terms as $t ) {
-                if ( $link_terms ) {
-                    $url = get_term_link( $t );
-                    if ( is_wp_error( $url ) ) {
-                        continue;
-                    }
-                    $links[] = '<a class="ecbb-event__link" href="' . esc_url( $url ) . '"' . $link_style . '>' . esc_html( $t->name ) . '</a>';
-                } else {
-                    $links[] = '<span class="ecbb-event__term"' . $link_style . '>' . esc_html( $t->name ) . '</span>';
-                }
-            }
-            if ( empty( $links ) ) {
+            $style = $this->ecbb_build_inline_style_attr( $item );
+            $inner = function_exists( 'ecbb_events_widget_terms_list_html' )
+                ? ecbb_events_widget_terms_list_html( $terms, $item, $style, $skin, 'categories' )
+                : '';
+            if ( $inner === '' ) {
                 return '';
             }
 
-            return '<div class="' . esc_attr( $wrap ) . '"' . ( $style ? ' style="' . esc_attr( $style ) . '"' : '' ) . '>' . wp_kses_post( implode( esc_html( $sep ), $links ) ) . '</div>';
+            return '<div class="' . esc_attr( $wrap ) . '"' . ( $style ? ' style="' . esc_attr( $style ) . '"' : '' ) . '>' . $inner . '</div>';
         }
 
         if ( $part === 'tags' ) {
@@ -517,28 +504,15 @@ class ECBB_Plugin {
                 return '';
             }
 
-            $style      = $this->ecbb_build_inline_style_attr( $item );
-            $link_style = $style ? ' style="' . esc_attr( $style ) . '"' : '';
-            $sep        = isset( $item['terms_separator'] ) ? (string) $item['terms_separator'] : ', ';
-            $sep        = $sep !== '' ? $sep : ', ';
-            $link_terms = ! array_key_exists( 'terms_link', $item ) ? true : (bool) $item['terms_link'];
-            $links = [];
-            foreach ( $terms as $t ) {
-                if ( $link_terms ) {
-                    $url = get_term_link( $t );
-                    if ( is_wp_error( $url ) ) {
-                        continue;
-                    }
-                    $links[] = '<a class="ecbb-event__link" href="' . esc_url( $url ) . '"' . $link_style . '>' . esc_html( $t->name ) . '</a>';
-                } else {
-                    $links[] = '<span class="ecbb-event__term"' . $link_style . '>' . esc_html( $t->name ) . '</span>';
-                }
-            }
-            if ( empty( $links ) ) {
+            $style = $this->ecbb_build_inline_style_attr( $item );
+            $inner = function_exists( 'ecbb_events_widget_terms_list_html' )
+                ? ecbb_events_widget_terms_list_html( $terms, $item, $style, $skin, 'tags' )
+                : '';
+            if ( $inner === '' ) {
                 return '';
             }
 
-            return '<div class="' . esc_attr( $wrap ) . '"' . ( $style ? ' style="' . esc_attr( $style ) . '"' : '' ) . '>' . wp_kses_post( implode( esc_html( $sep ), $links ) ) . '</div>';
+            return '<div class="' . esc_attr( $wrap ) . '"' . ( $style ? ' style="' . esc_attr( $style ) . '"' : '' ) . '>' . $inner . '</div>';
         }
 
         if ( $part === 'description' ) {

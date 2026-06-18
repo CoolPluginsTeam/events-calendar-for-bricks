@@ -277,13 +277,7 @@ function ecbb_events_widget_get_repeater_fields() {
 			'type'        => 'text',
 			'placeholder' => ', ',
 			'default'     => ', ',
-			'required'    => [ 'part', '=', [ 'categories', 'tags' ] ],
-		],
-		'terms_link' => [
-			'label'    => esc_html__( 'Link terms', 'ecbb' ),
-			'type'     => 'checkbox',
-			'default'  => true,
-			'required' => [ 'part', '=', [ 'categories', 'tags' ] ],
+			'required'    => [ 'part', '=', 'tags' ],
 		],
 		'venue_link' => [
 			'label'    => esc_html__( 'Link to venue', 'ecbb' ),

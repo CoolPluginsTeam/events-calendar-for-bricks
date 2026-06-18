@@ -173,7 +173,6 @@
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="date_format_preset"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="date_format_custom"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="terms_separator"],
-.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="terms_link"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="venue_link"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="detail_link_text"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="organizer_link"],
@@ -210,4 +209,11 @@
 
 .ecbb-parts-repeater-item:is(.open, .always-open) .repeater-item-inner:last-child {
 	margin-bottom: 0 !important;
+}
+
+/* Style 1 categories use chip gap — no comma separator control. */
+#bricks-panel-element:has([data-control-key="parts_style1"])
+	.ecbb-parts-repeater-item[data-ecbb-part="categories"]
+	.repeater-item-inner[data-control-key="terms_separator"] {
+	display: none !important;
 }

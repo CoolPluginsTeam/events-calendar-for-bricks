@@ -575,6 +575,55 @@ function ecbb_events_widget_format_event_cost_display( $post_id, array $item ) {
 }
 
 /**
+ * Build inner HTML for taxonomy terms (categories / tags).
+ *
+ * @param \WP_Term[] $terms      Terms to render.
+ * @param array      $item       Part settings row.
+ * @param string     $style_attr Inline CSS declarations (no style= wrapper).
+ * @param string     $skin       List skin: style1, style2, or empty.
+ * @param string     $part       Part slug: categories|tags.
+ * @return string HTML or empty when no terms.
+ */
+function ecbb_events_widget_terms_list_html( array $terms, array $item, $style_attr = '', $skin = '', $part = 'categories' ) {
+	$style_attr = (string) $style_attr;
+	$skin       = (string) $skin;
+	$part       = sanitize_key( (string) $part );
+	$link_style = $style_attr !== '' ? ' style="' . esc_attr( $style_attr ) . '"' : '';
+	$chip_each  = ( 'style1' === $skin && 'categories' === $part );
+
+	$sep = isset( $item['terms_separator'] ) ? (string) $item['terms_separator'] : ', ';
+	$sep = $sep !== '' ? $sep : ', ';
+	if ( $chip_each ) {
+		$sep = '';
+	}
+
+	$links = [];
+	foreach ( $terms as $t ) {
+		if ( ! $t instanceof \WP_Term ) {
+			continue;
+		}
+
+		$url = get_term_link( $t );
+		if ( is_wp_error( $url ) ) {
+			continue;
+		}
+		$inner = '<a class="ecbb-event__link" href="' . esc_url( $url ) . '"' . $link_style . '>' . esc_html( $t->name ) . '</a>';
+
+		if ( $chip_each ) {
+			$links[] = '<span class="ecbb-event__term-chip">' . $inner . '</span>';
+		} else {
+			$links[] = $inner;
+		}
+	}
+
+	if ( $links === [] ) {
+		return '';
+	}
+
+	return wp_kses_post( implode( esc_html( $sep ), $links ) );
+}
+
+/**
  * Short per-row class for Bricks-generated CSS (scoped under .ecbb-ev--{id}).
  *
  * @param int $idx Row index.

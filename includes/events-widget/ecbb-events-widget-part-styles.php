@@ -349,12 +349,33 @@ function ecbb_events_widget_border_to_css( $border ) {
 }
 
 /**
+ * Event parts whose box styles (background, padding) target each term chip, not the wrapper.
+ *
+ * @return string[]
+ */
+function ecbb_events_widget_part_chip_surface_part_slugs() {
+	return [ 'categories' ];
+}
+
+/**
+ * Selectors for per-term chip surfaces inside a part wrapper.
+ *
+ * @param string $scope_sel e.g. .ecbb-ev--abc .ecbb-p0
+ * @return string Comma-separated selectors.
+ */
+function ecbb_events_widget_part_chip_surface_selectors( $scope_sel ) {
+	return $scope_sel . ' .ecbb-event__term-chip,'
+		. $scope_sel . ' > .ecbb-event__link,'
+		. $scope_sel . ' > .ecbb-event__term';
+}
+
+/**
  * Event parts whose hover styles target inner links/terms (not the wrapper).
  *
  * @return string[]
  */
 function ecbb_events_widget_hover_child_link_part_slugs() {
-	return [ 'tags', 'read_more', 'event_tickets', 'event_rsvp' ];
+	return [ 'categories', 'tags', 'read_more', 'event_tickets', 'event_rsvp' ];
 }
 
 /**
@@ -367,7 +388,8 @@ function ecbb_events_widget_hover_child_link_part_slugs() {
 function ecbb_events_widget_hover_interaction_selectors( $scope_sel, $part_type ) {
 	if ( function_exists( 'ecbb_events_widget_hover_child_link_part_slugs' )
 		&& in_array( $part_type, ecbb_events_widget_hover_child_link_part_slugs(), true ) ) {
-		return $scope_sel . ' .ecbb-event__link:hover,'
+		return $scope_sel . ' .ecbb-event__term-chip:hover,'
+			. $scope_sel . ' .ecbb-event__link:hover,'
 			. $scope_sel . ' .ecbb-event__term:hover';
 	}
 
@@ -388,7 +410,8 @@ function ecbb_events_widget_hover_interaction_selectors( $scope_sel, $part_type 
 function ecbb_events_widget_hover_animation_scope( $scope_sel, $part_type ) {
 	if ( function_exists( 'ecbb_events_widget_hover_child_link_part_slugs' )
 		&& in_array( $part_type, ecbb_events_widget_hover_child_link_part_slugs(), true ) ) {
-		return $scope_sel . ' .ecbb-event__link,'
+		return $scope_sel . ' .ecbb-event__term-chip,'
+			. $scope_sel . ' .ecbb-event__link,'
 			. $scope_sel . ' .ecbb-event__term';
 	}
 
@@ -723,6 +746,11 @@ function ecbb_events_widget_build_parts_scoped_css( array $parts, $scope_class, 
 		$scope_sel = '.' . $scope_class . ' ' . $idx_class;
 		$typo      = isset( $p['ecbb_typography'] ) && is_array( $p['ecbb_typography'] ) ? $p['ecbb_typography'] : [];
 		$part_type = isset( $p['part'] ) ? (string) $p['part'] : '';
+		$chip_surface = function_exists( 'ecbb_events_widget_part_chip_surface_part_slugs' )
+			&& in_array( $part_type, ecbb_events_widget_part_chip_surface_part_slugs(), true );
+		$chip_sel = $chip_surface && function_exists( 'ecbb_events_widget_part_chip_surface_selectors' )
+			? ecbb_events_widget_part_chip_surface_selectors( $scope_sel )
+			: $scope_sel;
 
 		foreach ( $breakpoints as $device => $mq ) {
 			$decl = ecbb_events_widget_typography_declarations( $typo, $device );
@@ -770,7 +798,12 @@ function ecbb_events_widget_build_parts_scoped_css( array $parts, $scope_class, 
 				);
 			}
 			if ( $padding !== '' ) {
-				$decl[] = 'padding:' . $padding;
+				if ( $chip_surface ) {
+					$surface_rule = $chip_sel . '{padding:' . $padding . ';}';
+					$style_css[]  = ( $mq !== '' ? $mq . '{' . $surface_rule . '}' : $surface_rule );
+				} else {
+					$decl[] = 'padding:' . $padding;
+				}
 			}
 
 			if ( ! empty( $decl ) ) {
@@ -798,7 +831,8 @@ function ecbb_events_widget_build_parts_scoped_css( array $parts, $scope_class, 
 			if ( $hover_bg !== '' ) {
 				if ( function_exists( 'ecbb_events_widget_hover_child_link_part_slugs' )
 					&& in_array( $part_type, ecbb_events_widget_hover_child_link_part_slugs(), true ) ) {
-					$hover_css[] = $scope_sel . ' .ecbb-event__link:hover,'
+					$hover_css[] = $scope_sel . ' .ecbb-event__term-chip:hover,'
+						. $scope_sel . ' .ecbb-event__link:hover,'
 						. $scope_sel . ' .ecbb-event__term:hover{background-color:' . $hover_bg . ' !important;}';
 				} elseif ( $part_type === 'title' ) {
 					$hover_css[] = $scope_sel . ':hover,'
@@ -812,7 +846,8 @@ function ecbb_events_widget_build_parts_scoped_css( array $parts, $scope_class, 
 			if ( $hover_td !== '' && in_array( $hover_td, [ 'none', 'underline', 'overline', 'line-through' ], true ) ) {
 				if ( function_exists( 'ecbb_events_widget_hover_child_link_part_slugs' )
 					&& in_array( $part_type, ecbb_events_widget_hover_child_link_part_slugs(), true ) ) {
-					$hover_css[] = $scope_sel . ' .ecbb-event__link:hover,'
+					$hover_css[] = $scope_sel . ' .ecbb-event__term-chip:hover,'
+						. $scope_sel . ' .ecbb-event__link:hover,'
 						. $scope_sel . ' .ecbb-event__term:hover{text-decoration:' . $hover_td . ' !important;}';
 				} else {
 					$hover_css[] = $scope_sel . ':hover,'
@@ -836,7 +871,11 @@ function ecbb_events_widget_build_parts_scoped_css( array $parts, $scope_class, 
 
 		$bg = $color_fn( $p['ecbb_background'] ?? '' );
 		if ( $bg !== '' ) {
-			$style_css[] = $scope_sel . '{background-color:' . $bg . ' !important;}';
+			if ( $chip_surface ) {
+				$style_css[] = $chip_sel . '{background-color:' . $bg . ' !important;}';
+			} else {
+				$style_css[] = $scope_sel . '{background-color:' . $bg . ' !important;}';
+			}
 		}
 
 		$bg_in = '';

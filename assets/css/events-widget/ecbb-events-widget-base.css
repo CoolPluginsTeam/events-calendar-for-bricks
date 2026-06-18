@@ -23,6 +23,7 @@
 /* Smooth hover transitions for interactive event parts (categories, tags, buttons, links). */
 .ecbb-event-part .ecbb-event__link,
 .ecbb-event-part .ecbb-event__term,
+.ecbb-event-part .ecbb-event__term-chip,
 .ecbb-event-part--title,
 .ecbb-event-part--categories,
 .ecbb-event-part--tags,

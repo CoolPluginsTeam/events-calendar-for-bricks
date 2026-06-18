@@ -26,9 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 function ecbb_list1_default_parts_rows() {
 	return [
 		[
-			'part'            => 'categories',
-			'terms_link'      => true,
-			'terms_separator' => ', ',
+			'part' => 'categories',
 		],
 		[
 			'part' => 'title',
