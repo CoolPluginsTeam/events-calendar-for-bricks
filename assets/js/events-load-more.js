@@ -46,6 +46,29 @@
     }
   }
 
+  function sanitizeFragment(doc) {
+    const blocked = "script,style,iframe,object,embed,link,meta,base";
+    doc.querySelectorAll(blocked).forEach((el) => el.remove());
+
+    doc.querySelectorAll("*").forEach((el) => {
+      Array.from(el.attributes).forEach((attr) => {
+        const name = attr.name.toLowerCase();
+        const value = attr.value.trim();
+
+        if (name.startsWith("on") || name === "srcdoc") {
+          el.removeAttribute(attr.name);
+          return;
+        }
+
+        if ((name === "href" || name === "src") && /^(javascript|data):/i.test(value)) {
+          el.removeAttribute(attr.name);
+        }
+      });
+    });
+
+    return doc.body;
+  }
+
   document.addEventListener("click", async (e) => {
     const btn = e.target && e.target.closest ? e.target.closest(".ecbb-load-more__btn") : null;
     if (!btn) return;
@@ -85,9 +108,11 @@
 
       const html = (json.data && json.data.html) ? json.data.html : "";
       if (html) {
-        const tpl = document.createElement("template");
-        tpl.innerHTML = html;
-        list.appendChild(tpl.content);
+        const doc = new DOMParser().parseFromString(html, "text/html");
+        const safeBody = sanitizeFragment(doc);
+        while (safeBody.firstChild) {
+          list.appendChild(safeBody.firstChild);
+        }
       }
 
       const nextOffset = (json.data && typeof json.data.nextOffset === "number") ? json.data.nextOffset : (offset + limit);

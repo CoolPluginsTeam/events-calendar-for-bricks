@@ -2,6 +2,10 @@
 /**
  * Main plugin bootstrap (ECBB prefix: scripts, elements, AJAX).
  */
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
 class ECBB_Plugin {
 
     public function __construct() {
@@ -26,8 +30,14 @@ class ECBB_Plugin {
         if ( empty( $_POST['postId'] ) || ! class_exists( '\Bricks\Ajax' ) || ! class_exists( '\Bricks\Database' ) ) {
             return;
         }
-        $post_id = (int) $_POST['postId'];
+        $post_id = absint( wp_unslash( $_POST['postId'] ) );
         if ( $post_id < 1 ) {
+            return;
+        }
+        if ( false === check_ajax_referer( 'bricks-nonce', 'nonce', false ) ) {
+            return;
+        }
+        if ( ! current_user_can( 'edit_post', $post_id ) ) {
             return;
         }
 
@@ -36,7 +46,8 @@ class ECBB_Plugin {
             if ( empty( $_POST[ $post_key ] ) || ! is_string( $_POST[ $post_key ] ) ) {
                 continue;
             }
-            $merged = $this->ecbb_merge_events_loop_repeaters_into_posted_area( $_POST[ $post_key ], $post_id, $area );
+            $posted_json = wp_unslash( $_POST[ $post_key ] );
+            $merged      = $this->ecbb_merge_events_loop_repeaters_into_posted_area( $posted_json, $post_id, $area );
             if ( is_string( $merged ) ) {
                 $_POST[ $post_key ] = $merged;
             }
@@ -620,8 +631,8 @@ class ECBB_Plugin {
 
         $raw_settings = isset( $_POST['ecbb_settings'] ) ? wp_unslash( (string) $_POST['ecbb_settings'] ) : '';
         $settings     = $raw_settings !== '' ? json_decode( $raw_settings, true ) : null;
-        $offset       = isset( $_POST['ecbb_offset'] ) ? absint( $_POST['ecbb_offset'] ) : 0;
-        $limit        = isset( $_POST['ecbb_limit'] ) ? absint( $_POST['ecbb_limit'] ) : 6;
+        $offset       = isset( $_POST['ecbb_offset'] ) ? absint( wp_unslash( $_POST['ecbb_offset'] ) ) : 0;
+        $limit        = isset( $_POST['ecbb_limit'] ) ? absint( wp_unslash( $_POST['ecbb_limit'] ) ) : 6;
 
         if ( ! is_array( $settings ) ) {
             wp_send_json_error(
@@ -680,6 +691,7 @@ class ECBB_Plugin {
         if ( $limit < 1 ) {
             $limit = 6;
         }
+        $limit = min( $limit, 50 );
 
         $base = function_exists( 'ecbb_events_widget_query_tribe_args' ) ? ecbb_events_widget_query_tribe_args( $settings ) : [];
         if ( ! is_array( $base ) ) {

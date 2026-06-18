@@ -625,7 +625,7 @@ class Element_ECBB_Events_Widget extends \Bricks\Element {
 		$no_events_css = $this->ecbb_build_no_events_dynamic_style_css( $scope_class );
 		$all_css       = array_filter( array_merge( $gap_css !== '' ? [ $gap_css ] : [], $style_css, $hover_css, $no_events_css ) );
 		if ( ! empty( $all_css ) ) {
-			echo '<style>' . implode( "\n", $all_css ) . '</style>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			echo '<style>' . wp_strip_all_tags( str_replace( '</style', '<\/style', implode( "\n", $all_css ) ) ) . '</style>';
 		}
 
 		if ( ! function_exists( 'tribe_get_events' ) ) {

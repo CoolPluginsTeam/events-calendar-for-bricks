@@ -48,17 +48,186 @@ function ecbb_events_widget_responsive_pick( $value, $device = 'desktop' ) {
 }
 
 /**
+ * @param mixed  $value        CSS size value.
+ * @param string $default_unit Unit for numeric values.
+ * @return string
+ */
+function ecbb_events_widget_normalize_css_size( $value, $default_unit = 'px' ) {
+	$value = is_string( $value ) ? trim( $value ) : ( is_numeric( $value ) ? (string) $value : '' );
+	if ( $value === '' ) {
+		return '';
+	}
+	if ( preg_match( '/^-?\d*\.?\d+(px|rem|em|%)$/', $value ) ) {
+		return $value;
+	}
+	if ( preg_match( '/^-?\d*\.?\d+$/', $value ) ) {
+		$unit = in_array( $default_unit, [ 'px', 'rem', 'em', '%' ], true ) ? $default_unit : 'px';
+		return $value . $unit;
+	}
+	return '';
+}
+
+/**
+ * @param mixed  $value        CSS size or unitless number.
+ * @param string $default_unit Unit for numeric values when a unit is required.
+ * @param bool   $unitless     Whether unitless numeric values are allowed.
+ * @return string
+ */
+function ecbb_events_widget_sanitize_css_size_value( $value, $default_unit = 'px', $unitless = false ) {
+	$value = is_string( $value ) ? trim( $value ) : ( is_numeric( $value ) ? (string) $value : '' );
+	if ( '' === $value ) {
+		return '';
+	}
+	if ( true === $unitless && preg_match( '/^-?\d*\.?\d+$/', $value ) ) {
+		return $value;
+	}
+	return ecbb_events_widget_normalize_css_size( $value, $default_unit );
+}
+
+/**
+ * @param mixed  $value        CSS shorthand containing one to four size values.
+ * @param string $default_unit Unit for numeric values.
+ * @return string
+ */
+function ecbb_events_widget_sanitize_css_size_shorthand( $value, $default_unit = 'px' ) {
+	$value = is_string( $value ) || is_numeric( $value ) ? trim( (string) $value ) : '';
+	if ( '' === $value ) {
+		return '';
+	}
+
+	$parts = preg_split( '/\s+/', $value );
+	if ( ! is_array( $parts ) || count( $parts ) > 4 ) {
+		return '';
+	}
+
+	$clean = [];
+	foreach ( $parts as $part ) {
+		$size = ecbb_events_widget_sanitize_css_size_value( $part, $default_unit, false );
+		if ( '' === $size ) {
+			return '';
+		}
+		$clean[] = $size;
+	}
+
+	return implode( ' ', $clean );
+}
+
+/**
+ * @param mixed $value CSS font-family value.
+ * @return string
+ */
+function ecbb_events_widget_sanitize_css_font_family( $value ) {
+	$value = is_string( $value ) ? trim( wp_strip_all_tags( $value ) ) : '';
+	if ( '' === $value || strlen( $value ) > 200 ) {
+		return '';
+	}
+
+	$families = array_map( 'trim', explode( ',', $value ) );
+	$clean    = [];
+	foreach ( $families as $family ) {
+		$family = trim( $family, " \t\n\r\0\x0B'\"" );
+		if ( '' === $family || ! preg_match( '/^[a-zA-Z0-9 _-]+$/', $family ) ) {
+			return '';
+		}
+		$clean[] = preg_match( '/\s/', $family ) ? '"' . $family . '"' : $family;
+	}
+
+	return implode( ', ', $clean );
+}
+
+/**
+ * @param string $property CSS typography property.
+ * @param mixed  $value    Saved control value.
+ * @return string
+ */
+function ecbb_events_widget_sanitize_typography_value( $property, $value ) {
+	$value = is_string( $value ) || is_numeric( $value ) ? trim( (string) $value ) : '';
+	if ( '' === $value ) {
+		return '';
+	}
+
+	switch ( $property ) {
+		case 'font-family':
+			return ecbb_events_widget_sanitize_css_font_family( $value );
+		case 'font-size':
+		case 'letter-spacing':
+			return ecbb_events_widget_sanitize_css_size_value( $value, 'px', false );
+		case 'line-height':
+			return ecbb_events_widget_sanitize_css_size_value( $value, 'px', true );
+		case 'font-weight':
+			if ( is_numeric( $value ) ) {
+				$weight = (int) $value;
+				return ( $weight >= 100 && $weight <= 900 ) ? (string) $weight : '';
+			}
+			return in_array( $value, [ 'normal', 'bold', 'bolder', 'lighter' ], true ) ? $value : '';
+		case 'text-transform':
+			return in_array( $value, [ 'none', 'capitalize', 'uppercase', 'lowercase' ], true ) ? $value : '';
+		case 'text-align':
+			return in_array( $value, [ 'left', 'center', 'right', 'justify' ], true ) ? $value : '';
+		case 'text-decoration':
+			return in_array( $value, [ 'none', 'underline', 'overline', 'line-through' ], true ) ? $value : '';
+		default:
+			return '';
+	}
+}
+
+/**
+ * @param string $border CSS border shorthand.
+ * @return string
+ */
+function ecbb_events_widget_sanitize_border_shorthand( $border ) {
+	$border = is_string( $border ) ? trim( $border ) : '';
+	if ( '' === $border ) {
+		return '';
+	}
+
+	$parts = preg_split( '/\s+/', $border );
+	if ( ! is_array( $parts ) || count( $parts ) < 2 || count( $parts ) > 3 ) {
+		return '';
+	}
+
+	$width = '';
+	$style = '';
+	$color = '';
+	foreach ( $parts as $part ) {
+		if ( '' === $width ) {
+			$width = ecbb_events_widget_sanitize_css_size_value( $part, 'px', false );
+			if ( '' !== $width ) {
+				continue;
+			}
+		}
+		if ( '' === $style && in_array( $part, [ 'solid', 'dashed', 'dotted', 'double', 'none', 'groove', 'ridge', 'inset', 'outset' ], true ) ) {
+			$style = $part;
+			continue;
+		}
+		if ( '' === $color ) {
+			$color = function_exists( 'ecbb_normalize_bricks_color' ) ? ecbb_normalize_bricks_color( $part ) : '';
+			if ( '' !== $color ) {
+				continue;
+			}
+		}
+		return '';
+	}
+
+	if ( '' === $width || '' === $style ) {
+		return '';
+	}
+
+	return trim( $width . ' ' . $style . ' ' . $color );
+}
+
+/**
  * @param mixed $spacing Bricks spacing value.
  * @return string CSS shorthand or empty.
  */
 function ecbb_events_widget_spacing_to_css( $spacing ) {
 	if ( ! is_array( $spacing ) ) {
-		return is_string( $spacing ) ? trim( $spacing ) : '';
+		return ecbb_events_widget_sanitize_css_size_shorthand( $spacing );
 	}
-	$top    = isset( $spacing['top'] ) ? trim( (string) $spacing['top'] ) : '';
-	$right  = isset( $spacing['right'] ) ? trim( (string) $spacing['right'] ) : '';
-	$bottom = isset( $spacing['bottom'] ) ? trim( (string) $spacing['bottom'] ) : '';
-	$left   = isset( $spacing['left'] ) ? trim( (string) $spacing['left'] ) : '';
+	$top    = isset( $spacing['top'] ) ? ecbb_events_widget_sanitize_css_size_value( $spacing['top'] ) : '';
+	$right  = isset( $spacing['right'] ) ? ecbb_events_widget_sanitize_css_size_value( $spacing['right'] ) : '';
+	$bottom = isset( $spacing['bottom'] ) ? ecbb_events_widget_sanitize_css_size_value( $spacing['bottom'] ) : '';
+	$left   = isset( $spacing['left'] ) ? ecbb_events_widget_sanitize_css_size_value( $spacing['left'] ) : '';
 	if ( $top === '' && $right === '' && $bottom === '' && $left === '' ) {
 		return '';
 	}
@@ -75,7 +244,7 @@ function ecbb_events_widget_spacing_to_css( $spacing ) {
  */
 function ecbb_events_widget_border_radius_to_css( $radius ) {
 	if ( ! is_array( $radius ) ) {
-		return is_string( $radius ) ? trim( $radius ) : '';
+		return ecbb_events_widget_sanitize_css_size_shorthand( $radius );
 	}
 	$box = [];
 	foreach ( [ 'top', 'right', 'bottom', 'left' ] as $side ) {
@@ -96,8 +265,9 @@ function ecbb_events_widget_border_radius_to_css( $radius ) {
  */
 function ecbb_events_widget_border_declarations( $border ) {
 	if ( ! is_array( $border ) ) {
-		if ( is_string( $border ) && trim( $border ) !== '' ) {
-			return [ 'border:' . trim( $border ) ];
+		$border = ecbb_events_widget_sanitize_border_shorthand( $border );
+		if ( '' !== $border ) {
+			return [ 'border:' . $border ];
 		}
 		return [];
 	}
@@ -223,25 +393,6 @@ function ecbb_events_widget_hover_animation_scope( $scope_sel, $part_type ) {
 	}
 
 	return $scope_sel;
-}
-
-/**
- * @param mixed $value
- * @return string
- */
-function ecbb_events_widget_normalize_css_size( $value, $default_unit = 'px' ) {
-	$value = is_string( $value ) ? trim( $value ) : ( is_numeric( $value ) ? (string) $value : '' );
-	if ( $value === '' ) {
-		return '';
-	}
-	if ( preg_match( '/^-?\d*\.?\d+(px|rem|em|%)$/', $value ) ) {
-		return $value;
-	}
-	if ( preg_match( '/^-?\d*\.?\d+$/', $value ) ) {
-		$unit = in_array( $default_unit, [ 'px', 'rem', 'em', '%' ], true ) ? $default_unit : 'px';
-		return $value . $unit;
-	}
-	return '';
 }
 
 /**
@@ -427,6 +578,7 @@ function ecbb_events_widget_build_inline_style_attr( array $item, $allow_radius 
 	if ( $family === '' && ! empty( $item['ecbb_font_family'] ) ) {
 		$family = trim( (string) $item['ecbb_font_family'] );
 	}
+	$family = ecbb_events_widget_sanitize_css_font_family( $family );
 	if ( $family !== '' ) {
 		$styles[] = 'font-family:' . $family;
 	}
@@ -440,13 +592,15 @@ function ecbb_events_widget_build_inline_style_attr( array $item, $allow_radius 
 	}
 
 	$lh = $typo['line-height'] ?? ( $item['ecbb_line_height'] ?? '' );
-	if ( is_string( $lh ) && trim( $lh ) !== '' ) {
-		$styles[] = 'line-height:' . trim( $lh );
+	$lh = ecbb_events_widget_sanitize_typography_value( 'line-height', $lh );
+	if ( '' !== $lh ) {
+		$styles[] = 'line-height:' . $lh;
 	}
 
 	$ls = $typo['letter-spacing'] ?? ( $item['ecbb_letter_spacing'] ?? '' );
-	if ( is_string( $ls ) && trim( $ls ) !== '' ) {
-		$styles[] = 'letter-spacing:' . trim( $ls );
+	$ls = ecbb_events_widget_sanitize_typography_value( 'letter-spacing', $ls );
+	if ( '' !== $ls ) {
+		$styles[] = 'letter-spacing:' . $ls;
 	}
 
 	if ( $allow_radius ) {
@@ -526,9 +680,7 @@ function ecbb_events_widget_typography_declarations( array $typo, $device = 'des
 		}
 		$val = ecbb_events_widget_responsive_pick( $typo[ $key ], $device );
 		if ( is_string( $val ) && trim( $val ) !== '' ) {
-			if ( $css_prop === 'font-size' ) {
-				$val = ecbb_events_widget_normalize_css_size( $val, 'px' );
-			}
+			$val = ecbb_events_widget_sanitize_typography_value( $css_prop, $val );
 			if ( $val !== '' ) {
 				$decl[] = $css_prop . ':' . $val;
 			}
@@ -587,6 +739,7 @@ function ecbb_events_widget_build_parts_scoped_css( array $parts, $scope_class, 
 					$decl[] = 'font-weight:' . (int) $p['ecbb_font_weight'];
 				}
 				$ff = isset( $p['ecbb_font_family'] ) ? trim( (string) $p['ecbb_font_family'] ) : '';
+				$ff = ecbb_events_widget_sanitize_css_font_family( $ff );
 				if ( $ff !== '' ) {
 					$decl[] = 'font-family:' . $ff;
 				}
