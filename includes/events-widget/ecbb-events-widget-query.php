@@ -229,8 +229,32 @@ function ecbb_events_widget_sanitize_load_more_settings( array $settings ) {
 		$out['style2_show_month_headings'] = ecbb_sanitize_style2_show_month_headings( $out['style2_show_month_headings'] );
 	}
 
-	if ( isset( $out['item_gap'] ) ) {
+	if ( isset( $out['item_gap'] ) && ! is_array( $out['item_gap'] ) ) {
 		$out['item_gap'] = max( 0, (float) $out['item_gap'] );
+	}
+
+	if ( isset( $out['grid_cols'] ) ) {
+		if ( is_array( $out['grid_cols'] ) ) {
+			foreach ( [ 'desktop', 'tablet', 'mobile' ] as $device ) {
+				if ( isset( $out['grid_cols'][ $device ] ) && $out['grid_cols'][ $device ] !== '' ) {
+					$out['grid_cols'][ $device ] = max( 1, (int) $out['grid_cols'][ $device ] );
+				}
+			}
+		} else {
+			$out['grid_cols'] = max( 1, (int) $out['grid_cols'] );
+		}
+	}
+
+	foreach ( array_keys( $out ) as $setting_key ) {
+		if ( strpos( (string) $setting_key, 'grid_cols:' ) === 0 ) {
+			$out[ $setting_key ] = max( 1, (int) $out[ $setting_key ] );
+		}
+	}
+
+	foreach ( [ 'grid_cols_desktop', 'grid_cols_tablet', 'grid_cols_mobile' ] as $legacy_cols_key ) {
+		if ( isset( $out[ $legacy_cols_key ] ) ) {
+			$out[ $legacy_cols_key ] = max( 1, (int) $out[ $legacy_cols_key ] );
+		}
 	}
 
 	$item_gap_unit = isset( $out['item_gap_unit'] ) ? (string) $out['item_gap_unit'] : 'px';

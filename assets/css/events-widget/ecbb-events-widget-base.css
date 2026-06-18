@@ -88,18 +88,6 @@
 	opacity: inherit !important;
 }
 
-@media (max-width: 991px) {
-	.ecbb-ev__list--grid {
-		grid-template-columns: repeat(var(--ecbb-grid-cols-tablet, 2), minmax(0, 1fr));
-	}
-}
-
-@media (max-width: 640px) {
-	.ecbb-ev__list--grid {
-		grid-template-columns: repeat(var(--ecbb-grid-cols-mobile, 1), minmax(0, 1fr));
-	}
-}
-
 /* Empty state — layout defaults; typography/colors/hover from Dynamic Messages (Style). */
 .ecbb-ev__empty {
 	display: flex;

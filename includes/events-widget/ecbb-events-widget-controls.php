@@ -375,27 +375,42 @@ function ecbb_events_widget_get_repeater_fields() {
 			'label'       => esc_html__( 'Button background', 'ecbb' ),
 			'type'        => 'color',
 			'placeholder' => '#2271b1',
+			'responsive'  => true,
 			'required'    => [
 				[ 'part', '=', [ 'event_tickets', 'event_rsvp', 'read_more' ] ],
 				[ 'btn_style', '=', true ],
 			],
+			'css'         => ecbb_events_widget_repeater_control_css(
+				'background-color',
+				'.ecbb-event__link, & > a'
+			),
 		],
 		'btn_text_color' => [
 			'label'       => esc_html__( 'Button text color', 'ecbb' ),
 			'type'        => 'color',
 			'placeholder' => '#ffffff',
+			'responsive'  => true,
 			'required'    => [
 				[ 'part', '=', [ 'event_tickets', 'event_rsvp', 'read_more' ] ],
 				[ 'btn_style', '=', true ],
 			],
+			'css'         => ecbb_events_widget_repeater_control_css(
+				'color',
+				'.ecbb-event__link, & > a'
+			),
 		],
 		'btn_border' => [
-			'label'    => esc_html__( 'Button border', 'ecbb' ),
-			'type'     => 'border',
-			'required' => [
+			'label'      => esc_html__( 'Button border', 'ecbb' ),
+			'type'       => 'border',
+			'responsive' => true,
+			'required'   => [
 				[ 'part', '=', [ 'event_tickets', 'event_rsvp', 'read_more' ] ],
 				[ 'btn_style', '=', true ],
 			],
+			'css'        => ecbb_events_widget_repeater_control_css(
+				'border',
+				'.ecbb-event__link, & > a'
+			),
 		],
 		'btn_padding' => [
 			'label'    => esc_html__( 'Button padding', 'ecbb' ),
@@ -410,6 +425,10 @@ function ecbb_events_widget_get_repeater_fields() {
 				[ 'part', '=', [ 'event_tickets', 'event_rsvp', 'read_more' ] ],
 				[ 'btn_style', '=', true ],
 			],
+			'css'      => ecbb_events_widget_repeater_control_css(
+				'padding',
+				'.ecbb-event__link, & > a'
+			),
 		],
 		'read_more_text' => [
 			'label'       => esc_html__( 'Read more text', 'ecbb' ),
@@ -457,11 +476,12 @@ function ecbb_events_widget_get_repeater_fields() {
 			],
 		],
 		'ecbb_image_object_align' => [
-			'label'    => esc_html__( 'Image alignment', 'ecbb' ),
-			'type'     => 'select',
-			'options'  => function_exists( 'ecbb_get_image_object_align_control_options' ) ? ecbb_get_image_object_align_control_options() : [],
-			'default'  => '',
-			'required' => [ 'part', '=', 'image' ],
+			'label'      => esc_html__( 'Image alignment', 'ecbb' ),
+			'type'       => 'select',
+			'options'    => function_exists( 'ecbb_get_image_object_align_control_options' ) ? ecbb_get_image_object_align_control_options() : [],
+			'default'    => '',
+			'responsive' => true,
+			'required'   => [ 'part', '=', 'image' ],
 		],
 		'ecbb_image_object_align_hover' => [
 			'label'    => esc_html__( 'Image alignment (hover)', 'ecbb' ),
@@ -490,6 +510,10 @@ function ecbb_events_widget_get_repeater_fields() {
 			'placeholder' => '100%',
 			'responsive'  => true,
 			'required'    => [ 'part', '=', 'image' ],
+			'css'         => ecbb_events_widget_repeater_control_css(
+				'width',
+				'.ecbb-event__image, .ecbb-event__img-stack'
+			),
 		],
 		'ecbb_image_height' => [
 			'label'       => esc_html__( 'Image height', 'ecbb' ),
@@ -497,11 +521,15 @@ function ecbb_events_widget_get_repeater_fields() {
 			'placeholder' => 'auto',
 			'responsive'  => true,
 			'required'    => [ 'part', '=', 'image' ],
+			'css'         => ecbb_events_widget_repeater_control_css(
+				'height',
+				'.ecbb-event__image'
+			),
 		],
 		'ecbb_image_fit' => [
-			'label'    => esc_html__( 'Image fit', 'ecbb' ),
-			'type'     => 'select',
-			'options'  => [
+			'label'      => esc_html__( 'Image fit', 'ecbb' ),
+			'type'       => 'select',
+			'options'    => [
 				''           => esc_html__( 'Default', 'ecbb' ),
 				'cover'      => 'cover',
 				'contain'    => 'contain',
@@ -509,8 +537,13 @@ function ecbb_events_widget_get_repeater_fields() {
 				'none'       => 'none',
 				'scale-down' => 'scale-down',
 			],
-			'default'  => '',
-			'required' => [ 'part', '=', 'image' ],
+			'default'    => '',
+			'responsive' => true,
+			'required'   => [ 'part', '=', 'image' ],
+			'css'        => ecbb_events_widget_repeater_control_css(
+				'object-fit',
+				'.ecbb-event__image'
+			),
 		],
 		'ecbb_sep_style' => [
 			'type'  => 'separator',
@@ -535,11 +568,13 @@ function ecbb_events_widget_get_repeater_fields() {
 			'label'       => esc_html__( 'Background', 'ecbb' ),
 			'type'        => 'color',
 			'placeholder' => '#666666',
+			'responsive'  => true,
 		],
 		'ecbb_background_inner' => [
 			'label'       => esc_html__( 'Inner background', 'ecbb' ),
 			'type'        => 'color',
 			'placeholder' => '#666666',
+			'responsive'  => true,
 			'required'    => ecbb_events_widget_repeater_required_inner_background(),
 			'css'         => ecbb_events_widget_repeater_control_css(
 				'background-color',
@@ -547,15 +582,14 @@ function ecbb_events_widget_get_repeater_fields() {
 			),
 		],
 		'ecbb_margin' => [
-			'label'      => esc_html__( 'Margin', 'ecbb' ),
-			'type'       => 'spacing',
-			'responsive' => true,
-			'css'        => ecbb_events_widget_repeater_control_css( 'margin' ),
+			'label' => esc_html__( 'Margin', 'ecbb' ),
+			'type'  => 'spacing',
+			'css'   => ecbb_events_widget_repeater_control_css( 'margin' ),
 		],
 		'ecbb_padding' => [
-			'label'      => esc_html__( 'Padding', 'ecbb' ),
-			'type'       => 'spacing',
-			'responsive' => true,
+			'label' => esc_html__( 'Padding', 'ecbb' ),
+			'type'  => 'spacing',
+			'css'   => ecbb_events_widget_repeater_control_css( 'padding' ),
 		],
 		'ecbb_use_hover' => [
 			'label'    => esc_html__( 'Enable hover effects', 'ecbb' ),
@@ -565,7 +599,6 @@ function ecbb_events_widget_get_repeater_fields() {
 				'no'  => esc_html__( 'No', 'ecbb' ),
 			],
 			'default'  => 'yes',
-			'rerender' => true,
 			'required' => ecbb_events_widget_repeater_required_hover_toggle_visible(),
 		],
 		'ecbb_sep_hover' => [
@@ -614,15 +647,25 @@ function ecbb_events_widget_get_repeater_fields() {
 			'required' => ecbb_events_widget_repeater_required_hover_details(),
 		],
 		'ecbb_image_border' => [
-			'label'    => esc_html__( 'Image border', 'ecbb' ),
-			'type'     => 'border',
-			'required' => [ 'part', '=', 'image' ],
+			'label'      => esc_html__( 'Image border', 'ecbb' ),
+			'type'       => 'border',
+			'responsive' => true,
+			'required'   => [ 'part', '=', 'image' ],
+			'css'        => ecbb_events_widget_repeater_control_css(
+				'border',
+				'.ecbb-event__image'
+			),
 		],
 		'ecbb_image_radius' => [
 			'label'       => esc_html__( 'Image radius', 'ecbb' ),
 			'type'        => 'dimensions',
 			'placeholder' => '0px',
+			'responsive'  => true,
 			'required'    => [ 'part', '=', 'image' ],
+			'css'         => ecbb_events_widget_repeater_control_css(
+				'border-radius',
+				'.ecbb-event__image'
+			),
 		],
 	];
 }
@@ -691,37 +734,25 @@ function ecbb_events_widget_element_set_controls( $element ) {
 		],
 	];
 
-	$element->controls['grid_cols_desktop'] = [
-		'tab'      => 'content',
-		'group'    => 'layouts',
-		'label'    => esc_html__( 'Grid columns (desktop)', 'ecbb' ),
-		'type'     => 'number',
-		'min'      => 1,
-		'step'     => 1,
-		'default'  => 3,
-		'required' => [ 'layout_template', '=', 'grid' ],
-	];
-
-	$element->controls['grid_cols_tablet'] = [
-		'tab'      => 'content',
-		'group'    => 'layouts',
-		'label'    => esc_html__( 'Grid columns (tablet)', 'ecbb' ),
-		'type'     => 'number',
-		'min'      => 1,
-		'step'     => 1,
-		'default'  => 2,
-		'required' => [ 'layout_template', '=', 'grid' ],
-	];
-
-	$element->controls['grid_cols_mobile'] = [
-		'tab'      => 'content',
-		'group'    => 'layouts',
-		'label'    => esc_html__( 'Grid columns (mobile)', 'ecbb' ),
-		'type'     => 'number',
-		'min'      => 1,
-		'step'     => 1,
-		'default'  => 1,
-		'required' => [ 'layout_template', '=', 'grid' ],
+	$element->controls['grid_cols'] = [
+		'tab'         => 'content',
+		'group'       => 'layouts',
+		'label'       => esc_html__( 'Grid columns', 'ecbb' ),
+		'type'        => 'number',
+		'min'         => 1,
+		'step'        => 1,
+		'default'     => 3,
+		'placeholder' => '3',
+		'responsive'  => true,
+		'rerender'    => true,
+		'description' => esc_html__( 'Use device icons for different devices.', 'ecbb' ),
+		'required'    => [ 'layout_template', '=', 'grid' ],
+		'css'         => [
+			[
+				'property' => '--ecbb-grid-cols',
+				'selector' => '.ecbb-ev__list--grid',
+			],
+		],
 	];
 
 	$element->controls['item_gap'] = [

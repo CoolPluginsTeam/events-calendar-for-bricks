@@ -428,72 +428,14 @@ function ecbb_event_part_button_style_attr( array $item ) {
 		return '';
 	}
 
-	$styles = [];
+	$styles = [
+		'display:inline-flex',
+		'align-items:center',
+		'justify-content:center',
+		'text-decoration:none',
+	];
 
-	if ( ! empty( $item['btn_bg'] ) ) {
-		$bg = function_exists( 'ecbb_normalize_bricks_color' )
-			? ecbb_normalize_bricks_color( $item['btn_bg'] )
-			: (string) $item['btn_bg'];
-		if ( $bg !== '' ) {
-			$styles[] = 'background-color:' . esc_attr( $bg );
-		}
-	}
-
-	if ( ! empty( $item['btn_text_color'] ) ) {
-		$tc = function_exists( 'ecbb_normalize_bricks_color' )
-			? ecbb_normalize_bricks_color( $item['btn_text_color'] )
-			: (string) $item['btn_text_color'];
-		if ( $tc !== '' ) {
-			$styles[] = 'color:' . esc_attr( $tc ) . ' !important';
-		}
-	}
-
-	$has_border_radius = false;
-	if ( ! empty( $item['btn_border'] ) && function_exists( 'ecbb_events_widget_border_declarations' ) ) {
-		$border_decls = ecbb_events_widget_border_declarations( $item['btn_border'] );
-		if ( ! empty( $border_decls ) ) {
-			foreach ( $border_decls as $decl ) {
-				$styles[] = $decl;
-				if ( strpos( $decl, 'border-radius:' ) === 0 ) {
-					$has_border_radius = true;
-				}
-			}
-			$styles[] = 'box-sizing:border-box';
-		}
-	} elseif ( ! empty( $item['btn_border'] ) && function_exists( 'ecbb_events_widget_border_to_css' ) ) {
-		$border = ecbb_events_widget_border_to_css( $item['btn_border'] );
-		if ( $border !== '' ) {
-			$styles[] = 'border:' . esc_attr( $border );
-			$styles[] = 'box-sizing:border-box';
-		}
-	}
-
-	$radius = isset( $item['btn_radius'] ) ? trim( (string) $item['btn_radius'] ) : '';
-	if ( $radius !== '' && ! $has_border_radius ) {
-		$styles[] = 'border-radius:' . esc_attr( $radius );
-	}
-
-	$padding_css = '';
-	if ( ! empty( $item['btn_padding'] ) && function_exists( 'ecbb_events_widget_spacing_to_css' ) ) {
-		$padding_css = ecbb_events_widget_spacing_to_css( $item['btn_padding'] );
-	}
-	if ( $padding_css === '' ) {
-		$py = isset( $item['btn_padding_y'] ) ? trim( (string) $item['btn_padding_y'] ) : '';
-		$px = isset( $item['btn_padding_x'] ) ? trim( (string) $item['btn_padding_x'] ) : '';
-		if ( $py !== '' || $px !== '' ) {
-			$padding_css = ( $py !== '' ? $py : '10px' ) . ' ' . ( $px !== '' ? $px : '14px' );
-		}
-	}
-	if ( $padding_css !== '' ) {
-		$styles[] = 'padding:' . esc_attr( $padding_css );
-	}
-
-	$styles[] = 'display:inline-flex';
-	$styles[] = 'align-items:center';
-	$styles[] = 'justify-content:center';
-	$styles[] = 'text-decoration:none';
-
-	return empty( $styles ) ? '' : ' style="' . implode( ';', $styles ) . ';"';
+	return ' style="' . implode( ';', $styles ) . ';"';
 }
 
 /**

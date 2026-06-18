@@ -578,15 +578,8 @@ class Element_ECBB_Events_Widget extends \Bricks\Element {
 			];
 		}
 
-		$cols_desktop = isset( $this->settings['grid_cols_desktop'] ) ? max( 1, (int) $this->settings['grid_cols_desktop'] ) : 3;
-		$cols_tablet  = isset( $this->settings['grid_cols_tablet'] ) ? max( 1, (int) $this->settings['grid_cols_tablet'] ) : 2;
-		$cols_mobile  = isset( $this->settings['grid_cols_mobile'] ) ? max( 1, (int) $this->settings['grid_cols_mobile'] ) : 1;
-
-		// CSS variables enable responsive grid/gap without per-instance inline bloat.
-		$vars = '--ecbb-gap:' . $item_gap . ';'
-			. '--ecbb-grid-cols:' . $cols_desktop . ';'
-			. '--ecbb-grid-cols-tablet:' . $cols_tablet . ';'
-			. '--ecbb-grid-cols-mobile:' . $cols_mobile . ';';
+		// CSS variable for gap; grid columns use scoped responsive CSS + Bricks control CSS.
+		$vars = '--ecbb-gap:' . $item_gap . ';';
 		$this->set_attribute( '_root', 'style', $vars );
 
 		$style_css = [];
@@ -605,10 +598,22 @@ class Element_ECBB_Events_Widget extends \Bricks\Element {
 			? ecbb_events_widget_build_gap_responsive_css( $settings, '.' . $scope_class )
 			: '';
 
+		$grid_css = ( $template === 'grid' && function_exists( 'ecbb_events_widget_build_grid_cols_responsive_css' ) )
+			? ecbb_events_widget_build_grid_cols_responsive_css( $settings, '.' . $scope_class )
+			: '';
+
 		echo '<div ' . $this->render_attributes( '_root' ) . '>';
 
 		$no_events_css = $this->ecbb_build_no_events_dynamic_style_css( $scope_class );
-		$all_css       = array_filter( array_merge( $gap_css !== '' ? [ $gap_css ] : [], $style_css, $hover_css, $no_events_css ) );
+		$all_css       = array_filter(
+			array_merge(
+				$gap_css !== '' ? [ $gap_css ] : [],
+				$grid_css !== '' ? [ $grid_css ] : [],
+				$style_css,
+				$hover_css,
+				$no_events_css
+			)
+		);
 		if ( ! empty( $all_css ) ) {
 			echo '<style>' . wp_strip_all_tags( str_replace( '</style', '<\/style', implode( "\n", $all_css ) ) ) . '</style>';
 		}

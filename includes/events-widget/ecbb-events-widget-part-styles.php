@@ -568,6 +568,240 @@ function ecbb_events_widget_typography_color_from_item( array $item ) {
 }
 
 /**
+ * Read a responsive number saved in Bricks flat key format (key, key:tablet_portrait, …).
+ *
+ * @param array<string,mixed> $settings Element settings.
+ * @param string              $key      Control id (e.g. grid_cols).
+ * @param array{desktop:int,tablet:int,mobile:int} $defaults
+ * @return array{desktop:int,tablet:int,mobile:int}
+ */
+function ecbb_events_widget_read_responsive_number( array $settings, $key, array $defaults ) {
+	$nested = $settings[ $key ] ?? null;
+	if ( is_array( $nested ) && ( isset( $nested['desktop'] ) || isset( $nested['tablet'] ) || isset( $nested['mobile'] ) ) ) {
+		return [
+			'desktop' => max( 1, (int) ( ecbb_events_widget_responsive_pick( $nested, 'desktop' ) ?: $defaults['desktop'] ) ),
+			'tablet'  => max( 1, (int) ( ecbb_events_widget_responsive_pick( $nested, 'tablet' ) ?: $defaults['tablet'] ) ),
+			'mobile'  => max( 1, (int) ( ecbb_events_widget_responsive_pick( $nested, 'mobile' ) ?: $defaults['mobile'] ) ),
+		];
+	}
+
+	$suffixes = [
+		'desktop' => [ $key ],
+		'tablet'  => [ "{$key}:tablet_portrait", "{$key}:tablet" ],
+		'mobile'  => [ "{$key}:mobile_portrait", "{$key}:mobile_landscape", "{$key}:mobile" ],
+	];
+
+	$resolved = [];
+	foreach ( $suffixes as $device => $candidates ) {
+		$resolved[ $device ] = null;
+		foreach ( $candidates as $candidate ) {
+			if ( array_key_exists( $candidate, $settings ) && $settings[ $candidate ] !== '' && $settings[ $candidate ] !== null ) {
+				$resolved[ $device ] = max( 1, (int) $settings[ $candidate ] );
+				break;
+			}
+		}
+	}
+
+	if ( $resolved['desktop'] === null && is_scalar( $nested ) && $nested !== '' ) {
+		$resolved['desktop'] = max( 1, (int) $nested );
+	}
+
+	if ( $resolved['desktop'] === null ) {
+		return $defaults;
+	}
+
+	if ( $resolved['tablet'] === null ) {
+		$resolved['tablet'] = $resolved['desktop'];
+	}
+	if ( $resolved['mobile'] === null ) {
+		$resolved['mobile'] = $resolved['tablet'];
+	}
+
+	return [
+		'desktop' => $resolved['desktop'],
+		'tablet'  => $resolved['tablet'],
+		'mobile'  => $resolved['mobile'],
+	];
+}
+
+/**
+ * Resolve grid column counts per breakpoint (supports legacy grid_cols_* keys).
+ *
+ * @param array<string,mixed> $settings Element settings.
+ * @return array{desktop:int,tablet:int,mobile:int}
+ */
+function ecbb_events_widget_resolve_grid_cols_vars( array $settings ) {
+	$defaults = [
+		'desktop' => 3,
+		'tablet'  => 2,
+		'mobile'  => 1,
+	];
+
+	$has_new = array_key_exists( 'grid_cols', $settings ) && $settings['grid_cols'] !== '' && $settings['grid_cols'] !== null;
+	if ( ! $has_new ) {
+		foreach ( array_keys( $settings ) as $setting_key ) {
+			if ( strpos( (string) $setting_key, 'grid_cols:' ) === 0 ) {
+				$has_new = true;
+				break;
+			}
+		}
+	}
+
+	if ( $has_new ) {
+		return ecbb_events_widget_read_responsive_number( $settings, 'grid_cols', $defaults );
+	}
+
+	if ( isset( $settings['grid_cols_desktop'] ) || isset( $settings['grid_cols_tablet'] ) || isset( $settings['grid_cols_mobile'] ) ) {
+		return [
+			'desktop' => max( 1, (int) ( $settings['grid_cols_desktop'] ?? $defaults['desktop'] ) ),
+			'tablet'  => max( 1, (int) ( $settings['grid_cols_tablet'] ?? $defaults['tablet'] ) ),
+			'mobile'  => max( 1, (int) ( $settings['grid_cols_mobile'] ?? $defaults['mobile'] ) ),
+		];
+	}
+
+	return $defaults;
+}
+
+/**
+ * Responsive grid column CSS variable for list/grid root.
+ *
+ * @param array<string,mixed> $settings
+ * @param string              $root_selector Scoped element selector (e.g. .ecbb-ev--abc).
+ * @return string
+ */
+function ecbb_events_widget_build_grid_cols_responsive_css( array $settings, $root_selector ) {
+	$cols  = ecbb_events_widget_resolve_grid_cols_vars( $settings );
+	$rules = [];
+
+	foreach ( ecbb_events_widget_style_breakpoints() as $device => $mq ) {
+		$val  = $cols[ $device ] ?? 3;
+		$rule = $root_selector . ' .ecbb-ev__list--grid{--ecbb-grid-cols:' . (int) $val . ';}';
+		$rules[] = $mq !== '' ? $mq . '{' . $rule . '}' : $rule;
+	}
+
+	return implode( "\n", $rules );
+}
+
+/**
+ * Read responsive spacing from a repeater row (Bricks keys: field, field:tablet_portrait, …).
+ *
+ * @param array<string,mixed> $item   Repeater row.
+ * @param string              $key    Field id.
+ * @param string              $device desktop|tablet|mobile.
+ * @return array<string,mixed>|null
+ */
+function ecbb_events_widget_read_responsive_spacing( array $item, $key, $device = 'desktop' ) {
+	$nested = $item[ $key ] ?? null;
+	if ( is_array( $nested ) && ( isset( $nested['desktop'] ) || isset( $nested['tablet'] ) || isset( $nested['mobile'] ) ) ) {
+		$picked = ecbb_events_widget_responsive_pick( $nested, $device );
+		return is_array( $picked ) ? $picked : null;
+	}
+
+	$suffixes = [
+		'desktop' => [ $key ],
+		'tablet'  => [ "{$key}:tablet_portrait", "{$key}:tablet" ],
+		'mobile'  => [ "{$key}:mobile_portrait", "{$key}:mobile_landscape", "{$key}:mobile" ],
+	];
+
+	$is_spacing = static function ( $value ) {
+		return is_array( $value ) && ( isset( $value['top'] ) || isset( $value['right'] ) || isset( $value['bottom'] ) || isset( $value['left'] ) );
+	};
+
+	$devices = $device === 'mobile'
+		? [ 'mobile', 'tablet', 'desktop' ]
+		: ( $device === 'tablet' ? [ 'tablet', 'desktop' ] : [ 'desktop' ] );
+
+	foreach ( $devices as $dev ) {
+		foreach ( $suffixes[ $dev ] as $candidate ) {
+			if ( isset( $item[ $candidate ] ) && $is_spacing( $item[ $candidate ] ) ) {
+				return $item[ $candidate ];
+			}
+		}
+		if ( $dev === 'desktop' && $is_spacing( $nested ) ) {
+			return $nested;
+		}
+	}
+
+	return null;
+}
+
+/**
+ * Button style declarations for a repeater row at a given breakpoint.
+ *
+ * @param array<string,mixed> $item     Repeater row.
+ * @param string              $device   desktop|tablet|mobile.
+ * @param callable            $color_fn function( $value ): string
+ * @return string[]
+ */
+function ecbb_events_widget_button_declarations( array $item, $device, callable $color_fn ) {
+	if ( empty( $item['btn_style'] ) ) {
+		return [];
+	}
+
+	$styles = [];
+
+	$bg_raw = ecbb_events_widget_responsive_pick( $item['btn_bg'] ?? '', $device );
+	if ( $bg_raw !== '' && $bg_raw !== null ) {
+		$bg = $color_fn( $bg_raw );
+		if ( $bg !== '' ) {
+			$styles[] = 'background-color:' . $bg;
+		}
+	}
+
+	$tc_raw = ecbb_events_widget_responsive_pick( $item['btn_text_color'] ?? '', $device );
+	if ( $tc_raw !== '' && $tc_raw !== null ) {
+		$tc = $color_fn( $tc_raw );
+		if ( $tc !== '' ) {
+			$styles[] = 'color:' . $tc . ' !important';
+		}
+	}
+
+	$border_raw = ecbb_events_widget_responsive_pick( $item['btn_border'] ?? '', $device );
+	$has_border_radius = false;
+	if ( ! empty( $border_raw ) && function_exists( 'ecbb_events_widget_border_declarations' ) ) {
+		$border_decls = ecbb_events_widget_border_declarations( $border_raw );
+		if ( ! empty( $border_decls ) ) {
+			foreach ( $border_decls as $decl ) {
+				$styles[] = $decl;
+				if ( strpos( $decl, 'border-radius:' ) === 0 ) {
+					$has_border_radius = true;
+				}
+			}
+			$styles[] = 'box-sizing:border-box';
+		}
+	} elseif ( ! empty( $border_raw ) && function_exists( 'ecbb_events_widget_border_to_css' ) ) {
+		$border = ecbb_events_widget_border_to_css( $border_raw );
+		if ( $border !== '' ) {
+			$styles[] = 'border:' . $border;
+			$styles[] = 'box-sizing:border-box';
+		}
+	}
+
+	$radius = isset( $item['btn_radius'] ) ? trim( (string) $item['btn_radius'] ) : '';
+	if ( $radius !== '' && ! $has_border_radius ) {
+		$styles[] = 'border-radius:' . $radius;
+	}
+
+	$padding_raw = ecbb_events_widget_read_responsive_spacing( $item, 'btn_padding', $device );
+	$padding_css = '';
+	if ( ! empty( $padding_raw ) && function_exists( 'ecbb_events_widget_spacing_to_css' ) ) {
+		$padding_css = ecbb_events_widget_spacing_to_css( $padding_raw );
+	}
+	if ( $padding_css === '' ) {
+		$py = isset( $item['btn_padding_y'] ) ? trim( (string) $item['btn_padding_y'] ) : '';
+		$px = isset( $item['btn_padding_x'] ) ? trim( (string) $item['btn_padding_x'] ) : '';
+		if ( $py !== '' || $px !== '' ) {
+			$padding_css = ( $py !== '' ? $py : '10px' ) . ' ' . ( $px !== '' ? $px : '14px' );
+		}
+	}
+	if ( $padding_css !== '' ) {
+		$styles[] = 'padding:' . $padding_css;
+	}
+
+	return $styles;
+}
+
+/**
  * Build inline style attr for a part row (image sizing only; typography uses Bricks repeater CSS).
  *
  * @param array<string,mixed> $item
@@ -613,17 +847,24 @@ function ecbb_events_widget_build_inline_style_attr( array $item, $allow_radius 
 			$styles[] = 'border-radius:' . $radius;
 		}
 
-		$w = ecbb_events_widget_normalize_css_size( $item['ecbb_image_width'] ?? '', '%' );
+		$w = ecbb_events_widget_normalize_css_size(
+			ecbb_events_widget_responsive_pick( $item['ecbb_image_width'] ?? '', 'desktop' ),
+			'%'
+		);
 		if ( $w !== '' ) {
 			$styles[] = 'width:' . $w;
 		}
 
-		$h = ecbb_events_widget_normalize_css_size( $item['ecbb_image_height'] ?? '', 'px' );
+		$h = ecbb_events_widget_normalize_css_size(
+			ecbb_events_widget_responsive_pick( $item['ecbb_image_height'] ?? '', 'desktop' ),
+			'px'
+		);
 		if ( $h !== '' ) {
 			$styles[] = 'height:' . $h;
 		}
 
-		$fit = isset( $item['ecbb_image_fit'] ) ? (string) $item['ecbb_image_fit'] : '';
+		$fit = ecbb_events_widget_responsive_pick( $item['ecbb_image_fit'] ?? '', 'desktop' );
+		$fit = is_string( $fit ) ? $fit : '';
 		if ( $fit !== '' && in_array( $fit, [ 'cover', 'contain', 'fill', 'none', 'scale-down' ], true ) ) {
 			$styles[] = 'object-fit:' . $fit;
 		}
@@ -704,19 +945,26 @@ function ecbb_events_widget_build_parts_scoped_css( array $parts, $scope_class, 
 			: $scope_sel;
 
 		foreach ( ecbb_events_widget_style_breakpoints() as $device => $mq ) {
-			$padding = '';
-			if ( ! empty( $p['ecbb_padding'] ) ) {
-				$padding = ecbb_events_widget_spacing_to_css(
-					ecbb_events_widget_responsive_pick( $p['ecbb_padding'], $device )
-				);
-			}
-			if ( $padding !== '' ) {
-				if ( $chip_surface ) {
+			if ( $chip_surface ) {
+				$padding_raw = ecbb_events_widget_read_responsive_spacing( $p, 'ecbb_padding', $device );
+				$padding     = ! empty( $padding_raw ) && function_exists( 'ecbb_events_widget_spacing_to_css' )
+					? ecbb_events_widget_spacing_to_css( $padding_raw )
+					: '';
+				if ( $padding !== '' ) {
 					$surface_rule = $chip_sel . '{padding:' . $padding . ';}';
 					$style_css[]  = ( $mq !== '' ? $mq . '{' . $surface_rule . '}' : $surface_rule );
-				} else {
-					$rule        = $scope_sel . '{padding:' . $padding . ';}';
-					$style_css[] = ( $mq !== '' ? $mq . '{' . $rule . '}' : $rule );
+				}
+			}
+
+			if ( ! empty( $p['btn_style'] ) ) {
+				$btn_decls = ecbb_events_widget_button_declarations( $p, $device, $color_fn );
+				if ( ! empty( $btn_decls ) ) {
+					$btn_sel = $scope_sel . ' .ecbb-event__link,'
+						. $scope_sel . ' > a';
+					$btn_rule = $btn_sel . '{'
+						. implode( ';', $btn_decls )
+						. ';display:inline-flex;align-items:center;justify-content:center;text-decoration:none}';
+					$style_css[] = ( $mq !== '' ? $mq . '{' . $btn_rule . '}' : $btn_rule );
 				}
 			}
 		}
@@ -775,43 +1023,61 @@ function ecbb_events_widget_build_parts_scoped_css( array $parts, $scope_class, 
 
 		$bg_in = '';
 		if ( $part_type === 'title' ) {
-			$bg_in = $color_fn( $p['ecbb_background_inner'] ?? '' );
-			if ( $bg_in === '' ) {
-				$bg_in = $color_fn( $p['ecbb_hover_background_inner'] ?? '' );
+			foreach ( ecbb_events_widget_style_breakpoints() as $device => $mq ) {
+				$bg_raw = ecbb_events_widget_responsive_pick( $p['ecbb_background_inner'] ?? '', $device );
+				$bg_in  = $bg_raw !== '' && $bg_raw !== null ? $color_fn( $bg_raw ) : '';
+				if ( $bg_in === '' ) {
+					$bg_in = $color_fn( $p['ecbb_hover_background_inner'] ?? '' );
+				}
+				if ( $bg_in !== '' ) {
+					$inner_rule = $scope_sel . ' > .ecbb-event__link,'
+						. $scope_sel . ' .ecbb-event__link,'
+						. $scope_sel . ' .ecbb-event__link-wrapper,'
+						. $scope_sel . ' .ecbb-event__link-wrapper a,'
+						. $scope_sel . ' > a{background-color:' . $bg_in . ' !important;}';
+					$style_css[] = ( $mq !== '' ? $mq . '{' . $inner_rule . '}' : $inner_rule );
+				}
 			}
-		}
-		if ( $bg_in !== '' ) {
-			$style_css[] = $scope_sel . ' > .ecbb-event__link,'
-				. $scope_sel . ' .ecbb-event__link,'
-				. $scope_sel . ' .ecbb-event__link-wrapper,'
-				. $scope_sel . ' .ecbb-event__link-wrapper a,'
-				. $scope_sel . ' > a{background-color:' . $bg_in . ' !important;}';
 		}
 
-		if ( $chip_surface ) {
-			$bg = $color_fn( $p['ecbb_background'] ?? '' );
-			if ( $bg !== '' ) {
-				$style_css[] = $chip_sel . '{background-color:' . $bg . ' !important;}';
-			}
-		} else {
-			$bg = $color_fn( $p['ecbb_background'] ?? '' );
-			if ( $bg !== '' ) {
-				$style_css[] = $scope_sel . '{background-color:' . $bg . ' !important;}';
+		foreach ( ecbb_events_widget_style_breakpoints() as $device => $mq ) {
+			if ( $chip_surface ) {
+				$bg_raw = ecbb_events_widget_responsive_pick( $p['ecbb_background'] ?? '', $device );
+				$bg     = $bg_raw !== '' && $bg_raw !== null ? $color_fn( $bg_raw ) : '';
+				if ( $bg !== '' ) {
+					$chip_rule   = $chip_sel . '{background-color:' . $bg . ' !important;}';
+					$style_css[] = ( $mq !== '' ? $mq . '{' . $chip_rule . '}' : $chip_rule );
+				}
+			} else {
+				$bg_raw = ecbb_events_widget_responsive_pick( $p['ecbb_background'] ?? '', $device );
+				$bg     = $bg_raw !== '' && $bg_raw !== null ? $color_fn( $bg_raw ) : '';
+				if ( $bg !== '' ) {
+					$bg_rule     = $scope_sel . '{background-color:' . $bg . ' !important;}';
+					$style_css[] = ( $mq !== '' ? $mq . '{' . $bg_rule . '}' : $bg_rule );
+				}
 			}
 		}
 
 		if ( $part_type === 'image' && $hover_style_on && function_exists( 'ecbb_loop_image_uses_dual_layer' ) && function_exists( 'ecbb_object_position_from_image_align' ) ) {
 			if ( ! ecbb_loop_image_uses_dual_layer( $p ) ) {
-				$op_b = ecbb_object_position_from_image_align( $p['ecbb_image_object_align'] ?? '' );
-				$op_h = ecbb_object_position_from_image_align( $p['ecbb_image_object_align_hover'] ?? '' );
-				if ( $op_h !== '' && $op_h !== $op_b ) {
-					$img_sel = $scope_sel . ' .ecbb-event__image';
-					if ( $op_b !== '' ) {
-						$style_css[] = $img_sel . '{object-position:' . $op_b . ';transition:object-position 0.35s ease;}';
-					} else {
-						$style_css[] = $img_sel . '{transition:object-position 0.35s ease;}';
+				foreach ( ecbb_events_widget_style_breakpoints() as $device => $mq ) {
+					$align_b = ecbb_events_widget_responsive_pick( $p['ecbb_image_object_align'] ?? '', $device );
+					$op_b    = ecbb_object_position_from_image_align( $align_b );
+					$op_h    = ecbb_object_position_from_image_align( $p['ecbb_image_object_align_hover'] ?? '' );
+					if ( $op_h !== '' && $op_h !== $op_b ) {
+						$img_sel = $scope_sel . ' .ecbb-event__image';
+						if ( $op_b !== '' ) {
+							$base_rule   = $img_sel . '{object-position:' . $op_b . ';transition:object-position 0.35s ease;}';
+							$style_css[] = ( $mq !== '' ? $mq . '{' . $base_rule . '}' : $base_rule );
+						} else {
+							$base_rule   = $img_sel . '{transition:object-position 0.35s ease;}';
+							$style_css[] = ( $mq !== '' ? $mq . '{' . $base_rule . '}' : $base_rule );
+						}
+						$hover_css[] = $scope_sel . ':hover .ecbb-event__image{object-position:' . $op_h . ' !important;}';
+					} elseif ( $op_b !== '' ) {
+						$img_rule    = $scope_sel . ' .ecbb-event__image{object-position:' . $op_b . ';}';
+						$style_css[] = ( $mq !== '' ? $mq . '{' . $img_rule . '}' : $img_rule );
 					}
-					$hover_css[] = $scope_sel . ':hover .ecbb-event__image{object-position:' . $op_h . ' !important;}';
 				}
 			}
 		}
