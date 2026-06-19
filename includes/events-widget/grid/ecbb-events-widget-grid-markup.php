@@ -27,7 +27,8 @@ function ecbb_events_widget_grid_default_parts_rows() {
 			'link' => true,
 		],
 		[
-			'part' => 'venue',
+			'part'          => 'venue',
+			'venue_display' => 'name_and_state',
 		],
 		[
 			'part' => 'event_cost',
@@ -100,10 +101,8 @@ function ecbb_events_widget_grid_should_reset_parts( array $parts ) {
 			&& ecbb_events_widget_parts_stack_matches_defaults( $parts, ecbb_list2_default_parts_rows() ) ) {
 			return true;
 		}
-		if ( function_exists( 'ecbb_events_widget_grid_default_parts_rows' )
-			&& ecbb_events_widget_parts_stack_matches_defaults( $parts, ecbb_events_widget_grid_default_parts_rows() ) ) {
-			return true;
-		}
+		// Do not reset when the stack already matches grid defaults — that is the
+		// normal saved state and must keep row ids + Style-tab settings (typography, etc.).
 	}
 	// Fresh element: Bricks factory default from the control definition.
 	$factory = [ 'categories', 'title', 'date', 'venue', 'description', 'read_more' ];
@@ -115,7 +114,7 @@ function ecbb_events_widget_grid_should_reset_parts( array $parts ) {
 }
 
 /**
- * Normalize parts for grid rendering (defaults when the stack matches list presets).
+ * Normalize parts for grid rendering (defaults only for empty / foreign-layout stacks).
  *
  * @param array $parts Raw repeater rows.
  * @return array<int,array<string,mixed>>
@@ -124,7 +123,24 @@ function ecbb_events_widget_grid_normalize_parts( array $parts ) {
 	if ( ecbb_events_widget_grid_should_reset_parts( $parts ) ) {
 		return ecbb_events_widget_grid_default_parts_rows();
 	}
-	return ecbb_events_widget_parts_rows_clean( $parts );
+	$clean = ecbb_events_widget_parts_rows_clean( $parts );
+	$clean = array_map(
+		static function ( $row ) {
+			if ( ! is_array( $row ) || (string) ( $row['part'] ?? '' ) !== 'venue' ) {
+				return $row;
+			}
+			$display = (string) ( $row['venue_display'] ?? '' );
+			if ( $display === '' || $display === 'name_and_address' ) {
+				$row['venue_display'] = 'name_and_state';
+			}
+			return $row;
+		},
+		$clean
+	);
+	if ( function_exists( 'ecbb_events_widget_parts_rows_assign_ids' ) ) {
+		$clean = ecbb_events_widget_parts_rows_assign_ids( $clean );
+	}
+	return $clean;
 }
 
 /**

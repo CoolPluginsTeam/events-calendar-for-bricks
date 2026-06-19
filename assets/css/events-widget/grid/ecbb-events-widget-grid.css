@@ -2,7 +2,21 @@
  * Events Widget — Grid template (image + framed date badge + meta column).
  *
  * File: `assets/css/events-widget/grid/ecbb-events-widget-grid.css`.
+ *
+ * Part typography/color defaults use :where() so Bricks repeater Style controls
+ * (fieldId + ecbb-events-widget scoped CSS) can override without !important.
  */
+
+/* ── Design tokens (grid card shell) ── */
+
+.ecbb-ev__item-inner--grid {
+	--ecbb-grid-muted: #6b7280;
+	--ecbb-grid-title: #111827;
+	--ecbb-grid-cost: #666666;
+	--ecbb-grid-accent: #2563eb;
+	--ecbb-grid-font: "Open Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+	--ecbb-grid-font-alt: "Rubik", Sans-serif;
+}
 
 .ecbb-ev__list--grid .ecbb-ev__item--grid {
 	display: flex;
@@ -79,7 +93,7 @@
 	padding: 1rem 1rem 1.2rem;
 	box-sizing: border-box;
 	min-width: 0;
-	font-family: "Open Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+	font-family: var(--ecbb-grid-font);
 }
 
 .ecbb-ev__grid-date-col {
@@ -107,7 +121,7 @@
 
 /* Inner: solid blue block, slightly rounded, day + month in white. */
 .ecbb-ev__grid-date-badge {
-	background-color: #2563eb;
+	background-color: var(--ecbb-grid-accent);
 	color: #fff;
 	padding: 0.7rem 1.5rem 1rem;
 	display: flex;
@@ -121,15 +135,15 @@
 
 .ecbb-ev__grid-date-badge-day {
 	font-size: 18px;
-	font-family: "Rubik", Sans-serif;
+	font-family: var(--ecbb-grid-font-alt);
 	font-weight: 700;
 	letter-spacing: -0.02em;
 	line-height: 1;
 }
 
 .ecbb-ev__grid-date-badge-month {
-	font-family: "Rubik", Sans-serif;
-    font-size: 14px;
+	font-family: var(--ecbb-grid-font-alt);
+	font-size: 14px;
 	font-weight: 500;
 	text-transform: capitalize;
 	margin-top: 0.18rem;
@@ -141,11 +155,11 @@
 .ecbb-ev__grid-date-dow {
 	font-size: 1.125rem;
 	font-weight: 600;
-	color: #6b7280;
+	color: var(--ecbb-grid-muted);
 	letter-spacing: 0.06em;
 	text-transform: uppercase;
 	line-height: 1.2;
-	font-family: "Open Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+	font-family: var(--ecbb-grid-font);
 }
 
 .ecbb-ev__grid-body {
@@ -156,29 +170,21 @@
 	justify-content: flex-start;
 }
 
-/* Meta column: hierarchy like reference (time/venue muted, title + cost strong). */
+/* ── Repeater body parts: layout (full specificity) ── */
 
-.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--date,
-.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--event-time {
+.ecbb-ev__item--grid .ecbb-ev__grid-body :is(.ecbb-event-part--date, .ecbb-event-part--event-time) {
 	display: flex;
 	align-items: center;
-	color: #6b7280;
-	font-family: "Rubik", Sans-serif;
-    font-size: 15px;
-	font-weight: 400;
-	line-height: 1.4;
-	letter-spacing: 0.01em;
 	margin: 0;
 }
 
-.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--date.ecbb-has-row-icon::before,
-.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--event-time.ecbb-has-row-icon::before {
+.ecbb-ev__item--grid .ecbb-ev__grid-body :is(.ecbb-event-part--date, .ecbb-event-part--event-time).ecbb-has-row-icon::before {
 	content: "";
 	flex: 0 0 auto;
 	width: 16px;
 	height: 16px;
 	margin-right: 0.45rem;
-	background-color: #2563eb;
+	background-color: var(--ecbb-grid-accent);
 	-webkit-mask: url( "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' d='M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2zm4.2 14.2L11 13V7h1.5v5.2l4.5 2.7l-.8 1.3z'/%3E%3C/svg%3E" ) center / contain no-repeat;
 	mask: url( "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' d='M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2zm4.2 14.2L11 13V7h1.5v5.2l4.5 2.7l-.8 1.3z'/%3E%3C/svg%3E" ) center / contain no-repeat;
 }
@@ -188,64 +194,63 @@
 	display: none;
 }
 
-/* Title — prominent like reference / Style 1 list (≈20–22px) */
-.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--title {
+.ecbb-ev__item--grid .ecbb-ev__grid-body [class*="ecbb-event-part--venue"] {
+	position: relative;
+	padding-left: 0;
+}
+
+.ecbb-ev__item--grid .ecbb-ev__grid-body [class*="ecbb-event-part--venue"]::before {
+	display: none;
+}
+
+/* ── Repeater body parts: default typography (:where = repeater Style can override) ── */
+
+:where(.ecbb-ev__item--grid .ecbb-ev__grid-body) :is(.ecbb-event-part--date, .ecbb-event-part--event-time) {
+	color: var(--ecbb-grid-muted);
+	font-family: var(--ecbb-grid-font-alt);
+	font-size: 15px;
+	font-weight: 400;
+	line-height: 1.4;
+	letter-spacing: 0.01em;
+}
+
+:where(.ecbb-ev__item--grid .ecbb-ev__grid-body) .ecbb-event-part--title {
 	margin: 0.1rem 0 0.2rem;
 	font-size: clamp( 1.0625rem, 1rem + 0.35vw, 1.625rem );
 	font-weight: 500;
-	color: #111827;
+	color: var(--ecbb-grid-title);
 	line-height: 1.28;
 	font-family: inherit;
 	letter-spacing: -0.01em;
 }
 
-.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--title .ecbb-event__link {
+:where(.ecbb-ev__item--grid .ecbb-ev__grid-body) .ecbb-event-part--title .ecbb-event__link,
+:where(.ecbb-ev__item--grid .ecbb-ev__grid-body) .ecbb-event-part--title .ecbb-event__title-text {
 	color: inherit;
 	text-underline-offset: 3px;
 	text-decoration-thickness: 1px;
 	transition: color 0.18s ease;
 }
 
-.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--title:not(.ecbb-no-hover) .ecbb-event__link:hover,
-.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--title:not(.ecbb-no-hover) .ecbb-event__link:focus-visible {
-	color: #2563eb;
+:where(.ecbb-ev__item--grid .ecbb-ev__grid-body) .ecbb-event-part--title:not(.ecbb-no-hover) .ecbb-event__link:hover,
+:where(.ecbb-ev__item--grid .ecbb-ev__grid-body) .ecbb-event-part--title:not(.ecbb-no-hover) .ecbb-event__link:focus-visible {
+	color: var(--ecbb-grid-accent);
 	text-decoration: underline;
 }
 
-/* Venue — grey text only (reference has no pin) */
-.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--venue,
-.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--venue-full-address,
-.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--venue-street,
-.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--venue-city,
-.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--venue-state,
-.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--venue-zip,
-.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--venue-country,
-.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--venue-phone {
-	position: relative;
-	padding-left: 0;
+:where(.ecbb-ev__item--grid .ecbb-ev__grid-body) [class*="ecbb-event-part--venue"] {
 	margin: 0;
-	color: #6b7280;
+	color: var(--ecbb-grid-muted);
 	font-size: 14px;
 	font-weight: 400;
 	line-height: 1.45;
 }
 
-.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--venue::before,
-.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--venue-full-address::before,
-.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--venue-street::before,
-.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--venue-city::before,
-.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--venue-state::before,
-.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--venue-zip::before,
-.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--venue-country::before,
-.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--venue-phone::before {
-	display: none;
-}
-
-.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--event-cost {
-	font-family: "Rubik", Sans-serif;
-    font-size: 14px;
-    font-weight: 700;
-	color: #666666;
+:where(.ecbb-ev__item--grid .ecbb-ev__grid-body) .ecbb-event-part--event-cost {
+	font-family: var(--ecbb-grid-font-alt);
+	font-size: 14px;
+	font-weight: 700;
+	color: var(--ecbb-grid-cost);
 	margin: 0.2rem 0 0;
 	line-height: 1.35;
 }

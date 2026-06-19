@@ -302,7 +302,7 @@ class ECBB_Plugin {
         wp_enqueue_style(
             'ecbb-events-widget-grid',
             ECBB_URL . 'assets/css/events-widget/grid/ecbb-events-widget-grid.css',
-            [ 'ecbb-events-widget-base', 'ecbb-list-1' ],
+            [ 'ecbb-events-widget-base' ],
             file_exists( $grid_path ) ? (string) filemtime( $grid_path ) : ECBB_VERSION
         );
     }

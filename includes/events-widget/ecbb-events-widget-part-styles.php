@@ -1115,6 +1115,47 @@ function ecbb_events_widget_build_parts_scoped_css( array $parts, $scope_class, 
 			? ecbb_events_widget_part_chip_surface_selectors( $scope_sel )
 			: $scope_sel;
 
+		// Grid: emit repeater typography/spacing on the frontend (Bricks fieldId CSS + grid defaults).
+		if ( 'grid' === (string) $list_item_style && 'image' !== $part_type ) {
+			foreach ( ecbb_events_widget_style_breakpoints() as $device => $mq ) {
+				if ( ! empty( $p['ecbb_typography'] ) && is_array( $p['ecbb_typography'] ) ) {
+					$typo_decls = ecbb_events_widget_typography_declarations( $p['ecbb_typography'], $device );
+					if ( ! empty( $typo_decls ) ) {
+						$typo_sel = function_exists( 'ecbb_events_widget_part_typography_selectors' )
+							? ecbb_events_widget_part_typography_selectors( $scope_sel, $part_type )
+							: $scope_sel;
+						$typo_rule = $typo_sel . '{' . implode( ';', $typo_decls ) . '}';
+						$style_css[] = ( $mq !== '' ? $mq . '{' . $typo_rule . '}' : $typo_rule );
+					}
+				}
+
+				$margin_raw = ecbb_events_widget_read_responsive_spacing( $p, 'ecbb_margin', $device );
+				$margin     = ! empty( $margin_raw ) ? ecbb_events_widget_spacing_to_css( $margin_raw ) : '';
+				if ( $margin !== '' ) {
+					$margin_rule = $scope_sel . '{margin:' . $margin . ' !important;}';
+					$style_css[] = ( $mq !== '' ? $mq . '{' . $margin_rule . '}' : $margin_rule );
+				}
+
+				if ( ! $chip_surface ) {
+					$pad_raw = ecbb_events_widget_read_responsive_spacing( $p, 'ecbb_padding', $device );
+					$padding = ! empty( $pad_raw ) ? ecbb_events_widget_spacing_to_css( $pad_raw ) : '';
+					if ( $padding !== '' ) {
+						$pad_rule    = $scope_sel . '{padding:' . $padding . ' !important;}';
+						$style_css[] = ( $mq !== '' ? $mq . '{' . $pad_rule . '}' : $pad_rule );
+					}
+				}
+
+				$align_raw = ecbb_events_widget_responsive_pick( $p['ecbb_text_align'] ?? '', $device );
+				if ( is_string( $align_raw ) && in_array( $align_raw, [ 'left', 'center', 'right', 'justify' ], true ) ) {
+					$align_sel  = function_exists( 'ecbb_events_widget_part_typography_selectors' )
+						? ecbb_events_widget_part_typography_selectors( $scope_sel, $part_type )
+						: $scope_sel;
+					$align_rule = $align_sel . '{text-align:' . $align_raw . ' !important;}';
+					$style_css[] = ( $mq !== '' ? $mq . '{' . $align_rule . '}' : $align_rule );
+				}
+			}
+		}
+
 		foreach ( ecbb_events_widget_style_breakpoints() as $device => $mq ) {
 			if ( $chip_surface ) {
 				$padding_raw = ecbb_events_widget_read_responsive_spacing( $p, 'ecbb_padding', $device );
