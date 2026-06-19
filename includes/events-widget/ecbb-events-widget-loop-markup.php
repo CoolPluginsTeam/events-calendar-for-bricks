@@ -423,7 +423,7 @@ function ecbb_event_part_build_day_time_range_parts( $post_id, array $item ) {
 	return [ 'day' => $day_str, 'time' => $t_start . ' - ' . $t_end ];
 }
 
-function ecbb_event_part_button_style_attr( array $item ) {
+function ecbb_event_part_button_style_attr( array $item, $skin = '' ) {
 	if ( empty( $item['btn_style'] ) ) {
 		return '';
 	}
@@ -433,9 +433,25 @@ function ecbb_event_part_button_style_attr( array $item ) {
 		'align-items:center',
 		'justify-content:center',
 		'text-decoration:none',
+		'width:auto',
+		'max-width:100%',
+		'box-sizing:border-box',
 	];
 
-	return ' style="' . implode( ';', $styles ) . ';"';
+	if ( function_exists( 'ecbb_events_widget_button_declarations' ) ) {
+		$color_fn = static function ( $value ) {
+			return function_exists( 'ecbb_normalize_bricks_color' )
+				? ecbb_normalize_bricks_color( $value )
+				: '';
+		};
+		$skip_btn_colors = (string) $skin === 'style2';
+		$decls = ecbb_events_widget_button_declarations( $item, 'desktop', $color_fn, $skip_btn_colors );
+		if ( ! empty( $decls ) ) {
+			$styles = array_merge( $styles, $decls );
+		}
+	}
+
+	return ' style="' . esc_attr( implode( ';', $styles ) ) . ';"';
 }
 
 /**
@@ -610,6 +626,13 @@ function ecbb_events_widget_part_wrap_classes( $part, $idx, $skin = '', array $i
 			&& ! ecbb_event_part_hover_style_active( $row )
 		) {
 			$classes .= ' ecbb-no-hover';
+		}
+		if (
+			! empty( $row['btn_style'] )
+			&& function_exists( 'ecbb_events_widget_button_part_slugs' )
+			&& in_array( $ui_part, ecbb_events_widget_button_part_slugs(), true )
+		) {
+			$classes .= ' ecbb-has-btn';
 		}
 	}
 	return $classes;
@@ -866,7 +889,7 @@ function ecbb_event_part_extended_markup( $post, array $item, $idx, $style, $ski
 		} else {
 			$label = sanitize_text_field( $label );
 		}
-		$btn_attr  = ecbb_event_part_button_style_attr( $item );
+		$btn_attr  = ecbb_event_part_button_style_attr( $item, $skin );
 		$hover_on  = ! function_exists( 'ecbb_event_part_hover_style_active' ) || ecbb_event_part_hover_style_active( $item );
 		$inner_el  = $hover_on
 			? '<a class="ecbb-event__link" href="' . esc_url( $url ) . '" rel="noopener noreferrer" target="_blank"' . ( $btn_attr !== '' ? $btn_attr : $link_attr ) . '>' . esc_html( $label ) . '</a>'
@@ -886,7 +909,7 @@ function ecbb_event_part_extended_markup( $post, array $item, $idx, $style, $ski
 		if ( function_exists( 'tribe_events_has_tickets' ) && tribe_events_has_tickets( $post->ID ) ) {
 			$url = $url . $frag;
 		}
-		$btn_attr = ecbb_event_part_button_style_attr( $item );
+		$btn_attr = ecbb_event_part_button_style_attr( $item, $skin );
 		$hover_on = ! function_exists( 'ecbb_event_part_hover_style_active' ) || ecbb_event_part_hover_style_active( $item );
 		$inner_el = $hover_on
 			? '<a class="ecbb-event__link" href="' . esc_url( $url ) . '"' . ( $btn_attr !== '' ? $btn_attr : $link_attr ) . '>' . esc_html( $label ) . '</a>'
@@ -905,7 +928,7 @@ function ecbb_event_part_extended_markup( $post, array $item, $idx, $style, $ski
 		} else {
 			$label = sanitize_text_field( $label );
 		}
-		$btn_attr = ecbb_event_part_button_style_attr( $item );
+		$btn_attr = ecbb_event_part_button_style_attr( $item, $skin );
 		$hover_on = ! function_exists( 'ecbb_event_part_hover_style_active' ) || ecbb_event_part_hover_style_active( $item );
 		$inner_el = $hover_on
 			? '<a class="ecbb-event__link" href="' . esc_url( get_permalink( $post->ID ) ) . '"' . ( $btn_attr !== '' ? $btn_attr : $link_attr ) . '>' . esc_html( $label ) . '</a>'

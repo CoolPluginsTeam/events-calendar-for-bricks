@@ -590,7 +590,8 @@ class Element_ECBB_Events_Widget extends \Bricks\Element {
 				$scope_class,
 				function ( $value ) {
 					return $this->ecbb_normalize_color_value( $value );
-				}
+				},
+				$use_grid_shell ? 'grid' : $item_chrome
 			);
 		}
 

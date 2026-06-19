@@ -262,6 +262,7 @@
 			syncHoverVisibility(item);
 			ensureAccordions(item);
 		});
+		syncAllButtonPaint();
 	}
 
 	var t = null;
@@ -273,6 +274,326 @@
 			t = null;
 			scan();
 		}, 80);
+	}
+
+	function readRepeaterRowId(item) {
+		if (!item) {
+			return "";
+		}
+		if (item.getAttribute("data-id")) {
+			return item.getAttribute("data-id");
+		}
+		if (item.dataset && item.dataset.id) {
+			return item.dataset.id;
+		}
+		var idInput = item.querySelector(
+			'input[data-setting="id"], input[name$="[id]"]'
+		);
+		if (idInput && idInput.value) {
+			return idInput.value;
+		}
+		return "";
+	}
+
+	function getPreviewDocument() {
+		var selectors = [
+			"#bricks-builder-iframe",
+			"#bricks-preview-iframe",
+			"iframe#bricks-preview",
+		];
+		var i;
+		for (i = 0; i < selectors.length; i++) {
+			var iframe = document.querySelector(selectors[i]);
+			if (iframe && iframe.contentDocument && iframe.contentDocument.body) {
+				return iframe.contentDocument;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Bricks repeater live CSS ignores child selectors in the builder; mirror wrapper
+	 * color onto category chips / links so typography color updates instantly.
+	 */
+	function syncTypographyColorFromWrapper(repeaterItem) {
+		var preview = getPreviewDocument();
+		if (!preview || !repeaterItem) {
+			return;
+		}
+
+		var rowId = readRepeaterRowId(repeaterItem);
+		if (!rowId) {
+			return;
+		}
+
+		var wrapper = preview.querySelector('[data-field-id="' + rowId + '"]');
+		if (!wrapper || !preview.defaultView) {
+			return;
+		}
+
+		var color = preview.defaultView.getComputedStyle(wrapper).color;
+		if (!color) {
+			return;
+		}
+
+		wrapper
+			.querySelectorAll(
+				".ecbb-event__term-chip, .ecbb-event__link, .ecbb-event__term"
+			)
+			.forEach(function (node) {
+				node.style.setProperty("color", color);
+			});
+	}
+
+	var typoSyncTimer = null;
+	function scheduleTypographyColorSync(repeaterItem) {
+		if (!repeaterItem) {
+			return;
+		}
+		if (typoSyncTimer) {
+			clearTimeout(typoSyncTimer);
+		}
+		typoSyncTimer = setTimeout(function () {
+			typoSyncTimer = null;
+			syncTypographyColorFromWrapper(repeaterItem);
+		}, 60);
+	}
+
+	function onTypographyControlInteraction(e) {
+		var item = e.target.closest(".ecbb-parts-repeater-item");
+		if (!item) {
+			return;
+		}
+		if (
+			!e.target.closest(
+				'.repeater-item-inner[data-control-key="ecbb_typography"]'
+			)
+		) {
+			return;
+		}
+		scheduleTypographyColorSync(item);
+	}
+
+	var BTN_PAINT_KEYS = [
+		"btn_bg",
+		"btn_text_color",
+		"btn_border",
+		"btn_padding",
+		"ecbb_background",
+	];
+
+	function isStyle2PartsPanel() {
+		return !!document.querySelector(
+			'#bricks-panel-element [data-control-key="parts_style2"]'
+		);
+	}
+
+	function readControlInnerColor(controlInner) {
+		if (!controlInner) {
+			return "";
+		}
+
+		var textInput = controlInner.querySelector('input[type="text"]');
+		if (textInput && textInput.value) {
+			var value = textInput.value.trim();
+			if (
+				value.indexOf("#") === 0 ||
+				value.indexOf("rgb") === 0 ||
+				value.indexOf("hsl") === 0
+			) {
+				return value;
+			}
+		}
+
+		var pickr = controlInner.querySelector(".pcr-result");
+		if (pickr && pickr.style && pickr.style.backgroundColor) {
+			return pickr.style.backgroundColor;
+		}
+
+		return "";
+	}
+
+	function copyComputedButtonChrome(wrapper, link, preview) {
+		if (!wrapper || !link || !preview || !preview.defaultView) {
+			return;
+		}
+
+		var cs = preview.defaultView.getComputedStyle(wrapper);
+
+		if (cs.borderTopWidth && cs.borderTopWidth !== "0px") {
+			link.style.borderTopWidth = cs.borderTopWidth;
+			link.style.borderTopStyle = cs.borderTopStyle;
+			link.style.borderTopColor = cs.borderTopColor;
+			link.style.borderRightWidth = cs.borderRightWidth;
+			link.style.borderRightStyle = cs.borderRightStyle;
+			link.style.borderRightColor = cs.borderRightColor;
+			link.style.borderBottomWidth = cs.borderBottomWidth;
+			link.style.borderBottomStyle = cs.borderBottomStyle;
+			link.style.borderBottomColor = cs.borderBottomColor;
+			link.style.borderLeftWidth = cs.borderLeftWidth;
+			link.style.borderLeftStyle = cs.borderLeftStyle;
+			link.style.borderLeftColor = cs.borderLeftColor;
+		}
+
+		if (cs.borderRadius && cs.borderRadius !== "0px") {
+			link.style.borderRadius = cs.borderRadius;
+		}
+
+		if (cs.paddingTop && cs.paddingTop !== "0px") {
+			link.style.paddingTop = cs.paddingTop;
+			link.style.paddingRight = cs.paddingRight;
+			link.style.paddingBottom = cs.paddingBottom;
+			link.style.paddingLeft = cs.paddingLeft;
+		}
+	}
+
+	/**
+	 * Bricks repeater live CSS paints the row wrapper; keep button paint on the link.
+	 */
+	function syncButtonPaintToInnerLink(repeaterItem) {
+		var preview = getPreviewDocument();
+		if (!preview || !repeaterItem) {
+			return;
+		}
+
+		var rowId = readRepeaterRowId(repeaterItem);
+		if (!rowId) {
+			return;
+		}
+
+		var wrapper = preview.querySelector('[data-field-id="' + rowId + '"]');
+		if (!wrapper) {
+			return;
+		}
+
+		var btnStyleInner = repeaterItem.querySelector(
+			'.repeater-item-inner[data-control-key="btn_style"]'
+		);
+		var btnStyleOn = false;
+		if (btnStyleInner) {
+			var btnCb = btnStyleInner.querySelector('input[type="checkbox"]');
+			if (btnCb) {
+				btnStyleOn = btnCb.checked;
+			}
+		}
+		if (!btnStyleOn && !wrapper.classList.contains("ecbb-has-btn")) {
+			return;
+		}
+		if (btnStyleOn) {
+			wrapper.classList.add("ecbb-has-btn");
+		}
+
+		var link = wrapper.querySelector(".ecbb-event__link");
+		if (!link) {
+			return;
+		}
+
+		[
+			"backgroundColor",
+			"background",
+			"color",
+			"padding",
+			"border",
+			"borderRadius",
+		].forEach(function (prop) {
+			if (wrapper.style[prop]) {
+				link.style[prop] = wrapper.style[prop];
+				wrapper.style[prop] = "";
+			}
+		});
+
+		copyComputedButtonChrome(wrapper, link, preview);
+
+		var style2 = isStyle2PartsPanel();
+
+		if (style2) {
+			var partBg = readControlInnerColor(
+				repeaterItem.querySelector(
+					'.repeater-item-inner[data-control-key="ecbb_background"]'
+				)
+			);
+			if (partBg) {
+				link.style.setProperty("background-color", partBg);
+			}
+		} else {
+			var bg = readControlInnerColor(
+				repeaterItem.querySelector(
+					'.repeater-item-inner[data-control-key="btn_bg"]'
+				)
+			);
+			if (bg) {
+				link.style.setProperty("background-color", bg);
+			}
+
+			var textColor = readControlInnerColor(
+				repeaterItem.querySelector(
+					'.repeater-item-inner[data-control-key="btn_text_color"]'
+				)
+			);
+			if (textColor) {
+				link.style.setProperty("color", textColor);
+			}
+		}
+
+		link.style.setProperty("display", "inline-flex");
+		link.style.setProperty("align-items", "center");
+		link.style.setProperty("justify-content", "center");
+		link.style.setProperty("width", "auto");
+		link.style.setProperty("max-width", "100%");
+		link.style.setProperty("box-sizing", "border-box");
+	}
+
+	var btnSyncTimer = null;
+	function scheduleButtonPaintSync(repeaterItem) {
+		if (!repeaterItem) {
+			return;
+		}
+		if (btnSyncTimer) {
+			clearTimeout(btnSyncTimer);
+		}
+		btnSyncTimer = setTimeout(function () {
+			btnSyncTimer = null;
+			syncButtonPaintToInnerLink(repeaterItem);
+			// Bricks border/spacing controls may apply after the first paint pass.
+			setTimeout(function () {
+				syncButtonPaintToInnerLink(repeaterItem);
+			}, 120);
+		}, 60);
+	}
+
+	function syncAllButtonPaint() {
+		document
+			.querySelectorAll(".ecbb-parts-repeater-item")
+			.forEach(function (item) {
+				if (
+					item.querySelector(
+						'.repeater-item-inner[data-control-key="btn_style"]'
+					)
+				) {
+					syncButtonPaintToInnerLink(item);
+				}
+			});
+	}
+
+	function onButtonControlInteraction(e) {
+		var item = e.target.closest(".ecbb-parts-repeater-item");
+		if (!item) {
+			return;
+		}
+
+		var i;
+		for (i = 0; i < BTN_PAINT_KEYS.length; i++) {
+			if (
+				e.target.closest(
+					'.repeater-item-inner[data-control-key="' +
+						BTN_PAINT_KEYS[i] +
+						'"]'
+				)
+			) {
+				scheduleButtonPaintSync(item);
+				return;
+			}
+		}
 	}
 
 	document.addEventListener(
@@ -289,9 +610,24 @@
 			if (e.target.closest('.repeater-item-inner[data-control-key="ecbb_use_hover"]')) {
 				syncUseHoverEnabled(item);
 			}
+			if (e.target.closest('.repeater-item-inner[data-control-key="ecbb_typography"]')) {
+				scheduleTypographyColorSync(item);
+			}
+			if (
+				e.target.closest('.repeater-item-inner[data-control-key="btn_style"]') ||
+				e.target.closest('.repeater-item-inner[data-control-key="btn_border"]') ||
+				e.target.closest('.repeater-item-inner[data-control-key="btn_padding"]') ||
+				e.target.closest('.repeater-item-inner[data-control-key="ecbb_background"]')
+			) {
+				scheduleButtonPaintSync(item);
+			}
 		},
 		true
 	);
+
+	document.addEventListener("input", onTypographyControlInteraction, true);
+	document.addEventListener("input", onButtonControlInteraction, true);
+	document.addEventListener("change", onButtonControlInteraction, true);
 
 	document.addEventListener(
 		"click",

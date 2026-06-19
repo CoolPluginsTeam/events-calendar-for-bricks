@@ -380,10 +380,6 @@ function ecbb_events_widget_get_repeater_fields() {
 				[ 'part', '=', [ 'event_tickets', 'event_rsvp', 'read_more' ] ],
 				[ 'btn_style', '=', true ],
 			],
-			'css'         => ecbb_events_widget_repeater_control_css(
-				'background-color',
-				'.ecbb-event__link, & > a'
-			),
 		],
 		'btn_text_color' => [
 			'label'       => esc_html__( 'Button text color', 'ecbb' ),
@@ -394,10 +390,6 @@ function ecbb_events_widget_get_repeater_fields() {
 				[ 'part', '=', [ 'event_tickets', 'event_rsvp', 'read_more' ] ],
 				[ 'btn_style', '=', true ],
 			],
-			'css'         => ecbb_events_widget_repeater_control_css(
-				'color',
-				'.ecbb-event__link, & > a'
-			),
 		],
 		'btn_border' => [
 			'label'      => esc_html__( 'Button border', 'ecbb' ),
@@ -409,7 +401,9 @@ function ecbb_events_widget_get_repeater_fields() {
 			],
 			'css'        => ecbb_events_widget_repeater_control_css(
 				'border',
-				'.ecbb-event__link, & > a'
+				function_exists( 'ecbb_events_widget_repeater_button_inner_css_selector' )
+					? ecbb_events_widget_repeater_button_inner_css_selector()
+					: '& .ecbb-event__link, & > a'
 			),
 		],
 		'btn_padding' => [
@@ -427,7 +421,9 @@ function ecbb_events_widget_get_repeater_fields() {
 			],
 			'css'      => ecbb_events_widget_repeater_control_css(
 				'padding',
-				'.ecbb-event__link, & > a'
+				function_exists( 'ecbb_events_widget_repeater_button_inner_css_selector' )
+					? ecbb_events_widget_repeater_button_inner_css_selector()
+					: '& .ecbb-event__link, & > a'
 			),
 		],
 		'read_more_text' => [
@@ -555,14 +551,24 @@ function ecbb_events_widget_get_repeater_fields() {
 			'exclude'    => [ 'text-align' ],
 			'responsive' => true,
 			'required'   => [ 'part', '!=', 'image' ],
-			'css'        => ecbb_events_widget_repeater_control_css( 'font' ),
+			'css'        => function_exists( 'ecbb_events_widget_repeater_typography_control_css' )
+				? ecbb_events_widget_repeater_typography_control_css()
+				: ecbb_events_widget_repeater_control_css(
+					'typography',
+					'&, & .ecbb-event__term-chip, & .ecbb-event__link, & .ecbb-event__term'
+				),
 		],
 		'ecbb_text_align' => [
 			'label'      => esc_html__( 'Text align', 'ecbb' ),
 			'type'     => 'text-align',
 			'responsive' => true,
 			'required'   => [ 'part', '!=', 'image' ],
-			'css'        => ecbb_events_widget_repeater_control_css( 'text-align' ),
+			'css'        => ecbb_events_widget_repeater_control_css(
+				'text-align',
+				function_exists( 'ecbb_events_widget_repeater_typography_css_selector' )
+					? ecbb_events_widget_repeater_typography_css_selector()
+					: '&'
+			),
 		],
 		'ecbb_background' => [
 			'label'       => esc_html__( 'Background', 'ecbb' ),

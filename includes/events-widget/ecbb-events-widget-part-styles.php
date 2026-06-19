@@ -370,6 +370,103 @@ function ecbb_events_widget_part_chip_surface_selectors( $scope_sel ) {
 }
 
 /**
+ * Relative selector for Bricks repeater typography / text-align (fieldId wrapper).
+ *
+ * @return string
+ */
+function ecbb_events_widget_repeater_typography_css_selector() {
+	return '&, & .ecbb-event__term-chip, & .ecbb-event__link, & > .ecbb-event__link, & .ecbb-event__term, & > .ecbb-event__term';
+}
+
+/**
+ * Bricks repeater typography control CSS (live builder + frontend).
+ *
+ * Uses `typography` and explicit `color` so text color updates instantly like other
+ * typography fields (the `font` shorthand omits color in repeater live preview).
+ *
+ * @return array<int,array<string,string>>
+ */
+function ecbb_events_widget_repeater_typography_control_css() {
+	$selector = ecbb_events_widget_repeater_typography_css_selector();
+
+	return [
+		[
+			'property' => 'typography',
+			'selector' => $selector,
+		],
+		[
+			'property' => 'color',
+			'selector' => $selector,
+		],
+	];
+}
+
+/**
+ * Selectors for typography on a scoped event part (frontend scoped CSS).
+ *
+ * @param string $scope_sel  e.g. .ecbb-ev--abc .ecbb-p0
+ * @param string $part_type  Part slug.
+ * @return string Comma-separated selectors.
+ */
+function ecbb_events_widget_part_typography_selectors( $scope_sel, $part_type ) {
+	if ( function_exists( 'ecbb_events_widget_part_chip_surface_part_slugs' )
+		&& in_array( $part_type, ecbb_events_widget_part_chip_surface_part_slugs(), true ) ) {
+		return ecbb_events_widget_part_chip_surface_selectors( $scope_sel );
+	}
+
+	if ( function_exists( 'ecbb_events_widget_hover_child_link_part_slugs' )
+		&& in_array( $part_type, ecbb_events_widget_hover_child_link_part_slugs(), true ) ) {
+		return $scope_sel . ' .ecbb-event__link,'
+			. $scope_sel . ' .ecbb-event__term,'
+			. $scope_sel . ' > .ecbb-event__link,'
+			. $scope_sel . ' > .ecbb-event__term';
+	}
+
+	return $scope_sel . ','
+		. $scope_sel . ' .ecbb-event__link,'
+		. $scope_sel . ' > .ecbb-event__link';
+}
+
+/**
+ * Event parts that support the optional button-style row (read more, tickets, RSVP).
+ *
+ * @return string[]
+ */
+function ecbb_events_widget_button_part_slugs() {
+	return [ 'read_more', 'event_tickets', 'event_rsvp' ];
+}
+
+/**
+ * Relative selector for button-style controls (border, padding, etc.).
+ *
+ * @return string
+ */
+function ecbb_events_widget_repeater_button_inner_css_selector() {
+	return '& .ecbb-event__link, & > a';
+}
+
+/**
+ * Scoped selectors for button chrome on the inner link (not the row wrapper).
+ *
+ * @param string $scope_sel e.g. .ecbb-ev--abc .ecbb-p0
+ * @return string
+ */
+function ecbb_events_widget_part_button_inner_selectors( $scope_sel ) {
+	return $scope_sel . ' .ecbb-event__link,'
+		. $scope_sel . ' > a';
+}
+
+/**
+ * Style 2 uses Style-tab Typography + Background for button colors (not btn_bg / btn_text_color).
+ *
+ * @param string $list_style style-1|style-2|grid
+ * @return bool
+ */
+function ecbb_events_widget_list_uses_shared_button_colors( $list_style ) {
+	return (string) $list_style === 'style-2';
+}
+
+/**
  * Event parts whose hover styles target inner links/terms (not the wrapper).
  *
  * @return string[]
@@ -728,31 +825,34 @@ function ecbb_events_widget_read_responsive_spacing( array $item, $key, $device 
 /**
  * Button style declarations for a repeater row at a given breakpoint.
  *
- * @param array<string,mixed> $item     Repeater row.
- * @param string              $device   desktop|tablet|mobile.
- * @param callable            $color_fn function( $value ): string
+ * @param array<string,mixed> $item              Repeater row.
+ * @param string              $device            desktop|tablet|mobile.
+ * @param callable            $color_fn          function( $value ): string
+ * @param bool                $skip_color_fields Skip btn_bg/btn_text_color (Style 2 uses Typography + Background).
  * @return string[]
  */
-function ecbb_events_widget_button_declarations( array $item, $device, callable $color_fn ) {
+function ecbb_events_widget_button_declarations( array $item, $device, callable $color_fn, $skip_color_fields = false ) {
 	if ( empty( $item['btn_style'] ) ) {
 		return [];
 	}
 
 	$styles = [];
 
-	$bg_raw = ecbb_events_widget_responsive_pick( $item['btn_bg'] ?? '', $device );
-	if ( $bg_raw !== '' && $bg_raw !== null ) {
-		$bg = $color_fn( $bg_raw );
-		if ( $bg !== '' ) {
-			$styles[] = 'background-color:' . $bg;
+	if ( ! $skip_color_fields ) {
+		$bg_raw = ecbb_events_widget_responsive_pick( $item['btn_bg'] ?? '', $device );
+		if ( $bg_raw !== '' && $bg_raw !== null ) {
+			$bg = $color_fn( $bg_raw );
+			if ( $bg !== '' ) {
+				$styles[] = 'background-color:' . $bg;
+			}
 		}
-	}
 
-	$tc_raw = ecbb_events_widget_responsive_pick( $item['btn_text_color'] ?? '', $device );
-	if ( $tc_raw !== '' && $tc_raw !== null ) {
-		$tc = $color_fn( $tc_raw );
-		if ( $tc !== '' ) {
-			$styles[] = 'color:' . $tc . ' !important';
+		$tc_raw = ecbb_events_widget_responsive_pick( $item['btn_text_color'] ?? '', $device );
+		if ( $tc_raw !== '' && $tc_raw !== null ) {
+			$tc = $color_fn( $tc_raw );
+			if ( $tc !== '' ) {
+				$styles[] = 'color:' . $tc . ' !important';
+			}
 		}
 	}
 
@@ -906,6 +1006,16 @@ function ecbb_events_widget_typography_declarations( array $typo, $device = 'des
 		}
 	}
 
+	if ( ! empty( $typo['color'] ) ) {
+		$color_raw = ecbb_events_widget_responsive_pick( $typo['color'], $device );
+		$color     = function_exists( 'ecbb_normalize_bricks_color' )
+			? ecbb_normalize_bricks_color( $color_raw )
+			: '';
+		if ( $color !== '' ) {
+			$decl[] = 'color:' . $color;
+		}
+	}
+
 	return $decl;
 }
 
@@ -913,11 +1023,14 @@ function ecbb_events_widget_typography_declarations( array $typo, $device = 'des
  * Scoped CSS for all event parts in a loop instance.
  *
  * @param array<int,array<string,mixed>> $parts
- * @param string                         $scope_class e.g. ecbb-ev--abc
- * @param callable                       $color_fn    function( $value ): string
+ * @param string                         $scope_class     e.g. ecbb-ev--abc
+ * @param callable                       $color_fn        function( $value ): string
+ * @param string                         $list_item_style style-1|style-2|grid
  * @return array{0:string[],1:string[]}  [base rules, hover rules]
  */
-function ecbb_events_widget_build_parts_scoped_css( array $parts, $scope_class, callable $color_fn ) {
+function ecbb_events_widget_build_parts_scoped_css( array $parts, $scope_class, callable $color_fn, $list_item_style = 'style-1' ) {
+	$shared_btn_colors = function_exists( 'ecbb_events_widget_list_uses_shared_button_colors' )
+		&& ecbb_events_widget_list_uses_shared_button_colors( $list_item_style );
 	$scope_class = preg_replace( '/[^a-zA-Z0-9\-_]/', '', (string) $scope_class );
 	$style_css   = [];
 	$hover_css   = [];
@@ -938,6 +1051,9 @@ function ecbb_events_widget_build_parts_scoped_css( array $parts, $scope_class, 
 			: 'ecbb-p' . absint( $idx ) );
 		$scope_sel = '.' . $scope_class . ' ' . $idx_class;
 		$part_type = isset( $p['part'] ) ? (string) $p['part'] : '';
+		$btn_style_on = ! empty( $p['btn_style'] )
+			&& function_exists( 'ecbb_events_widget_button_part_slugs' )
+			&& in_array( $part_type, ecbb_events_widget_button_part_slugs(), true );
 		$chip_surface = function_exists( 'ecbb_events_widget_part_chip_surface_part_slugs' )
 			&& in_array( $part_type, ecbb_events_widget_part_chip_surface_part_slugs(), true );
 		$chip_sel = $chip_surface && function_exists( 'ecbb_events_widget_part_chip_surface_selectors' )
@@ -957,7 +1073,7 @@ function ecbb_events_widget_build_parts_scoped_css( array $parts, $scope_class, 
 			}
 
 			if ( ! empty( $p['btn_style'] ) ) {
-				$btn_decls = ecbb_events_widget_button_declarations( $p, $device, $color_fn );
+				$btn_decls = ecbb_events_widget_button_declarations( $p, $device, $color_fn, $shared_btn_colors );
 				if ( ! empty( $btn_decls ) ) {
 					$btn_sel = $scope_sel . ' .ecbb-event__link,'
 						. $scope_sel . ' > a';
@@ -1047,6 +1163,14 @@ function ecbb_events_widget_build_parts_scoped_css( array $parts, $scope_class, 
 				if ( $bg !== '' ) {
 					$chip_rule   = $chip_sel . '{background-color:' . $bg . ' !important;}';
 					$style_css[] = ( $mq !== '' ? $mq . '{' . $chip_rule . '}' : $chip_rule );
+				}
+			} elseif ( $btn_style_on ) {
+				$bg_raw = ecbb_events_widget_responsive_pick( $p['ecbb_background'] ?? '', $device );
+				$bg     = $bg_raw !== '' && $bg_raw !== null ? $color_fn( $bg_raw ) : '';
+				if ( $bg !== '' ) {
+					$btn_inner   = ecbb_events_widget_part_button_inner_selectors( $scope_sel );
+					$btn_bg_rule = $btn_inner . '{background-color:' . $bg . ' !important;}';
+					$style_css[] = ( $mq !== '' ? $mq . '{' . $btn_bg_rule . '}' : $btn_bg_rule );
 				}
 			} else {
 				$bg_raw = ecbb_events_widget_responsive_pick( $p['ecbb_background'] ?? '', $device );

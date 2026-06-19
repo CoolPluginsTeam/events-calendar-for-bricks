@@ -228,3 +228,13 @@
 	.repeater-item-inner[data-control-key="terms_separator"] {
 	display: none !important;
 }
+
+/* Style 2: button colors come from Style-tab Typography + Background. */
+#bricks-panel-element:has([data-control-key="parts_style2"])
+	.ecbb-parts-repeater-item
+	.repeater-item-inner[data-control-key="btn_bg"],
+#bricks-panel-element:has([data-control-key="parts_style2"])
+	.ecbb-parts-repeater-item
+	.repeater-item-inner[data-control-key="btn_text_color"] {
+	display: none !important;
+}

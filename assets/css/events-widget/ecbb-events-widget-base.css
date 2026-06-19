@@ -25,6 +25,22 @@
 	background-color: transparent !important;
 }
 
+/* Button-style rows: background/padding belong on the inner link, not the full-width wrapper. */
+.ecbb-event-part.ecbb-has-btn {
+	background-color: transparent !important;
+	border: none !important;
+}
+
+.ecbb-event-part.ecbb-has-btn > .ecbb-event__link,
+.ecbb-event-part.ecbb-has-btn .ecbb-event__link {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: auto;
+	max-width: 100%;
+	box-sizing: border-box;
+}
+
 /* Smooth hover transitions for interactive event parts (when hover is enabled per row). */
 .ecbb-event-part:not(.ecbb-no-hover) .ecbb-event__link,
 .ecbb-event-part:not(.ecbb-no-hover) .ecbb-event__term,

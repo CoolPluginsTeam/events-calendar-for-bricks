@@ -227,6 +227,10 @@
 	padding-top: 0.35rem;
 }
 
+.ecbb-ev__item--style-2 .ecbb-style2-read-more.ecbb-has-btn {
+	background-color: transparent !important;
+}
+
 .ecbb-ev__item--style-2 .ecbb-style2-body > .ecbb-style2-title {
 	margin: 0 0 0.25rem;
 	font-size: 24px;

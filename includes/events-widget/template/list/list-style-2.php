@@ -128,7 +128,7 @@ function ecbb_list2_is_legacy_stack( array $clean ) {
 /**
  * Default Event parts for Style 2 list (body column). Featured image is not listed here;
  * {@see ecbb_list2_normalize_parts()} appends an `image` row when missing so the static
- * trail column can render.
+ * trail column can render. Read more is included by default at the end of the body stack.
  *
  * @return array<int,array<string,mixed>>
  */
@@ -155,6 +155,10 @@ function ecbb_list2_default_parts_rows() {
 			'part'        => 'description',
 			'desc_source' => 'content',
 			'ecbb_color'  => '',
+		],
+		[
+			'part'           => 'read_more',
+			'read_more_text' => esc_html__( 'More Details', 'ecbb' ),
 		],
 	];
 
