@@ -417,9 +417,6 @@ function ecbb_list2_item_inner_markup( $post, array $parts, $gap_style_value, ca
 	$has_media  = ( $img_info['index'] >= 0 );
 
 	$inner_class = 'ecbb-style2';
-	if ( ! $has_media ) {
-		$inner_class .= ' ecbb-style2--noimg';
-	}
 	if ( $has_media ) {
 		$inner_class .= ' ecbb-style2--has-media';
 	}
