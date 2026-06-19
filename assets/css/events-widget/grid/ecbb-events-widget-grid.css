@@ -1,35 +1,31 @@
 /**
- * Events Widget — Grid template (image + framed date badge + meta column).
+ * Events Widget — Grid template
+ *
+ * Layout: `.ecbb-ev__grid-media` | `.ecbb-ev__grid-meta` ( `.ecbb-ev__grid-date-col` | `.ecbb-ev__grid-body` )
  *
  * File: `assets/css/events-widget/grid/ecbb-events-widget-grid.css`.
  *
- * Part typography/color defaults use :where() so Bricks repeater Style controls
- * (fieldId + ecbb-events-widget scoped CSS) can override without !important.
+ * Default part typography uses :where() so Bricks repeater Style controls can override.
  */
 
 /* ── Design tokens (grid card shell) ── */
 
 .ecbb-ev__item-inner--grid {
+	--ecbb-grid-bg: #fff;
+	--ecbb-grid-border: rgba( 15, 23, 42, 0.06 );
+	--ecbb-grid-shadow: 0 4px 20px rgba( 15, 23, 42, 0.07 );
+	--ecbb-grid-radius: 10px;
 	--ecbb-grid-muted: #6b7280;
 	--ecbb-grid-title: #111827;
 	--ecbb-grid-cost: #666666;
 	--ecbb-grid-accent: #2563eb;
+	--ecbb-grid-date-frame-border: #d8dde3;
+	--ecbb-grid-media-bg: #e5e7eb;
+	--ecbb-grid-media-ratio: 16 / 10;
 	--ecbb-grid-font: "Open Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 	--ecbb-grid-font-alt: "Rubik", Sans-serif;
-}
+	--ecbb-grid-icon-clock: url( "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' d='M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2zm4.2 14.2L11 13V7h1.5v5.2l4.5 2.7l-.8 1.3z'/%3E%3C/svg%3E" );
 
-.ecbb-ev__list--grid .ecbb-ev__item--grid {
-	display: flex;
-	flex-direction: column;
-	background: #fff;
-	border-radius: 10px;
-	overflow: hidden;
-	box-shadow: 0 4px 20px rgba( 15, 23, 42, 0.07 );
-	border: 1px solid rgba( 15, 23, 42, 0.06 );
-	min-width: 0;
-}
-
-.ecbb-ev__item-inner--grid {
 	display: flex;
 	flex-direction: column;
 	width: 100%;
@@ -38,35 +34,48 @@
 	border-radius: inherit;
 }
 
-/* Static image: fixed frame; inner image scales down on hover (no overflow growth). */
-.ecbb-ev__grid-media {
+/* ── Card chrome ── */
+
+.ecbb-ev__list--grid .ecbb-ev__item--grid {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	overflow: hidden;
+	background: var(--ecbb-grid-bg);
+	border: 1px solid var(--ecbb-grid-border);
+	border-radius: var(--ecbb-grid-radius);
+	box-shadow: var(--ecbb-grid-shadow);
+}
+
+/* ── Featured image (static shell; not repeater-driven) ── */
+
+.ecbb-ev__item--grid .ecbb-ev__grid-media {
 	position: relative;
 	width: 100%;
 	overflow: hidden;
-	border-radius: 0;
 	line-height: 0;
-	background: #e5e7eb;
-	aspect-ratio: 16 / 10;
+	background: var(--ecbb-grid-media-bg);
+	aspect-ratio: var(--ecbb-grid-media-ratio);
 }
 
-.ecbb-ev__grid-media-link {
+.ecbb-ev__item--grid .ecbb-ev__grid-media-link {
 	display: block;
-	width: 100%;
-	height: 100%;
-	overflow: hidden;
 	position: relative;
-}
-
-.ecbb-ev__grid-media-inner {
 	width: 100%;
 	height: 100%;
 	overflow: hidden;
 }
 
-.ecbb-ev__grid-thumb-img {
+.ecbb-ev__item--grid .ecbb-ev__grid-media-inner {
 	width: 100%;
 	height: 100%;
+	overflow: hidden;
+}
+
+.ecbb-ev__item--grid .ecbb-ev__grid-thumb-img {
 	display: block;
+	width: 100%;
+	height: 100%;
 	object-fit: cover;
 	transform-origin: center center;
 	transition: transform 0.45s ease;
@@ -74,123 +83,124 @@
 	backface-visibility: hidden;
 }
 
-.ecbb-ev__grid-media-link:hover .ecbb-ev__grid-thumb-img,
-.ecbb-ev__grid-media-link:focus-visible .ecbb-ev__grid-thumb-img {
-	transform: scale(1.06);
+.ecbb-ev__item--grid .ecbb-ev__grid-media-link:hover .ecbb-ev__grid-thumb-img,
+.ecbb-ev__item--grid .ecbb-ev__grid-media-link:focus-visible .ecbb-ev__grid-thumb-img {
+	transform: scale( 1.06 );
 }
 
-.ecbb-ev__grid-media--placeholder {
+.ecbb-ev__item--grid .ecbb-ev__grid-media--placeholder {
 	min-height: 160px;
 	background: linear-gradient( 145deg, #e5e7eb 0%, #f3f4f6 55%, #e8ecf0 100% );
 }
 
-/* Bottom row: badge column + repeater (aligned to top like reference). */
-.ecbb-ev__grid-meta {
+/* ── Meta row: framed date + repeater body ── */
+
+.ecbb-ev__item--grid .ecbb-ev__grid-meta {
 	display: flex;
 	flex-direction: row;
 	align-items: flex-start;
 	gap: 0.75rem 1rem;
-	padding: 1rem 1rem 1.2rem;
 	box-sizing: border-box;
 	min-width: 0;
+	padding: 1rem 1rem 1.2rem;
 	font-family: var(--ecbb-grid-font);
 }
 
-.ecbb-ev__grid-date-col {
+/* Date badge column (fixed; not repeater-driven) */
+
+.ecbb-ev__item--grid .ecbb-ev__grid-date-col {
 	flex: 0 0 auto;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	gap: 0.35rem;
-	text-align: center;
 	min-width: 4rem;
+	text-align: center;
 }
 
-/* Outer frame: white + thin gray border (reference). */
-.ecbb-ev__grid-date-frame {
-	background: #fff;
-	border: 1px solid #d8dde3;
-	border-radius: 6px;
-	padding: 5px;
-	box-sizing: border-box;
+.ecbb-ev__item--grid .ecbb-ev__grid-date-frame {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
+	box-sizing: border-box;
+	padding: 5px;
 	line-height: 0;
+	background: var(--ecbb-grid-bg);
+	border: 1px solid var(--ecbb-grid-date-frame-border);
+	border-radius: 6px;
 }
 
-/* Inner: solid blue block, slightly rounded, day + month in white. */
-.ecbb-ev__grid-date-badge {
-	background-color: var(--ecbb-grid-accent);
-	color: #fff;
-	padding: 0.7rem 1.5rem 1rem;
+.ecbb-ev__item--grid .ecbb-ev__grid-date-badge {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	line-height: 1;
-	min-width: 4rem;
 	box-sizing: border-box;
-}
-
-.ecbb-ev__grid-date-badge-day {
-	font-size: 18px;
-	font-family: var(--ecbb-grid-font-alt);
-	font-weight: 700;
-	letter-spacing: -0.02em;
+	min-width: 4rem;
+	padding: 0.7rem 1.5rem 1rem;
 	line-height: 1;
+	color: #fff;
+	background-color: var(--ecbb-grid-accent);
 }
 
-.ecbb-ev__grid-date-badge-month {
+.ecbb-ev__item--grid .ecbb-ev__grid-date-badge-day {
+	font-family: var(--ecbb-grid-font-alt);
+	font-size: 18px;
+	font-weight: 700;
+	line-height: 1;
+	letter-spacing: -0.02em;
+}
+
+.ecbb-ev__item--grid .ecbb-ev__grid-date-badge-month {
+	margin-top: 0.18rem;
 	font-family: var(--ecbb-grid-font-alt);
 	font-size: 14px;
 	font-weight: 500;
-	text-transform: capitalize;
-	margin-top: 0.18rem;
-	letter-spacing: 0.02em;
 	line-height: 1.1;
+	letter-spacing: 0.02em;
+	text-transform: capitalize;
 }
 
-/* Weekday under the framed badge — medium gray, caps. */
-.ecbb-ev__grid-date-dow {
+.ecbb-ev__item--grid .ecbb-ev__grid-date-dow {
+	font-family: var(--ecbb-grid-font);
 	font-size: 1.125rem;
 	font-weight: 600;
+	line-height: 1.2;
 	color: var(--ecbb-grid-muted);
 	letter-spacing: 0.06em;
 	text-transform: uppercase;
-	line-height: 1.2;
-	font-family: var(--ecbb-grid-font);
 }
 
-.ecbb-ev__grid-body {
-	flex: 1 1 auto;
-	min-width: 0;
+/* Repeater body stack */
+
+.ecbb-ev__item--grid .ecbb-ev__grid-body {
 	display: flex;
+	flex: 1 1 auto;
 	flex-direction: column;
 	justify-content: flex-start;
+	min-width: 0;
 }
 
-/* ── Repeater body parts: layout (full specificity) ── */
+/* ── Event parts: structure (layout, icons, visibility) ── */
 
-.ecbb-ev__item--grid .ecbb-ev__grid-body :is(.ecbb-event-part--date, .ecbb-event-part--event-time) {
+.ecbb-ev__item--grid .ecbb-ev__grid-body :is( .ecbb-event-part--date, .ecbb-event-part--event-time ) {
 	display: flex;
 	align-items: center;
 	margin: 0;
 }
 
-.ecbb-ev__item--grid .ecbb-ev__grid-body :is(.ecbb-event-part--date, .ecbb-event-part--event-time).ecbb-has-row-icon::before {
+.ecbb-ev__item--grid .ecbb-ev__grid-body :is( .ecbb-event-part--date, .ecbb-event-part--event-time ).ecbb-has-row-icon::before {
 	content: "";
 	flex: 0 0 auto;
 	width: 16px;
 	height: 16px;
 	margin-right: 0.45rem;
 	background-color: var(--ecbb-grid-accent);
-	-webkit-mask: url( "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' d='M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2zm4.2 14.2L11 13V7h1.5v5.2l4.5 2.7l-.8 1.3z'/%3E%3C/svg%3E" ) center / contain no-repeat;
-	mask: url( "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' d='M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2zm4.2 14.2L11 13V7h1.5v5.2l4.5 2.7l-.8 1.3z'/%3E%3C/svg%3E" ) center / contain no-repeat;
+	-webkit-mask: var(--ecbb-grid-icon-clock) center / contain no-repeat;
+	mask: var(--ecbb-grid-icon-clock) center / contain no-repeat;
 }
 
-.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--date .ecbb-event__date-day,
-.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--date .ecbb-event__date-sep {
+.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--date :is( .ecbb-event__date-day, .ecbb-event__date-sep ) {
 	display: none;
 }
 
@@ -203,54 +213,101 @@
 	display: none;
 }
 
-/* ── Repeater body parts: default typography (:where = repeater Style can override) ── */
+/* ── Event parts: default typography (:where = repeater Style can override) ── */
 
-:where(.ecbb-ev__item--grid .ecbb-ev__grid-body) :is(.ecbb-event-part--date, .ecbb-event-part--event-time) {
-	color: var(--ecbb-grid-muted);
+:where( .ecbb-ev__item--grid .ecbb-ev__grid-body ) :is( .ecbb-event-part--date, .ecbb-event-part--event-time ) {
 	font-family: var(--ecbb-grid-font-alt);
 	font-size: 15px;
 	font-weight: 400;
 	line-height: 1.4;
+	color: var(--ecbb-grid-muted);
 	letter-spacing: 0.01em;
 }
 
-:where(.ecbb-ev__item--grid .ecbb-ev__grid-body) .ecbb-event-part--title {
+:where( .ecbb-ev__item--grid .ecbb-ev__grid-body ) .ecbb-event-part--title {
 	margin: 0.1rem 0 0.2rem;
+	font-family: inherit;
 	font-size: clamp( 1.0625rem, 1rem + 0.35vw, 1.625rem );
 	font-weight: 500;
-	color: var(--ecbb-grid-title);
 	line-height: 1.28;
-	font-family: inherit;
+	color: var(--ecbb-grid-title);
 	letter-spacing: -0.01em;
 }
 
-:where(.ecbb-ev__item--grid .ecbb-ev__grid-body) .ecbb-event-part--title .ecbb-event__link,
-:where(.ecbb-ev__item--grid .ecbb-ev__grid-body) .ecbb-event-part--title .ecbb-event__title-text {
+:where( .ecbb-ev__item--grid .ecbb-ev__grid-body ) .ecbb-event-part--title .ecbb-event__link,
+:where( .ecbb-ev__item--grid .ecbb-ev__grid-body ) .ecbb-event-part--title .ecbb-event__title-text {
+	display: inline-block;
+	width: fit-content;
+	max-width: 100%;
 	color: inherit;
 	text-underline-offset: 3px;
 	text-decoration-thickness: 1px;
 	transition: color 0.18s ease;
 }
 
-:where(.ecbb-ev__item--grid .ecbb-ev__grid-body) .ecbb-event-part--title:not(.ecbb-no-hover) .ecbb-event__link:hover,
-:where(.ecbb-ev__item--grid .ecbb-ev__grid-body) .ecbb-event-part--title:not(.ecbb-no-hover) .ecbb-event__link:focus-visible {
+:where( .ecbb-ev__item--grid .ecbb-ev__grid-body ) .ecbb-event-part--title:not( .ecbb-no-hover ) .ecbb-event__link:hover,
+:where( .ecbb-ev__item--grid .ecbb-ev__grid-body ) .ecbb-event-part--title:not( .ecbb-no-hover ) .ecbb-event__link:focus-visible {
 	color: var(--ecbb-grid-accent);
 	text-decoration: underline;
 }
 
-:where(.ecbb-ev__item--grid .ecbb-ev__grid-body) [class*="ecbb-event-part--venue"] {
+:where( .ecbb-ev__item--grid .ecbb-ev__grid-body ) .ecbb-event-part--title.ecbb-no-hover,
+:where( .ecbb-ev__item--grid .ecbb-ev__grid-body ) .ecbb-event-part--title.ecbb-no-hover .ecbb-event__link {
+	text-decoration: none;
+}
+
+:where( .ecbb-ev__item--grid .ecbb-ev__grid-body ) [class*="ecbb-event-part--venue"] {
 	margin: 0;
-	color: var(--ecbb-grid-muted);
 	font-size: 14px;
 	font-weight: 400;
 	line-height: 1.45;
+	color: var(--ecbb-grid-muted);
 }
 
-:where(.ecbb-ev__item--grid .ecbb-ev__grid-body) .ecbb-event-part--event-cost {
+:where( .ecbb-ev__item--grid .ecbb-ev__grid-body ) .ecbb-event-part--event-cost {
+	margin: 0.2rem 0 0;
 	font-family: var(--ecbb-grid-font-alt);
 	font-size: 14px;
 	font-weight: 700;
-	color: var(--ecbb-grid-cost);
-	margin: 0.2rem 0 0;
 	line-height: 1.35;
+	color: var(--ecbb-grid-cost);
+}
+
+:where( .ecbb-ev__item--grid .ecbb-ev__grid-body ) .ecbb-event-part--description {
+	font-size: 14px;
+	line-height: 1.5;
+	color: var(--ecbb-grid-muted);
+}
+
+:where( .ecbb-ev__item--grid .ecbb-ev__grid-body ) .ecbb-event-part--description p {
+	margin: 0 0 0.5rem;
+}
+
+:where( .ecbb-ev__item--grid .ecbb-ev__grid-body ) .ecbb-event-part--description p:last-child {
+	margin-bottom: 0;
+}
+
+:where( .ecbb-ev__item--grid .ecbb-ev__grid-body ) .ecbb-event-part--categories {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.35rem;
+	max-width: 100%;
+	font-size: 12px;
+	font-weight: 500;
+	line-height: 1.5;
+	color: var(--ecbb-grid-accent);
+}
+
+:where( .ecbb-ev__item--grid .ecbb-ev__grid-body ) .ecbb-event-part--categories .ecbb-event__term-chip {
+	display: inline-flex;
+	align-items: center;
+	padding: 0 8px;
+	border: 1px solid currentColor;
+	border-radius: 4px;
+}
+
+:where( .ecbb-ev__item--grid .ecbb-ev__grid-body ) .ecbb-event-part--categories .ecbb-event__term-chip :is( .ecbb-event__link, .ecbb-event__term ) {
+	color: inherit;
+	text-decoration: none;
 }

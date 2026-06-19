@@ -229,8 +229,20 @@ function ecbb_events_widget_sanitize_load_more_settings( array $settings ) {
 		$out['style2_show_month_headings'] = ecbb_sanitize_style2_show_month_headings( $out['style2_show_month_headings'] );
 	}
 
-	if ( isset( $out['item_gap'] ) && ! is_array( $out['item_gap'] ) ) {
+	if ( isset( $out['item_gap'] ) && is_array( $out['item_gap'] ) ) {
+		foreach ( [ 'desktop', 'tablet', 'mobile' ] as $device ) {
+			if ( isset( $out['item_gap'][ $device ] ) && $out['item_gap'][ $device ] !== '' ) {
+				$out['item_gap'][ $device ] = max( 0, (float) $out['item_gap'][ $device ] );
+			}
+		}
+	} elseif ( isset( $out['item_gap'] ) ) {
 		$out['item_gap'] = max( 0, (float) $out['item_gap'] );
+	}
+
+	foreach ( array_keys( $out ) as $setting_key ) {
+		if ( strpos( (string) $setting_key, 'item_gap:' ) === 0 ) {
+			$out[ $setting_key ] = max( 0, (float) $out[ $setting_key ] );
+		}
 	}
 
 	if ( isset( $out['grid_cols'] ) ) {

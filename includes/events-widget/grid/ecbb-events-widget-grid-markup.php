@@ -31,7 +31,8 @@ function ecbb_events_widget_grid_default_parts_rows() {
 			'venue_display' => 'name_and_state',
 		],
 		[
-			'part' => 'event_cost',
+			'part'          => 'event_cost',
+			'cost_currency' => 'default',
 		],
 	];
 
@@ -126,12 +127,18 @@ function ecbb_events_widget_grid_normalize_parts( array $parts ) {
 	$clean = ecbb_events_widget_parts_rows_clean( $parts );
 	$clean = array_map(
 		static function ( $row ) {
-			if ( ! is_array( $row ) || (string) ( $row['part'] ?? '' ) !== 'venue' ) {
+			if ( ! is_array( $row ) ) {
 				return $row;
 			}
-			$display = (string) ( $row['venue_display'] ?? '' );
-			if ( $display === '' || $display === 'name_and_address' ) {
-				$row['venue_display'] = 'name_and_state';
+			$part = (string) ( $row['part'] ?? '' );
+			if ( $part === 'venue' ) {
+				$display = (string) ( $row['venue_display'] ?? '' );
+				if ( $display === '' || $display === 'name_and_address' ) {
+					$row['venue_display'] = 'name_and_state';
+				}
+			}
+			if ( $part === 'event_cost' && ( ! isset( $row['cost_currency'] ) || (string) $row['cost_currency'] === '' ) ) {
+				$row['cost_currency'] = 'default';
 			}
 			return $row;
 		},

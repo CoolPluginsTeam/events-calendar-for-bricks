@@ -156,6 +156,9 @@
 		if (!item.hasAttribute("data-ecbb-btn-open")) {
 			item.setAttribute("data-ecbb-btn-open", "true");
 		}
+		if (!item.hasAttribute("data-ecbb-btn-border-open")) {
+			item.setAttribute("data-ecbb-btn-border-open", "true");
+		}
 	}
 
 	function bindAccordionToggle(item, sepKey, attrName) {
@@ -183,6 +186,7 @@
 		ensureAccordionState(item);
 		bindAccordionToggle(item, "ecbb_sep_hover", "data-ecbb-hover-open");
 		bindAccordionToggle(item, "btn_sep_style", "data-ecbb-btn-open");
+		bindAccordionToggle(item, "btn_sep_border", "data-ecbb-btn-border-open");
 	}
 
 	function isECBBPartsRow(item) {
@@ -488,13 +492,19 @@
 		scheduleTypographyColorSync(item);
 	}
 
-	var BTN_PAINT_KEYS = [
-		"btn_bg",
-		"btn_text_color",
-		"btn_border_color",
-		"btn_padding",
-		"ecbb_background",
-	];
+	var BTN_STYLE_PAINT_KEYS = ["btn_bg", "btn_text_color", "ecbb_background"];
+	var BTN_BORDER_PAINT_KEYS = Array.isArray(L.btnBorderKeys)
+		? L.btnBorderKeys.filter(function (key) {
+				return key !== "btn_sep_border";
+		  })
+		: [
+				"btn_border_type",
+				"btn_border_width",
+				"btn_border_color",
+				"btn_padding",
+				"btn_border_radius",
+		  ];
+	var BTN_PAINT_KEYS = BTN_STYLE_PAINT_KEYS.concat(BTN_BORDER_PAINT_KEYS);
 
 	function readControlInnerColor(controlInner) {
 		if (!controlInner) {
@@ -574,37 +584,139 @@
 		link.style.removeProperty("color");
 	}
 
-	function copyComputedButtonChrome(wrapper, link, preview) {
-		if (!wrapper || !link || !preview || !preview.defaultView) {
-			return;
+	function readSpacingControlValue(controlInner) {
+		if (!controlInner) {
+			return "";
 		}
 
-		var cs = preview.defaultView.getComputedStyle(wrapper);
+		var sides = ["top", "right", "bottom", "left"];
+		var values = {};
+		var hasValue = false;
+		var i;
 
-		if (cs.paddingTop && cs.paddingTop !== "0px") {
-			link.style.paddingTop = cs.paddingTop;
-			link.style.paddingRight = cs.paddingRight;
-			link.style.paddingBottom = cs.paddingBottom;
-			link.style.paddingLeft = cs.paddingLeft;
+		for (i = 0; i < sides.length; i++) {
+			var side = sides[i];
+			var input = controlInner.querySelector(
+				'input[name*="' + side + '"], input[data-name="' + side + '"], input[data-key="' + side + '"]'
+			);
+			if (!input) {
+				var labeled = controlInner.querySelectorAll("input[type='text'], input[type='number']");
+				if (labeled.length >= 4) {
+					input = labeled[i];
+				}
+			}
+			if (input && input.value) {
+				values[side] = String(input.value).trim();
+				if (values[side]) {
+					hasValue = true;
+				}
+			}
 		}
+
+		if (!hasValue) {
+			return "";
+		}
+
+		return (
+			(values.top || "0") +
+			" " +
+			(values.right || values.top || "0") +
+			" " +
+			(values.bottom || values.top || "0") +
+			" " +
+			(values.left || values.right || values.top || "0")
+		);
 	}
 
-	function applyButtonBorderColor(repeaterItem, link) {
-		if (!repeaterItem || !link) {
+	function readSelectControlValue(controlInner) {
+		if (!controlInner) {
+			return "";
+		}
+		var select = controlInner.querySelector("select");
+		return select && select.value ? String(select.value).trim() : "";
+	}
+
+	function readNumberControlValue(controlInner) {
+		if (!controlInner) {
+			return "";
+		}
+		var input = controlInner.querySelector(
+			'input[type="number"], input[type="text"]'
+		);
+		if (!input || !input.value) {
+			return "";
+		}
+		var value = String(input.value).trim();
+		if (!value) {
+			return "";
+		}
+		if (/[a-z%]+$/i.test(value)) {
+			return value;
+		}
+		return value + "px";
+	}
+
+	function applyButtonBorderChrome(repeaterItem, surface) {
+		if (!repeaterItem || !surface) {
 			return;
 		}
 
+		var padding = readSpacingControlValue(
+			repeaterItem.querySelector(
+				'.repeater-item-inner[data-control-key="btn_padding"]'
+			)
+		);
+		if (padding) {
+			surface.style.padding = padding;
+		} else {
+			surface.style.removeProperty("padding");
+		}
+
+		var radius = readSpacingControlValue(
+			repeaterItem.querySelector(
+				'.repeater-item-inner[data-control-key="btn_border_radius"]'
+			)
+		);
+		if (radius) {
+			surface.style.borderRadius = radius;
+		} else {
+			surface.style.removeProperty("border-radius");
+		}
+
+		var borderType =
+			readSelectControlValue(
+				repeaterItem.querySelector(
+					'.repeater-item-inner[data-control-key="btn_border_type"]'
+				)
+			) || "solid";
+		var borderWidth =
+			readNumberControlValue(
+				repeaterItem.querySelector(
+					'.repeater-item-inner[data-control-key="btn_border_width"]'
+				)
+			) || "1px";
 		var borderColor = readControlInnerColor(
 			repeaterItem.querySelector(
 				'.repeater-item-inner[data-control-key="btn_border_color"]'
 			)
 		);
-		if (borderColor) {
-			link.style.setProperty("border", "1px solid " + borderColor);
-			link.style.setProperty("box-sizing", "border-box");
+
+		if (borderType === "none") {
+			surface.style.setProperty("border", "none");
+		} else if (borderColor) {
+			surface.style.setProperty(
+				"border",
+				borderWidth + " " + borderType + " " + borderColor
+			);
 		} else {
-			link.style.removeProperty("border");
+			surface.style.removeProperty("border");
 		}
+
+		surface.style.setProperty("box-sizing", "border-box");
+	}
+
+	function applyButtonBorderColor(repeaterItem, link) {
+		applyButtonBorderChrome(repeaterItem, link);
 	}
 
 	/**
@@ -697,6 +809,8 @@
 			return;
 		}
 
+		wrapper.style.setProperty("padding", "0");
+
 		[
 			"backgroundColor",
 			"background",
@@ -706,13 +820,11 @@
 			"borderRadius",
 		].forEach(function (prop) {
 			if (wrapper.style[prop]) {
-				surface.style[prop] = wrapper.style[prop];
 				wrapper.style[prop] = "";
 			}
 		});
 
-		copyComputedButtonChrome(wrapper, surface, preview);
-		applyButtonBorderColor(repeaterItem, surface);
+		applyButtonBorderChrome(repeaterItem, surface);
 		applyButtonColors(repeaterItem, surface, preview, wrapper);
 
 		surface.style.setProperty("display", "inline-flex");
@@ -808,8 +920,11 @@
 				e.target.closest('.repeater-item-inner[data-control-key="btn_style"]') ||
 				e.target.closest('.repeater-item-inner[data-control-key="btn_bg"]') ||
 				e.target.closest('.repeater-item-inner[data-control-key="btn_text_color"]') ||
+				e.target.closest('.repeater-item-inner[data-control-key="btn_border_type"]') ||
+				e.target.closest('.repeater-item-inner[data-control-key="btn_border_width"]') ||
 				e.target.closest('.repeater-item-inner[data-control-key="btn_border_color"]') ||
 				e.target.closest('.repeater-item-inner[data-control-key="btn_padding"]') ||
+				e.target.closest('.repeater-item-inner[data-control-key="btn_border_radius"]') ||
 				e.target.closest('.repeater-item-inner[data-control-key="ecbb_background"]')
 			) {
 				scheduleButtonPaintSync(item);

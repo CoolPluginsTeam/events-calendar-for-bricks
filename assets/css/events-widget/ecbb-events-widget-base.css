@@ -25,10 +25,11 @@
 	background-color: transparent !important;
 }
 
-/* Button-style rows: background/padding belong on the inner link, not the full-width wrapper. */
+/* Button-style rows: background/padding/border belong on the inner link, not the full-width wrapper. */
 .ecbb-event-part.ecbb-has-btn {
 	background-color: transparent !important;
 	border: none !important;
+	padding: 0 !important;
 }
 
 .ecbb-event-part.ecbb-has-btn > .ecbb-event__link,

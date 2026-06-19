@@ -918,7 +918,7 @@ function ecbb_events_widget_cost_token_is_free( $token ) {
 }
 
 /**
- * Currency choices for the Events Widget cost display (widget-level setting).
+ * Currency choices for the Event cost part (per repeater row).
  *
  * @return array<string,string>
  */
@@ -1109,23 +1109,52 @@ function ecbb_events_widget_render_settings( $settings = null ) {
 }
 
 /**
- * Resolve widget-level cost currency for display.
+ * Resolve cost currency for one Event cost repeater row.
  *
- * @param array<string,mixed> $item Optional repeater row (legacy fallback only).
+ * @param array<string,mixed> $item Repeater row.
  * @return string
  */
 function ecbb_events_widget_resolve_event_cost_currency( array $item = [] ) {
+	if ( isset( $item['cost_currency'] ) && (string) $item['cost_currency'] !== '' ) {
+		return ecbb_events_widget_sanitize_event_cost_currency( $item['cost_currency'] );
+	}
+
 	$settings = ecbb_events_widget_render_settings();
 	if ( isset( $settings['event_cost_currency'] ) ) {
 		return ecbb_events_widget_sanitize_event_cost_currency( $settings['event_cost_currency'] );
 	}
 
-	if ( isset( $item['cost_currency'] ) ) {
-		$legacy = (string) $item['cost_currency'];
-		return $legacy === 'none' ? 'none' : 'default';
+	return 'default';
+}
+
+/**
+ * Copy legacy widget-level event_cost_currency onto Event cost repeater rows (once per row).
+ *
+ * @param array<string,mixed> $settings Element settings.
+ * @return array<string,mixed>
+ */
+function ecbb_events_widget_migrate_event_cost_currency_into_repeaters( array $settings ) {
+	if ( ! isset( $settings['event_cost_currency'] ) ) {
+		return $settings;
 	}
 
-	return 'default';
+	$currency = ecbb_events_widget_sanitize_event_cost_currency( $settings['event_cost_currency'] );
+
+	foreach ( [ 'parts_style1', 'parts_style2', 'parts_grid', 'parts' ] as $key ) {
+		if ( empty( $settings[ $key ] ) || ! is_array( $settings[ $key ] ) ) {
+			continue;
+		}
+		foreach ( $settings[ $key ] as $index => $row ) {
+			if ( ! is_array( $row ) || (string) ( $row['part'] ?? '' ) !== 'event_cost' ) {
+				continue;
+			}
+			if ( ! isset( $row['cost_currency'] ) || (string) $row['cost_currency'] === '' ) {
+				$settings[ $key ][ $index ]['cost_currency'] = $currency;
+			}
+		}
+	}
+
+	return $settings;
 }
 
 /**
@@ -2118,7 +2147,7 @@ function ecbb_events_widget_parts_rows_clean( array $parts ) {
 		if ( ! is_array( $row ) || ! isset( $row['part'] ) || trim( (string) $row['part'] ) === '' ) {
 			continue;
 		}
-		unset( $row['venue_link'], $row['organizer_link'], $row['cost_currency'], $row['cost_prefix'], $row['cost_suffix'] );
+		unset( $row['venue_link'], $row['organizer_link'], $row['cost_prefix'], $row['cost_suffix'] );
 		$out[] = $row;
 	}
 	return $out;

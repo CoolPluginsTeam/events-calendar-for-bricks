@@ -224,6 +224,10 @@ class ECBB_Plugin {
             }
         }
 
+        if ( function_exists( 'ecbb_events_widget_migrate_event_cost_currency_into_repeaters' ) ) {
+            $settings = ecbb_events_widget_migrate_event_cost_currency_into_repeaters( $settings );
+        }
+
         return $settings;
     }
 
@@ -359,6 +363,16 @@ class ECBB_Plugin {
                     'ecbb_hover_animation',
                     'image_size_hover',
                     'ecbb_image_object_align_hover',
+                ],
+            'btnBorderKeys' => function_exists( 'ecbb_events_widget_repeater_btn_border_control_keys' )
+                ? ecbb_events_widget_repeater_btn_border_control_keys()
+                : [
+                    'btn_sep_border',
+                    'btn_border_type',
+                    'btn_border_width',
+                    'btn_border_color',
+                    'btn_padding',
+                    'btn_border_radius',
                 ],
         ] );
     }

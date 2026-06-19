@@ -219,11 +219,19 @@
 
 .ecbb-style2-body > .ecbb-style2-read-more {
 	margin-top: auto;
-	padding-top: 0.35rem;
+}
+
+/* Layout gap above read-more (outside button border when btn styles are on). */
+.ecbb-style2-body > .ecbb-style2-read-more:not(:first-child)::before {
+	content: "";
+	display: block;
+	height: 0.35rem;
 }
 
 .ecbb-style2-read-more.ecbb-has-btn {
 	background-color: transparent !important;
+	border: none !important;
+	padding: 0 !important;
 }
 
 .ecbb-style2-body > .ecbb-style2-title {

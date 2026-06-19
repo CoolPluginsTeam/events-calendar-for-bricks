@@ -458,9 +458,6 @@ class Element_ECBB_Events_Widget extends \Bricks\Element {
 		$this->set_attribute( '_root', 'class', $scope_class );
 
 		$settings = is_array( $this->settings ) ? $this->settings : [];
-		$item_gap = function_exists( 'ecbb_events_widget_resolve_item_gap_css' )
-			? ecbb_events_widget_resolve_item_gap_css( $settings )
-			: '24px';
 		$template = isset( $settings['layout_template'] ) ? (string) $settings['layout_template'] : 'list';
 		if ( $template === 'carousel' ) {
 			$template = 'list';
@@ -504,10 +501,7 @@ class Element_ECBB_Events_Widget extends \Bricks\Element {
 			];
 		}
 
-		// CSS variable for gap; grid columns use scoped responsive CSS + Bricks control CSS.
-		$vars = '--ecbb-gap:' . $item_gap . ';';
-		$this->set_attribute( '_root', 'style', $vars );
-
+		// Responsive gap + grid columns use scoped CSS (avoid inline --ecbb-gap; it blocks media queries).
 		$style_css = [];
 		$hover_css = [];
 		if ( function_exists( 'ecbb_events_widget_build_parts_scoped_css' ) ) {

@@ -100,10 +100,14 @@
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_image_object_align"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="ecbb_image_object_align_hover"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="btn_sep_style"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="btn_sep_border"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="btn_bg"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="btn_text_color"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="btn_border_type"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="btn_border_width"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="btn_border_color"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="btn_padding"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="btn_border_radius"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="read_more_text"] {
 	display: none !important;
 }
@@ -153,7 +157,8 @@
 }
 
 .ecbb-parts-repeater-item[data-ecbb-hover-open="false"] .repeater-item-inner[data-control-key="ecbb_sep_hover"]::after,
-.ecbb-parts-repeater-item[data-ecbb-btn-open="false"] .repeater-item-inner[data-control-key="btn_sep_style"]::after {
+.ecbb-parts-repeater-item[data-ecbb-btn-open="false"] .repeater-item-inner[data-control-key="btn_sep_style"]::after,
+.ecbb-parts-repeater-item[data-ecbb-btn-border-open="false"] .repeater-item-inner[data-control-key="btn_sep_border"]::after {
 	transform: translateY(-50%) rotate(-90deg);
 }
 
@@ -176,9 +181,15 @@
 }
 
 .ecbb-parts-repeater-item[data-ecbb-btn-open="false"] .repeater-item-inner[data-control-key="btn_bg"],
-.ecbb-parts-repeater-item[data-ecbb-btn-open="false"] .repeater-item-inner[data-control-key="btn_text_color"],
-.ecbb-parts-repeater-item[data-ecbb-btn-open="false"] .repeater-item-inner[data-control-key="btn_border_color"],
-.ecbb-parts-repeater-item[data-ecbb-btn-open="false"] .repeater-item-inner[data-control-key="btn_padding"] {
+.ecbb-parts-repeater-item[data-ecbb-btn-open="false"] .repeater-item-inner[data-control-key="btn_text_color"] {
+	display: none !important;
+}
+
+.ecbb-parts-repeater-item[data-ecbb-btn-border-open="false"] .repeater-item-inner[data-control-key="btn_border_type"],
+.ecbb-parts-repeater-item[data-ecbb-btn-border-open="false"] .repeater-item-inner[data-control-key="btn_border_width"],
+.ecbb-parts-repeater-item[data-ecbb-btn-border-open="false"] .repeater-item-inner[data-control-key="btn_border_color"],
+.ecbb-parts-repeater-item[data-ecbb-btn-border-open="false"] .repeater-item-inner[data-control-key="btn_padding"],
+.ecbb-parts-repeater-item[data-ecbb-btn-border-open="false"] .repeater-item-inner[data-control-key="btn_border_radius"] {
 	display: none !important;
 }
 
@@ -186,6 +197,7 @@
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="date_display"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="venue_display"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="organizer_display"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="cost_currency"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="event_link_display"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="link"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="desc_source"],

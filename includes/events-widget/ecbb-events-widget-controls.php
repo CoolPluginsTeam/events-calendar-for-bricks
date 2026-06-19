@@ -112,6 +112,68 @@ function ecbb_events_widget_repeater_hover_control_keys() {
 }
 
 /**
+ * Button parts that support optional button chrome.
+ *
+ * @return string[]
+ */
+function ecbb_events_widget_repeater_button_part_slugs() {
+	return [ 'read_more', 'event_tickets', 'event_rsvp' ];
+}
+
+/**
+ * @return array<int,array{0:string,1:string,2:mixed>>
+ */
+function ecbb_events_widget_repeater_required_btn_style_on() {
+	return [
+		[ 'part', '=', ecbb_events_widget_repeater_button_part_slugs() ],
+		[ 'btn_style', '=', true ],
+	];
+}
+
+/**
+ * @return array<int,array{0:string,1:string,2:mixed>>
+ */
+function ecbb_events_widget_repeater_required_btn_style_group() {
+	return ecbb_events_widget_repeater_required_btn_style_on();
+}
+
+/**
+ * @return array<int,array{0:string,1:string,2:mixed>>
+ */
+function ecbb_events_widget_repeater_required_btn_border_group() {
+	return ecbb_events_widget_repeater_required_btn_style_on();
+}
+
+/**
+ * Repeater field keys in the border & padding accordion (builder tab CSS + JS).
+ *
+ * @return string[]
+ */
+function ecbb_events_widget_repeater_btn_border_control_keys() {
+	return [
+		'btn_sep_border',
+		'btn_border_type',
+		'btn_border_width',
+		'btn_border_color',
+		'btn_padding',
+		'btn_border_radius',
+	];
+}
+
+/**
+ * Repeater field keys in the button fill / text accordion.
+ *
+ * @return string[]
+ */
+function ecbb_events_widget_repeater_btn_style_control_keys() {
+	return [
+		'btn_sep_style',
+		'btn_bg',
+		'btn_text_color',
+	];
+}
+
+/**
  * @return string[]
  */
 function ecbb_events_widget_repeater_hover_text_decoration_part_slugs() {
@@ -213,6 +275,18 @@ function ecbb_events_widget_get_repeater_fields() {
 			'default'  => 'full_details',
 			'required' => [ 'part', '=', 'organizer' ],
 		],
+		'cost_currency' => [
+			'label'    => esc_html__( 'Cost currency', 'ecbb' ),
+			'type'     => 'select',
+			'options'  => function_exists( 'ecbb_events_widget_event_cost_currency_options' )
+				? ecbb_events_widget_event_cost_currency_options()
+				: [
+					'default' => esc_html__( 'Site default', 'ecbb' ),
+					'none'    => esc_html__( 'No currency symbol', 'ecbb' ),
+				],
+			'default'  => 'default',
+			'required' => [ 'part', '=', 'event_cost' ],
+		],
 		'event_link_display' => [
 			'label'    => esc_html__( 'Link type', 'ecbb' ),
 			'type'     => 'select',
@@ -297,40 +371,55 @@ function ecbb_events_widget_get_repeater_fields() {
 		'btn_sep_style' => [
 			'label'    => esc_html__( 'Button styling', 'ecbb' ),
 			'type'     => 'separator',
-			'required' => [
-				[ 'part', '=', [ 'event_tickets', 'event_rsvp', 'read_more' ] ],
-				[ 'btn_style', '=', true ],
-			],
+			'required' => ecbb_events_widget_repeater_required_btn_style_group(),
 		],
 		'btn_bg' => [
 			'label'       => esc_html__( 'Button background', 'ecbb' ),
 			'type'        => 'color',
 			'placeholder' => '#2271b1',
 			'responsive'  => true,
-			'required'    => [
-				[ 'part', '=', [ 'event_tickets', 'event_rsvp', 'read_more' ] ],
-				[ 'btn_style', '=', true ],
-			],
+			'required'    => ecbb_events_widget_repeater_required_btn_style_group(),
 		],
 		'btn_text_color' => [
 			'label'       => esc_html__( 'Button text color', 'ecbb' ),
 			'type'        => 'color',
 			'placeholder' => '#ffffff',
 			'responsive'  => true,
-			'required'    => [
-				[ 'part', '=', [ 'event_tickets', 'event_rsvp', 'read_more' ] ],
-				[ 'btn_style', '=', true ],
+			'required'    => ecbb_events_widget_repeater_required_btn_style_group(),
+		],
+		'btn_sep_border' => [
+			'label'    => esc_html__( 'Border & padding', 'ecbb' ),
+			'type'     => 'separator',
+			'required' => ecbb_events_widget_repeater_required_btn_border_group(),
+		],
+		'btn_border_type' => [
+			'label'    => esc_html__( 'Border type', 'ecbb' ),
+			'type'     => 'select',
+			'options'  => [
+				'solid'  => esc_html__( 'Solid', 'ecbb' ),
+				'dashed' => esc_html__( 'Dashed', 'ecbb' ),
+				'dotted' => esc_html__( 'Dotted', 'ecbb' ),
+				'double' => esc_html__( 'Double', 'ecbb' ),
+				'none'   => esc_html__( 'None', 'ecbb' ),
 			],
+			'default'  => 'solid',
+			'required' => ecbb_events_widget_repeater_required_btn_border_group(),
+		],
+		'btn_border_width' => [
+			'label'      => esc_html__( 'Border width', 'ecbb' ),
+			'type'       => 'number',
+			'units'      => [ 'px' ],
+			'unit'       => 'px',
+			'placeholder' => '1',
+			'responsive' => true,
+			'required'   => ecbb_events_widget_repeater_required_btn_border_group(),
 		],
 		'btn_border_color' => [
 			'label'       => esc_html__( 'Border color', 'ecbb' ),
 			'type'        => 'color',
 			'placeholder' => '#cccccc',
 			'responsive'  => true,
-			'required'    => [
-				[ 'part', '=', [ 'event_tickets', 'event_rsvp', 'read_more' ] ],
-				[ 'btn_style', '=', true ],
-			],
+			'required'    => ecbb_events_widget_repeater_required_btn_border_group(),
 		],
 		'btn_padding' => [
 			'label'    => esc_html__( 'Button padding', 'ecbb' ),
@@ -341,16 +430,18 @@ function ecbb_events_widget_get_repeater_fields() {
 				'bottom' => '10px',
 				'left'   => '14px',
 			],
-			'required' => [
-				[ 'part', '=', [ 'event_tickets', 'event_rsvp', 'read_more' ] ],
-				[ 'btn_style', '=', true ],
-			],
-			'css'      => ecbb_events_widget_repeater_control_css(
-				'padding',
-				function_exists( 'ecbb_events_widget_repeater_button_inner_css_selector' )
-					? ecbb_events_widget_repeater_button_inner_css_selector()
-					: '& .ecbb-event__link, & > a'
-			),
+			'required' => ecbb_events_widget_repeater_required_btn_border_group(),
+			// No Bricks `css` rule: child selectors are ignored on repeater fieldId targets.
+			// Frontend: ecbb_events_widget_button_declarations() + build_parts_scoped_css(). Builder: ecbb-builder.js.
+		],
+		'btn_border_radius' => [
+			'label'       => esc_html__( 'Border radius', 'ecbb' ),
+			'type'        => 'dimensions',
+			'placeholder' => '0px',
+			'responsive'  => true,
+			'required'    => ecbb_events_widget_repeater_required_btn_border_group(),
+			// No Bricks `css` rule: child selectors are ignored on repeater fieldId targets.
+			// Frontend: ecbb_events_widget_button_declarations() + build_parts_scoped_css(). Builder: ecbb-builder.js.
 		],
 		'read_more_text' => [
 			'label'       => esc_html__( 'Read more text', 'ecbb' ),
@@ -695,22 +786,21 @@ function ecbb_events_widget_element_set_controls( $element ) {
 		'step'        => 1,
 		'placeholder' => '24',
 		'default'     => 24,
-		'responsive'  => true,
-		'description' => esc_html__( 'Space between each event card. Use device icons for tablet/mobile.', 'ecbb' ),
-	];
-
-	$element->controls['item_gap_unit'] = [
-		'tab'     => 'content',
-		'group'   => 'layouts',
-		'label'   => esc_html__( 'Gap unit', 'ecbb' ),
-		'type'    => 'select',
-		'options' => [
+		'units'       => [
 			'px'  => 'px',
 			'rem' => 'rem',
 			'em'  => 'em',
 		],
-		'inline'  => true,
-		'default' => 'px',
+		'unit'        => 'px',
+		'responsive'  => true,
+		'rerender'    => true,
+		'description' => esc_html__( 'Space between each event card. Click the device icon on this control for tablet/mobile.', 'ecbb' ),
+		'css'         => [
+			[
+				'property' => '--ecbb-gap',
+				'selector' => '.ecbb-ev',
+			],
+		],
 	];
 
 	$element->controls['date_format'] = [
@@ -726,20 +816,6 @@ function ecbb_events_widget_element_set_controls( $element ) {
 		'options'  => function_exists( 'ecbb_events_widget_date_format_preset_options' )
 			? ecbb_events_widget_date_format_preset_options()
 			: [ 'default' => esc_html__( 'Default', 'ecbb' ) ],
-	];
-
-	$element->controls['event_cost_currency'] = [
-		'tab'     => 'content',
-		'group'   => 'layouts',
-		'label'   => esc_html__( 'Cost currency', 'ecbb' ),
-		'type'    => 'select',
-		'default' => 'default',
-		'options' => function_exists( 'ecbb_events_widget_event_cost_currency_options' )
-			? ecbb_events_widget_event_cost_currency_options()
-			: [
-				'default' => esc_html__( 'Site default', 'ecbb' ),
-				'none'    => esc_html__( 'No currency symbol', 'ecbb' ),
-			],
 	];
 
 	// ── Events Query ──
