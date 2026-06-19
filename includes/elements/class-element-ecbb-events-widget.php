@@ -299,75 +299,6 @@ class Element_ECBB_Events_Widget extends \Bricks\Element {
 			return;
 		}
 
-		if ( $part === 'venue' ) {
-			$venue = '';
-			if ( function_exists( 'tribe_get_venue' ) ) {
-				$venue = \tribe_get_venue( $post->ID );
-			}
-			if ( ! $venue ) {
-				$venue_id = (int) get_post_meta( $post->ID, '_EventVenueID', true );
-				if ( $venue_id ) {
-					$venue = get_the_title( $venue_id );
-				}
-			}
-			$venue = trim( (string) $venue );
-			if ( $venue === '' ) {
-				return;
-			}
-
-			$style = $this->ecbb_build_inline_style_attr( $item );
-			$link_enabled = ! empty( $item['venue_link'] );
-			$url = '';
-			if ( $link_enabled && function_exists( 'tribe_get_venue_link' ) ) {
-				$url = (string) \tribe_get_venue_link( $post->ID );
-			}
-			$icon    = ' ecbb-has-row-icon';
-			$classes = $wrap . $icon;
-			// Location pin is gated in CSS on `.ecbb-has-row-icon` (Style 2 list, Style 1, grid).
-			echo '<div class="' . esc_attr( $classes ) . '"' . $this->ecbb_part_wrapper_attrs( $item, $idx, $style ) . '>';
-			if ( $link_enabled && $url ) {
-				echo '<span class="ecbb-event__link-wrapper">' . wp_kses_post( $url ) . '</span>';
-			} else {
-				echo esc_html( $venue );
-			}
-			echo '</div>';
-			return;
-		}
-
-		if ( $part === 'organizer' ) {
-			$organizer = '';
-
-			if ( function_exists( 'tribe_get_organizer' ) ) {
-				$organizer = \tribe_get_organizer( $post->ID );
-			}
-
-			if ( ! $organizer ) {
-				$organizer_id = (int) get_post_meta( $post->ID, '_EventOrganizerID', true );
-				if ( $organizer_id ) {
-					$organizer = get_the_title( $organizer_id );
-				}
-			}
-
-			if ( ! $organizer ) {
-				return;
-			}
-
-			$style = $this->ecbb_build_inline_style_attr( $item );
-			echo '<div class="' . esc_attr( $wrap ) . '"' . $this->ecbb_part_wrapper_attrs( $item, $idx, $style ) . '>';
-			$link_enabled = ! empty( $item['organizer_link'] );
-			$url = '';
-			if ( $link_enabled && function_exists( 'tribe_get_organizer_link' ) ) {
-				$url = (string) \tribe_get_organizer_link( $post->ID );
-			}
-			if ( $link_enabled && $url ) {
-				echo '<span class="ecbb-event__link-wrapper">' . wp_kses_post( $url ) . '</span>';
-			} else {
-				echo esc_html( $organizer );
-			}
-			echo '</div>';
-			return;
-		}
-
 		if ( $part === 'categories' ) {
 			$terms = get_the_terms( $post->ID, 'tribe_events_cat' );
 			if ( empty( $terms ) || is_wp_error( $terms ) ) {
@@ -460,15 +391,10 @@ class Element_ECBB_Events_Widget extends \Bricks\Element {
 				return;
 			}
 
-			$tt    = isset( $item['date_text_transform'] ) ? strtolower( trim( (string) $item['date_text_transform'] ) ) : 'capitalize';
-			if ( ! in_array( $tt, [ 'capitalize', 'none', 'uppercase', 'lowercase' ], true ) ) {
-				$tt = 'capitalize';
-			}
 			$style = trim( (string) $this->ecbb_build_inline_style_attr( $item ) );
-			$day_style = $tt !== '' ? 'text-transform:' . $tt . ';' : '';
 			$row_icon  = ( $time !== '' ) ? ' ecbb-has-row-icon' : '';
 			echo '<div class="' . esc_attr( $wrap . $row_icon ) . '"' . $this->ecbb_part_wrapper_attrs( $item, $idx, $style ) . '>';
-			echo '<span class="ecbb-event__date-day"' . ( $day_style ? ' style="' . esc_attr( $day_style ) . '"' : '' ) . '>' . esc_html( $day ) . '</span>';
+			echo '<span class="ecbb-event__date-day">' . esc_html( $day ) . '</span>';
 			if ( $time !== '' ) {
 				echo '<span class="ecbb-event__date-sep">,</span>';
 				echo '<span class="ecbb-event__date-time">' . esc_html( $time ) . '</span>';
@@ -477,22 +403,22 @@ class Element_ECBB_Events_Widget extends \Bricks\Element {
 			return;
 		}
 
-		// Title default: no link when hover is disabled (plain text).
+		// Title: uses repeater `tag` + `link`; no link/hover when link or hover is off.
 		$tag   = ! empty( $item['tag'] ) ? \Bricks\Helpers::sanitize_html_tag( (string) $item['tag'], 'h3' ) : 'h3';
 		$hover = ! function_exists( 'ecbb_event_part_hover_style_active' ) || ecbb_event_part_hover_style_active( $item );
-		$link  = ! empty( $item['link'] ) && $hover;
+		$link  = function_exists( 'ecbb_event_part_title_link_active' )
+			? ( ecbb_event_part_title_link_active( $item ) && $hover )
+			: ( ! empty( $item['link'] ) && $hover );
 		$style = $this->ecbb_build_inline_style_attr( $item );
 
 		echo '<' . esc_attr( $tag ) . ' class="' . esc_attr( $wrap ) . '"' . $this->ecbb_part_wrapper_attrs( $item, $idx, $style ) . '>';
 
 		if ( $link ) {
 			echo '<a class="ecbb-event__link" href="' . esc_url( get_permalink( $post->ID ) ) . '">';
-		}
-
-		echo esc_html( get_the_title( $post->ID ) );
-
-		if ( $link ) {
+			echo esc_html( get_the_title( $post->ID ) );
 			echo '</a>';
+		} else {
+			echo '<span class="ecbb-event__title-text">' . esc_html( get_the_title( $post->ID ) ) . '</span>';
 		}
 
 		echo '</' . esc_attr( $tag ) . '>';
@@ -650,6 +576,10 @@ class Element_ECBB_Events_Widget extends \Bricks\Element {
 		$style2_last_month = null;
 		$style2_show_month = ecbb_list2_month_headings_enabled( $this->settings );
 
+		if ( function_exists( 'ecbb_events_widget_render_settings' ) ) {
+			ecbb_events_widget_render_settings( $settings );
+		}
+
 		echo '<div class="' . esc_attr( $list_class ) . '">';
 
 		foreach ( $events as $event_post ) {
@@ -720,6 +650,10 @@ class Element_ECBB_Events_Widget extends \Bricks\Element {
 
 		wp_reset_postdata();
 		$post = $original_post;
+
+		if ( function_exists( 'ecbb_events_widget_render_settings' ) ) {
+			ecbb_events_widget_render_settings( [] );
+		}
 
 		echo '</div>';
 	}

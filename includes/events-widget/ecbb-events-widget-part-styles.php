@@ -378,6 +378,12 @@ function ecbb_events_widget_repeater_typography_css_selector() {
 	return '&, & .ecbb-event__term-chip, & .ecbb-event__link, & > .ecbb-event__link, & .ecbb-event__term, & > .ecbb-event__term';
 }
 
+function ecbb_events_widget_part_title_inner_selectors( $scope_sel ) {
+	return $scope_sel . ' .ecbb-event__link,'
+		. $scope_sel . ' > .ecbb-event__link,'
+		. $scope_sel . ' .ecbb-event__title-text';
+}
+
 /**
  * Bricks repeater typography control CSS (live builder + frontend).
  *
@@ -516,34 +522,91 @@ function ecbb_events_widget_hover_animation_scope( $scope_sel, $part_type ) {
 }
 
 /**
+ * Internal date-preset keys mapped to PHP date() format strings.
+ *
+ * @return array<string,string>
+ */
+function ecbb_events_widget_date_preset_formats() {
+	return [
+		'MD,Y'  => 'M j, Y',
+		'FD,Y'  => 'F j, Y',
+		'DM'    => 'd/m/Y',
+		'DML'   => 'j F l',
+		'DF'    => 'j F',
+		'MD'    => 'M j',
+		'FD'    => 'F j',
+		'MD,YT' => 'M j, Y',
+		'jMl'   => 'j M l',
+		'd.FY'  => 'd.m.Y',
+		'd.F'   => 'd.m',
+		'ldF'   => 'l j F',
+		'Mdl'   => 'M j l',
+		'd.Ml'  => 'd.m l',
+		'dFT'   => 'j F',
+		'D.j.F' => 'D, j. F',
+	];
+}
+
+/**
+ * Resolve a saved preset key to a PHP date format string.
+ *
+ * @param string $preset Preset key.
+ * @param string $part   event_date|event_time.
+ * @return string|null    PHP format, or null when not mapped (e.g. custom).
+ */
+function ecbb_events_widget_date_preset_php_format( $preset, $part = 'event_date' ) {
+	$preset = (string) $preset;
+
+	if ( $preset === '' || $preset === 'default' || $preset === 'full' ) {
+		return $part === 'event_time'
+			? (string) get_option( 'time_format' )
+			: (string) get_option( 'date_format' );
+	}
+
+	if ( $preset === 'custom' ) {
+		return null;
+	}
+
+	if ( in_array( $preset, [ 'sed', 'sedt', 'MD,YT', 'dFT' ], true ) ) {
+		return $part === 'event_time'
+			? (string) get_option( 'time_format' )
+			: (string) get_option( 'date_format' );
+	}
+
+	$formats = ecbb_events_widget_date_preset_formats();
+
+	return isset( $formats[ $preset ] ) ? $formats[ $preset ] : null;
+}
+
+/**
  * Date format presets shared by list query + repeater date parts.
  *
  * @return array<string,string>
  */
 function ecbb_events_widget_date_format_preset_options() {
 	return [
-		''      => esc_html__( 'Default', 'ecbb' ),
+		''        => esc_html__( 'Default', 'ecbb' ),
 		'default' => esc_html__( 'Default (01 January 2025)', 'ecbb' ),
-		'MD,Y'  => 'Md,Y (Jan 01, 2025)',
-		'FD,Y'  => 'Fd,Y (January 01, 2025)',
-		'DM'    => 'dM (01 Jan)',
-		'DML'   => 'dML (01 Jan Monday)',
-		'DF'    => 'dF (01 January)',
-		'MD'    => 'Md (Jan 01)',
-		'FD'    => 'Fd (January 01)',
-		'MD,YT' => 'Md,YT (Jan 01, 2025 8:00am-5:00pm)',
-		'full'  => 'Full (01 January 2025 8:00am-5:00pm)',
-		'jMl'   => 'jMl (1 Jan Monday)',
-		'd.FY'  => 'd.FY (01. January 2025)',
-		'd.F'   => 'd.F (01. January)',
-		'ldF'   => 'ldF (Monday 01 January)',
-		'Mdl'   => 'Mdl (Jan 01 Monday)',
-		'd.Ml'  => 'd.Ml (01. Jan Monday)',
-		'dFT'   => 'dFT (01 January 8:00am-5:00pm)',
-		'sed'   => 'SED (01 Jan - 02 Jan 2025)',
-		'sedt'  => 'SEDT (01 Jan - 02 Jan 2025 8:00am-5:00pm)',
-		'D.j.F' => 'D.,j. F (Wed., 15. May)',
-		'custom' => esc_html__( 'Custom…', 'ecbb' ),
+		'MD,Y'    => 'Md,Y (Jan 01, 2025)',
+		'FD,Y'    => 'Fd,Y (January 01, 2025)',
+		'DM'      => 'dM (01 Jan)',
+		'DML'     => 'dML (01 Jan Monday)',
+		'DF'      => 'dF (01 January)',
+		'MD'      => 'Md (Jan 01)',
+		'FD'      => 'Fd (January 01)',
+		'MD,YT'   => 'Md,YT (Jan 01, 2025 8:00am-5:00pm)',
+		'full'    => 'Full (01 January 2025 8:00am-5:00pm)',
+		'jMl'     => 'jMl (1 Jan Monday)',
+		'd.FY'    => 'd.FY (01. January 2025)',
+		'd.F'     => 'd.F (01. January)',
+		'ldF'     => 'ldF (Monday 01 January)',
+		'Mdl'     => 'Mdl (Jan 01 Monday)',
+		'd.Ml'    => 'd.Ml (01. Jan Monday)',
+		'dFT'     => 'dFT (01 January 8:00am-5:00pm)',
+		'sed'     => 'SED (01 Jan - 02 Jan 2025)',
+		'sedt'    => 'SEDT (01 Jan - 02 Jan 2025 8:00am-5:00pm)',
+		'D.j.F'   => 'D.,j. F (Wed., 15. May)',
+		'custom'  => esc_html__( 'Custom…', 'ecbb' ),
 	];
 }
 
@@ -592,8 +655,12 @@ function ecbb_events_widget_normalize_part_item( array $item ) {
 	}
 
 	if ( $part === 'venue' ) {
-		$fmt = isset( $item['venue_display'] ) ? (string) $item['venue_display'] : 'name';
+		$fmt = isset( $item['venue_display'] ) ? (string) $item['venue_display'] : 'full_details';
+		if ( $fmt === 'name_and_address' ) {
+			$fmt = 'full_details';
+		}
 		$map = [
+			'full_details'   => 'venue',
 			'name'           => 'venue',
 			'full_address'   => 'venue_full_address',
 			'street'         => 'venue_street',
@@ -624,12 +691,13 @@ function ecbb_events_widget_normalize_part_item( array $item ) {
 	}
 
 	if ( $part === 'organizer' ) {
-		$fmt = isset( $item['organizer_display'] ) ? (string) $item['organizer_display'] : 'name';
+		$fmt = isset( $item['organizer_display'] ) ? (string) $item['organizer_display'] : 'full_details';
 		$map = [
-			'name'    => 'organizer',
-			'email'   => 'organizer_email',
-			'phone'   => 'organizer_phone',
-			'website' => 'organizer_website',
+			'full_details' => 'organizer',
+			'name'         => 'organizer',
+			'email'        => 'organizer_email',
+			'phone'        => 'organizer_phone',
+			'website'      => 'organizer_website',
 		];
 		if ( isset( $map[ $fmt ] ) ) {
 			$item['part'] = $map[ $fmt ];
@@ -1103,8 +1171,8 @@ function ecbb_events_widget_build_parts_scoped_css( array $parts, $scope_class, 
 						. $scope_sel . ' .ecbb-event__link:hover,'
 						. $scope_sel . ' .ecbb-event__term:hover{background-color:' . $hover_bg . ' !important;}';
 				} elseif ( $part_type === 'title' ) {
-					$hover_css[] = $scope_sel . ':hover,'
-						. $scope_sel . ' .ecbb-event__link:hover{background-color:' . $hover_bg . ' !important;}';
+					$hover_css[] = $scope_sel . ' .ecbb-event__link:hover,'
+						. $scope_sel . ' .ecbb-event__title-text:hover{background-color:' . $hover_bg . ' !important;}';
 				} else {
 					$hover_css[] = $scope_sel . ':hover{background-color:' . $hover_bg . ' !important;}';
 				}
@@ -1142,15 +1210,11 @@ function ecbb_events_widget_build_parts_scoped_css( array $parts, $scope_class, 
 			foreach ( ecbb_events_widget_style_breakpoints() as $device => $mq ) {
 				$bg_raw = ecbb_events_widget_responsive_pick( $p['ecbb_background_inner'] ?? '', $device );
 				$bg_in  = $bg_raw !== '' && $bg_raw !== null ? $color_fn( $bg_raw ) : '';
-				if ( $bg_in === '' ) {
-					$bg_in = $color_fn( $p['ecbb_hover_background_inner'] ?? '' );
-				}
 				if ( $bg_in !== '' ) {
-					$inner_rule = $scope_sel . ' > .ecbb-event__link,'
-						. $scope_sel . ' .ecbb-event__link,'
-						. $scope_sel . ' .ecbb-event__link-wrapper,'
-						. $scope_sel . ' .ecbb-event__link-wrapper a,'
-						. $scope_sel . ' > a{background-color:' . $bg_in . ' !important;}';
+					$inner_sel  = function_exists( 'ecbb_events_widget_part_title_inner_selectors' )
+						? ecbb_events_widget_part_title_inner_selectors( $scope_sel )
+						: $scope_sel . ' .ecbb-event__link,' . $scope_sel . ' .ecbb-event__title-text';
+					$inner_rule = $inner_sel . '{display:inline-block;width:fit-content;max-width:100%;background-color:' . $bg_in . ' !important;}';
 					$style_css[] = ( $mq !== '' ? $mq . '{' . $inner_rule . '}' : $inner_rule );
 				}
 			}

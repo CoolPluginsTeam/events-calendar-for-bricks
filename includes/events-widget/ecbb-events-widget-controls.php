@@ -169,7 +169,7 @@ function ecbb_events_widget_get_repeater_fields() {
 			'default' => 'title',
 		],
 		'date_display' => [
-			'label'    => esc_html__( 'Date format', 'ecbb' ),
+			'label'    => esc_html__( 'Visibility', 'ecbb' ),
 			'type'     => 'select',
 			'options'  => [
 				'day_time_range' => esc_html__( 'Time range', 'ecbb' ),
@@ -181,11 +181,12 @@ function ecbb_events_widget_get_repeater_fields() {
 			'required' => [ 'part', '=', 'date' ],
 		],
 		'venue_display' => [
-			'label'    => esc_html__( 'Venue field', 'ecbb' ),
+			'label'    => esc_html__( 'Venue display', 'ecbb' ),
 			'type'     => 'select',
 			'options'  => [
-				'name'         => esc_html__( 'Venue name', 'ecbb' ),
-				'full_address' => esc_html__( 'Full address', 'ecbb' ),
+				'full_details' => esc_html__( 'Full venue details', 'ecbb' ),
+				'name'         => esc_html__( 'Venue name only', 'ecbb' ),
+				'full_address' => esc_html__( 'Full address only', 'ecbb' ),
 				'street'       => esc_html__( 'Street', 'ecbb' ),
 				'city'         => esc_html__( 'City', 'ecbb' ),
 				'state'        => esc_html__( 'State / province', 'ecbb' ),
@@ -195,19 +196,20 @@ function ecbb_events_widget_get_repeater_fields() {
 				'website'      => esc_html__( 'Website', 'ecbb' ),
 				'map_link'     => esc_html__( 'Map link', 'ecbb' ),
 			],
-			'default'  => 'name',
+			'default'  => 'full_details',
 			'required' => [ 'part', '=', 'venue' ],
 		],
 		'organizer_display' => [
-			'label'    => esc_html__( 'Organizer field', 'ecbb' ),
+			'label'    => esc_html__( 'Organizer display', 'ecbb' ),
 			'type'     => 'select',
 			'options'  => [
-				'name'    => esc_html__( 'Name', 'ecbb' ),
-				'email'   => esc_html__( 'Email', 'ecbb' ),
-				'phone'   => esc_html__( 'Phone', 'ecbb' ),
-				'website' => esc_html__( 'Website', 'ecbb' ),
+				'full_details' => esc_html__( 'Full organizer details', 'ecbb' ),
+				'name'         => esc_html__( 'Organizer name only', 'ecbb' ),
+				'email'        => esc_html__( 'Email', 'ecbb' ),
+				'phone'        => esc_html__( 'Phone', 'ecbb' ),
+				'website'      => esc_html__( 'Website', 'ecbb' ),
 			],
-			'default'  => 'name',
+			'default'  => 'full_details',
 			'required' => [ 'part', '=', 'organizer' ],
 		],
 		'event_link_display' => [
@@ -253,7 +255,7 @@ function ecbb_events_widget_get_repeater_fields() {
 			'required' => [ 'part', '=', 'description' ],
 		],
 		'date_format_preset' => [
-			'label'       => esc_html__( 'PHP date preset', 'ecbb' ),
+			'label'       => esc_html__( 'Date Format', 'ecbb' ),
 			'type'        => 'select',
 			'options'     => $date_formats,
 			'default'     => '',
@@ -271,21 +273,6 @@ function ecbb_events_widget_get_repeater_fields() {
 				[ 'part', '=', 'date' ],
 				[ 'date_display', '=', [ 'date', 'time' ] ],
 				[ 'date_format_preset', '=', 'custom' ],
-			],
-		],
-		'date_text_transform' => [
-			'label'    => esc_html__( 'Text transform', 'ecbb' ),
-			'type'     => 'select',
-			'options'  => [
-				'capitalize' => esc_html__( 'Capitalize', 'ecbb' ),
-				'none'       => esc_html__( 'None', 'ecbb' ),
-				'uppercase'  => esc_html__( 'Uppercase', 'ecbb' ),
-				'lowercase'  => esc_html__( 'Lowercase', 'ecbb' ),
-			],
-			'default'  => 'capitalize',
-			'required' => [
-				[ 'part', '=', 'date' ],
-				[ 'date_display', '=', 'day_time_range' ],
 			],
 		],
 		'tickets_link_text' => [
@@ -309,53 +296,11 @@ function ecbb_events_widget_get_repeater_fields() {
 			'default'     => ', ',
 			'required'    => [ 'part', '=', 'tags' ],
 		],
-		'venue_link' => [
-			'label'    => esc_html__( 'Link to venue', 'ecbb' ),
-			'type'     => 'checkbox',
-			'default'  => false,
-			'required' => [
-				[ 'part', '=', 'venue' ],
-				[ 'venue_display', '=', [ 'name', 'full_address', 'street', 'city', 'state', 'zip', 'country', 'phone' ] ],
-			],
-		],
 		'detail_link_text' => [
 			'label'       => esc_html__( 'Link label', 'ecbb' ),
 			'type'        => 'text',
 			'placeholder' => esc_html__( 'Open link', 'ecbb' ),
-			'required'    => [
-				[ 'part', '=', [ 'organizer', 'event_link' ] ],
-			],
-		],
-		'organizer_link' => [
-			'label'    => esc_html__( 'Link to organizer', 'ecbb' ),
-			'type'     => 'checkbox',
-			'default'  => false,
-			'required' => [
-				[ 'part', '=', 'organizer' ],
-				[ 'organizer_display', '=', 'name' ],
-			],
-		],
-		'cost_currency' => [
-			'label'    => esc_html__( 'Currency', 'ecbb' ),
-			'type'     => 'select',
-			'options'  => [
-				'symbol' => esc_html__( 'Symbol', 'ecbb' ),
-				'none'   => esc_html__( 'None', 'ecbb' ),
-			],
-			'default'  => 'symbol',
-			'required' => [ 'part', '=', 'event_cost' ],
-		],
-		'cost_prefix' => [
-			'label'       => esc_html__( 'Prefix', 'ecbb' ),
-			'type'        => 'text',
-			'placeholder' => esc_html__( 'From', 'ecbb' ),
-			'required'    => [ 'part', '=', 'event_cost' ],
-		],
-		'cost_suffix' => [
-			'label'       => esc_html__( 'Suffix', 'ecbb' ),
-			'type'        => 'text',
-			'placeholder' => esc_html__( 'per person', 'ecbb' ),
-			'required'    => [ 'part', '=', 'event_cost' ],
+			'required'    => [ 'part', '=', 'event_link' ],
 		],
 		'btn_style' => [
 			'label'    => esc_html__( 'Button styles', 'ecbb' ),
@@ -575,6 +520,7 @@ function ecbb_events_widget_get_repeater_fields() {
 			'type'        => 'color',
 			'placeholder' => '#666666',
 			'responsive'  => true,
+			'css'         => ecbb_events_widget_repeater_control_css( 'background-color', '&' ),
 		],
 		'ecbb_background_inner' => [
 			'label'       => esc_html__( 'Inner background', 'ecbb' ),
@@ -582,10 +528,8 @@ function ecbb_events_widget_get_repeater_fields() {
 			'placeholder' => '#666666',
 			'responsive'  => true,
 			'required'    => ecbb_events_widget_repeater_required_inner_background(),
-			'css'         => ecbb_events_widget_repeater_control_css(
-				'background-color',
-				'& > .ecbb-event__link, & .ecbb-event__link, & .ecbb-event__link-wrapper, & > a'
-			),
+			// No Bricks `css` rule: child selectors are ignored on repeater fieldId targets.
+			// Frontend: ecbb_events_widget_build_parts_scoped_css(). Builder: assets/js/ecbb-builder.js.
 		],
 		'ecbb_margin' => [
 			'label' => esc_html__( 'Margin', 'ecbb' ),
@@ -801,6 +745,20 @@ function ecbb_events_widget_element_set_controls( $element ) {
 		'options'  => function_exists( 'ecbb_events_widget_date_format_preset_options' )
 			? ecbb_events_widget_date_format_preset_options()
 			: [ 'default' => esc_html__( 'Default', 'ecbb' ) ],
+	];
+
+	$element->controls['event_cost_currency'] = [
+		'tab'     => 'content',
+		'group'   => 'layouts',
+		'label'   => esc_html__( 'Cost currency', 'ecbb' ),
+		'type'    => 'select',
+		'default' => 'default',
+		'options' => function_exists( 'ecbb_events_widget_event_cost_currency_options' )
+			? ecbb_events_widget_event_cost_currency_options()
+			: [
+				'default' => esc_html__( 'Site default', 'ecbb' ),
+				'none'    => esc_html__( 'No currency symbol', 'ecbb' ),
+			],
 	];
 
 	// ── Events Query ──

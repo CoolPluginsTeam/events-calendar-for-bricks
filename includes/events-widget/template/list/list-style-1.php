@@ -40,7 +40,8 @@ function ecbb_list1_default_parts_rows() {
 					'date_text_transform' => 'none',
 				],
 				[
-					'part' => 'venue',
+					'part'          => 'venue',
+					'venue_display' => 'full_details',
 				],
 				[
 					'part'        => 'description',
@@ -62,7 +63,8 @@ function ecbb_list1_default_parts_rows() {
 				'date_text_transform' => 'none',
 			],
 			[
-				'part' => 'venue',
+				'part'          => 'venue',
+				'venue_display' => 'full_details',
 			],
 			[
 				'part'        => 'description',
@@ -114,6 +116,33 @@ function ecbb_list1_normalize_parts( array $parts ) {
 				return is_array( $row ) && ( (string) ( $row['part'] ?? '' ) !== 'read_more' );
 			}
 		)
+	);
+
+	$clean = array_map(
+		static function ( $row ) {
+			if ( ! is_array( $row ) ) {
+				return $row;
+			}
+
+			$part = (string) ( $row['part'] ?? '' );
+
+			if ( $part === 'venue' ) {
+				$display = (string) ( $row['venue_display'] ?? '' );
+				if ( $display === '' || $display === 'name_and_address' ) {
+					$row['venue_display'] = 'full_details';
+				}
+			}
+
+			if ( $part === 'organizer' ) {
+				$display = (string) ( $row['organizer_display'] ?? '' );
+				if ( $display === '' ) {
+					$row['organizer_display'] = 'full_details';
+				}
+			}
+
+			return $row;
+		},
+		$clean
 	);
 
 	return $clean;

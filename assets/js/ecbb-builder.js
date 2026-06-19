@@ -49,8 +49,39 @@
 		return "";
 	}
 
-	function partSupportsHover(part) {
-		return part !== "" && HOVER_PARTS.indexOf(part) !== -1;
+	function partSupportsHover(part, item) {
+		if (part === "" || HOVER_PARTS.indexOf(part) === -1) {
+			return false;
+		}
+		if (part === "title" && item && !titleLinkEnabled(item)) {
+			return false;
+		}
+		return true;
+	}
+
+	function titleLinkEnabled(item) {
+		if (!item) {
+			return false;
+		}
+		var inner = item.querySelector(
+			'.repeater-item-inner[data-control-key="link"]'
+		);
+		if (!inner) {
+			return false;
+		}
+		var cb = inner.querySelector('input[type="checkbox"]');
+		if (cb) {
+			return cb.checked;
+		}
+		var toggle = inner.querySelector("[aria-checked]");
+		if (toggle) {
+			return toggle.getAttribute("aria-checked") === "true";
+		}
+		var select = inner.querySelector("select");
+		if (select) {
+			return select.value !== "no" && select.value !== "0" && select.value !== "";
+		}
+		return false;
 	}
 
 	function readUseHoverValue(item) {
@@ -89,7 +120,7 @@
 		}
 
 		var part = readPartValue(item);
-		if (!partSupportsHover(part)) {
+		if (!partSupportsHover(part, item)) {
 			item.removeAttribute("data-ecbb-use-hover");
 			return;
 		}
@@ -107,7 +138,11 @@
 
 		var part = readPartValue(item);
 		item.setAttribute("data-ecbb-part", part);
-		item.classList.toggle("ecbb-part-no-hover", part !== "" && !partSupportsHover(part));
+		item.setAttribute(
+			"data-ecbb-title-link",
+			part === "title" && titleLinkEnabled(item) ? "true" : "false"
+		);
+		item.classList.toggle("ecbb-part-no-hover", part !== "" && !partSupportsHover(part, item));
 		syncUseHoverEnabled(item);
 	}
 
@@ -263,6 +298,7 @@
 			ensureAccordions(item);
 		});
 		syncAllButtonPaint();
+		syncAllTitleInnerBackground();
 	}
 
 	var t = null;
@@ -343,6 +379,84 @@
 			.forEach(function (node) {
 				node.style.setProperty("color", color);
 			});
+	}
+
+	function syncTitleInnerBackground(repeaterItem) {
+		if (!repeaterItem || readPartValue(repeaterItem) !== "title") {
+			return;
+		}
+
+		var preview = getPreviewDocument();
+		if (!preview) {
+			return;
+		}
+
+		var rowId = readRepeaterRowId(repeaterItem);
+		if (!rowId) {
+			return;
+		}
+
+		var wrapper = preview.querySelector('[data-field-id="' + rowId + '"]');
+		if (!wrapper) {
+			return;
+		}
+
+		var bg = readControlInnerColor(
+			repeaterItem.querySelector(
+				'.repeater-item-inner[data-control-key="ecbb_background_inner"]'
+			)
+		);
+
+		wrapper
+			.querySelectorAll(".ecbb-event__link, .ecbb-event__title-text")
+			.forEach(function (node) {
+				if (bg) {
+					node.style.setProperty("background-color", bg, "important");
+					node.style.setProperty("display", "inline-block");
+					node.style.setProperty("width", "fit-content");
+					node.style.setProperty("max-width", "100%");
+				} else {
+					node.style.removeProperty("background-color");
+				}
+			});
+	}
+
+	var titleInnerBgTimer = null;
+	function scheduleTitleInnerBackgroundSync(repeaterItem) {
+		if (!repeaterItem) {
+			return;
+		}
+		if (titleInnerBgTimer) {
+			clearTimeout(titleInnerBgTimer);
+		}
+		titleInnerBgTimer = setTimeout(function () {
+			titleInnerBgTimer = null;
+			syncTitleInnerBackground(repeaterItem);
+		}, 60);
+	}
+
+	function syncAllTitleInnerBackground() {
+		document
+			.querySelectorAll(".ecbb-parts-repeater-item")
+			.forEach(function (item) {
+				if (readPartValue(item) === "title") {
+					syncTitleInnerBackground(item);
+				}
+			});
+	}
+
+	function onTitleInnerBackgroundInteraction(e) {
+		var item = e.target.closest(".ecbb-parts-repeater-item");
+		if (!item) {
+			return;
+		}
+		if (
+			e.target.closest(
+				'.repeater-item-inner[data-control-key="ecbb_background_inner"]'
+			)
+		) {
+			scheduleTitleInnerBackgroundSync(item);
+		}
 	}
 
 	var typoSyncTimer = null;
@@ -607,11 +721,19 @@
 				syncHoverVisibility(item);
 				return;
 			}
+			if (e.target.closest('.repeater-item-inner[data-control-key="link"]')) {
+				syncHoverVisibility(item);
+				scheduleTitleInnerBackgroundSync(item);
+				return;
+			}
 			if (e.target.closest('.repeater-item-inner[data-control-key="ecbb_use_hover"]')) {
 				syncUseHoverEnabled(item);
 			}
 			if (e.target.closest('.repeater-item-inner[data-control-key="ecbb_typography"]')) {
 				scheduleTypographyColorSync(item);
+			}
+			if (e.target.closest('.repeater-item-inner[data-control-key="ecbb_background_inner"]')) {
+				scheduleTitleInnerBackgroundSync(item);
 			}
 			if (
 				e.target.closest('.repeater-item-inner[data-control-key="btn_style"]') ||
@@ -628,6 +750,8 @@
 	document.addEventListener("input", onTypographyControlInteraction, true);
 	document.addEventListener("input", onButtonControlInteraction, true);
 	document.addEventListener("change", onButtonControlInteraction, true);
+	document.addEventListener("input", onTitleInnerBackgroundInteraction, true);
+	document.addEventListener("change", onTitleInnerBackgroundInteraction, true);
 
 	document.addEventListener(
 		"click",

@@ -1,46 +1,27 @@
 /**
- * Events Widget — List template / Style 1 (single-row card: cyan date column + light-cyan body
- * + cyan CTA column on the right).
- *
- * File: `assets/css/events-widget/template/list/list-style-1.css`.
- *
- * Style 1 mirrors Style 2's "static side + repeater body" architecture:
- *   - left aside  `.ecbb-ev__style1-date` (day / month / year)
- *   - middle      `.ecbb-ev__style1-body` (repeater minus read_more)
- *   - right aside `.ecbb-ev__style1-cta`  (first read_more row)
- *
- * Typography mirrors Style 2 for cross-style consistency (24px title, 16px
- * description / venue, 14px read-more, 13px time, Open Sans). Palette is
- * keyed to Style 1's cyan accent (#1ac8e8); the left & right asides use the
- * same solid cyan so they read as matching bookends around the body.
+ * Events Widget — List template / Style 1
+ * Layout: `.ecbb-ev__style1-date` | `.ecbb-ev__style1-body` | `.ecbb-ev__style1-cta`
  */
 
-/* ─────────────────────────── Item chrome ─────────────────────────── */
+/* ── Design tokens (scoped to Style 1 shell) ── */
 
-/* Style 1 + grid: keep cards flat (no extra chrome). */
-.ecbb-ev__list--grid .ecbb-ev__item--style-1 {
-	padding: 0;
-	border-radius: 0;
-	border: none;
-	background: transparent;
-	box-shadow: none;
-}
-
-/* Style 1 + list: the item is a frame; the inner grid carries the chrome. */
-.ecbb-ev__list--list .ecbb-ev__item--style-1 {
-	padding: 0;
-	border: none;
-	background: transparent;
-	box-shadow: none;
-}
-
-/* ─────────────────────────── Inner layout ─────────────────────────── */
-
-/* Base: 2 columns (date | body). The CTA modifier expands to 3 columns. */
 .ecbb-ev__item-inner--style1 {
-	--ecbb-style1-date-width: 18rem;
+	--ecbb-s1-cyan: #1d9aee;
+	--ecbb-s1-body-bg: #e7f6fa;
+	--ecbb-s1-muted: #4b5563;
+	--ecbb-s1-title: #222222;
+	--ecbb-s1-chip: #0693e3;
+	--ecbb-s1-accent: #1ac8e8;
+	--ecbb-s1-cta-text: #111827;
+	--ecbb-s1-date-width: 18rem;
+	--ecbb-s1-cta-width: 18rem;
+	--ecbb-s1-font: "Open Sans", sans-serif;
+	--ecbb-s1-font-alt: "Inter", sans-serif;
+	--ecbb-s1-icon-clock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' d='M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2zm4.2 14.2L11 13V7h1.5v5.2l4.5 2.7l-.8 1.3z'/%3E%3C/svg%3E");
+	--ecbb-s1-icon-pin: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' d='M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z'/%3E%3C/svg%3E");
+
 	display: grid;
-	grid-template-columns: var(--ecbb-style1-date-width) minmax(0, 1fr);
+	grid-template-columns: var(--ecbb-s1-date-width) minmax(0, 1fr);
 	align-items: stretch;
 	overflow: hidden;
 	border-radius: 6px;
@@ -48,14 +29,25 @@
 }
 
 .ecbb-ev__item-inner--style1-has-cta {
-	grid-template-columns: var(--ecbb-style1-date-width) minmax(0, 1fr) 18rem;
+	grid-template-columns: var(--ecbb-s1-date-width) minmax(0, 1fr) var(--ecbb-s1-cta-width);
 }
 
-/* ─────────────────────────── Left date column ─────────────────────────── */
+/* ── Item chrome (flat card; inner grid carries layout) ── */
+
+.ecbb-ev__list--grid .ecbb-ev__item--style-1,
+.ecbb-ev__list--list .ecbb-ev__item--style-1 {
+	padding: 0;
+	border: none;
+	border-radius: 0;
+	background: transparent;
+	box-shadow: none;
+}
+
+/* ── Left date column ── */
 
 .ecbb-ev__style1-date {
-	background-color: #1d9aee;
-	color: #ffffff;
+	background-color: var(--ecbb-s1-cyan);
+	color: #fff;
 	padding: 1.75rem 0.75rem;
 	display: flex;
 	flex-direction: column;
@@ -64,25 +56,24 @@
 	gap: 0.4rem;
 	text-align: center;
 	box-sizing: border-box;
-	font-family: "Open Sans", sans-serif;
+	font-family: var(--ecbb-s1-font);
 }
 
 .ecbb-ev__style1-date-day {
-	font-size: 28px;
+	font-size: 20px;
 	font-weight: 700;
-	line-height: 1;
+	line-height: 1.5;
 	letter-spacing: -0.01em;
 }
 
 .ecbb-ev__style1-date-month,
 .ecbb-ev__style1-date-year {
-	font-size: 16px;
+	font-size: 18px;
 	font-weight: 500;
-	line-height: 1.2;
+	line-height: 1.5;
 	letter-spacing: 0.01em;
 }
 
-/* Alternate left-column layouts (Events Query → Date formats). */
 .ecbb-ev__style1-date--multiline {
 	gap: 0.35rem;
 }
@@ -107,7 +98,8 @@
 	letter-spacing: -0.01em;
 }
 
-.ecbb-ev__style1-date-line--2 {
+.ecbb-ev__style1-date-line--2,
+.ecbb-ev__style1-date-line--3 {
 	font-size: 15px;
 	font-weight: 500;
 	line-height: 1.2;
@@ -116,32 +108,31 @@
 
 .ecbb-ev__style1-date-line--3 {
 	font-size: 14px;
-	font-weight: 500;
-	line-height: 1.2;
-	letter-spacing: 0.01em;
 }
 
-/* ─────────────────────────── Middle body ─────────────────────────── */
+/* ── Middle body ── */
 
 .ecbb-ev__style1-body {
-	background-color: #e7f6fa;
+	background-color: var(--ecbb-s1-body-bg);
 	padding: 1.5rem 1.75rem;
 	min-width: 0;
 	box-sizing: border-box;
-	font-family: "Open Sans", sans-serif;
+	font-family: var(--ecbb-s1-font);
+	color: var(--ecbb-s1-muted);
 }
 
-/* Title (sized to match Style 2). */
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--title {
-	margin: 0 0 0.35rem;
-	font-size: 24px;
-	font-family: "Open Sans", sans-serif;
-	font-weight: 700;
-	color: #111827;
+/* Title — :where() keeps Bricks controls able to override defaults. */
+:where(.ecbb-ev__item--style-1 .ecbb-ev__style1-body) .ecbb-event-part--title {
+	font-family: var(--ecbb-s1-font-alt);
+	font-size: 21px;
+	font-weight: 600;
+	text-decoration: underline;
+	color: var(--ecbb-s1-title);
 	line-height: 1.25;
+	margin: 0 0 0.35rem;
 }
 
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--title:not(.ecbb-no-hover) .ecbb-event__link {
+:where(.ecbb-ev__item--style-1 .ecbb-ev__style1-body) .ecbb-event-part--title:not(.ecbb-no-hover) .ecbb-event__link {
 	color: inherit;
 	text-decoration: underline;
 	text-underline-offset: 3px;
@@ -149,15 +140,19 @@
 	transition: color 0.18s ease;
 }
 
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--title.ecbb-no-hover {
+:where(.ecbb-ev__item--style-1 .ecbb-ev__style1-body) .ecbb-event-part--title .ecbb-event__link,
+:where(.ecbb-ev__item--style-1 .ecbb-ev__style1-body) .ecbb-event-part--title .ecbb-event__title-text {
+	display: inline-block;
+	width: fit-content;
+	max-width: 100%;
+}
+
+:where(.ecbb-ev__item--style-1 .ecbb-ev__style1-body) .ecbb-event-part--title.ecbb-no-hover,
+:where(.ecbb-ev__item--style-1 .ecbb-ev__style1-body) .ecbb-event-part--title.ecbb-no-hover .ecbb-event__link {
 	text-decoration: none;
 }
 
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--title.ecbb-no-hover .ecbb-event__link {
-	text-decoration: none;
-}
-
-/* Category chips — defaults use :where() so Bricks typography/color wins live in the builder. */
+/* Category chips */
 :where(.ecbb-ev__item--style-1 .ecbb-ev__style1-body) .ecbb-event-part--categories {
 	display: flex;
 	flex-wrap: wrap;
@@ -165,7 +160,7 @@
 	gap: 0.35rem;
 	align-self: flex-start;
 	max-width: 100%;
-	color: #1ac8e8;
+	color: var(--ecbb-s1-chip);
 	font-size: 12px;
 	font-weight: 500;
 	line-height: 1.5;
@@ -175,102 +170,70 @@
 :where(.ecbb-ev__item--style-1 .ecbb-ev__style1-body) .ecbb-event-part--categories .ecbb-event__term-chip {
 	display: inline-flex;
 	align-items: center;
-	padding: 2px 12px;
-	border: none;
-	background-color: transparent;
-	border-radius: 999px;
+	padding: 0 8px;
+	border: 1px solid var(--ecbb-s1-chip);
+	border-radius: 4px;
 }
 
-:where(.ecbb-ev__item--style-1 .ecbb-ev__style1-body) .ecbb-event-part--categories .ecbb-event__term-chip .ecbb-event__link,
-:where(.ecbb-ev__item--style-1 .ecbb-ev__style1-body) .ecbb-event-part--categories .ecbb-event__term-chip .ecbb-event__term {
+:where(.ecbb-ev__item--style-1 .ecbb-ev__style1-body) .ecbb-event-part--categories .ecbb-event__term-chip :is(.ecbb-event__link, .ecbb-event__term) {
 	color: inherit;
 	text-decoration: none;
 }
 
-/* Time row (works for the "Day & time range" part and for "Time").
-   Clock glyph only when `.ecbb-has-row-icon` is set (PHP: time segment present). */
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--date,
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--event-time {
+/* Date / time rows — clock icon when `.ecbb-has-row-icon` is set */
+.ecbb-ev__item--style-1 .ecbb-ev__style1-body :is(.ecbb-event-part--date, .ecbb-event-part--event-time) {
 	display: flex;
 	align-items: center;
-	color: #4b5563;
-	font-size: 13px;
-	font-weight: 400;
+	font-family: var(--ecbb-s1-font-alt);
+	font-size: 14px;
+	font-weight: 500;
 	line-height: 1.45;
 	letter-spacing: 0.01em;
 }
 
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--date.ecbb-has-row-icon::before,
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--event-time.ecbb-has-row-icon::before {
+.ecbb-ev__item--style-1 .ecbb-ev__style1-body :is(.ecbb-event-part--date, .ecbb-event-part--event-time).ecbb-has-row-icon::before {
 	content: "";
 	flex: 0 0 auto;
 	width: 14px;
 	height: 14px;
 	margin-right: 0.5rem;
 	background-color: currentColor;
-	-webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' d='M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2zm4.2 14.2L11 13V7h1.5v5.2l4.5 2.7l-.8 1.3z'/%3E%3C/svg%3E") center / contain no-repeat;
-	mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' d='M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2zm4.2 14.2L11 13V7h1.5v5.2l4.5 2.7l-.8 1.3z'/%3E%3C/svg%3E") center / contain no-repeat;
+	-webkit-mask: var(--ecbb-s1-icon-clock) center / contain no-repeat;
+	mask: var(--ecbb-s1-icon-clock) center / contain no-repeat;
 }
 
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--date .ecbb-event__date-day,
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--date .ecbb-event__date-sep {
+.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--date :is(.ecbb-event__date-day, .ecbb-event__date-sep) {
 	display: none;
 }
 
-/* Venue rows: pin only when the row actually rendered venue text (`.ecbb-has-row-icon`). */
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--venue,
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--venue-full-address,
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--venue-street,
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--venue-city,
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--venue-state,
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--venue-zip,
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--venue-country,
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--venue-phone {
+/* Venue rows — pin icon when `.ecbb-has-row-icon` is set */
+.ecbb-ev__item--style-1 .ecbb-ev__style1-body [class*="ecbb-event-part--venue"] {
 	position: relative;
 	padding-left: 0;
-	color: #4b5563;
-	font-family: "Open Sans", sans-serif;
-	font-size: 16px;
+	font-size: 15px;
 	font-weight: 400;
 	line-height: 1.5;
 }
 
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--venue.ecbb-has-row-icon,
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--venue-full-address.ecbb-has-row-icon,
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--venue-street.ecbb-has-row-icon,
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--venue-city.ecbb-has-row-icon,
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--venue-state.ecbb-has-row-icon,
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--venue-zip.ecbb-has-row-icon,
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--venue-country.ecbb-has-row-icon,
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--venue-phone.ecbb-has-row-icon {
+.ecbb-ev__item--style-1 .ecbb-ev__style1-body [class*="ecbb-event-part--venue"].ecbb-has-row-icon {
 	padding-left: 1.4rem;
 }
 
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--venue.ecbb-has-row-icon::before,
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--venue-full-address.ecbb-has-row-icon::before,
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--venue-street.ecbb-has-row-icon::before,
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--venue-city.ecbb-has-row-icon::before,
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--venue-state.ecbb-has-row-icon::before,
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--venue-zip.ecbb-has-row-icon::before,
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--venue-country.ecbb-has-row-icon::before,
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--venue-phone.ecbb-has-row-icon::before {
+.ecbb-ev__item--style-1 .ecbb-ev__style1-body [class*="ecbb-event-part--venue"].ecbb-has-row-icon::before {
 	content: "";
 	position: absolute;
-	left: 0;
+	left: -2px;
 	top: 0.15em;
 	width: 16px;
 	height: 18px;
 	background-color: currentColor;
-	-webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' d='M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z'/%3E%3C/svg%3E") center / contain no-repeat;
-	mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' d='M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z'/%3E%3C/svg%3E") center / contain no-repeat;
+	-webkit-mask: var(--ecbb-s1-icon-pin) center / contain no-repeat;
+	mask: var(--ecbb-s1-icon-pin) center / contain no-repeat;
 }
 
-/* Description (matches Style 2: 16px, gray-600, 1.5em). */
+/* Description */
 .ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--description {
-	color: #4b5563;
-	font-family: "Open Sans", sans-serif;
 	font-size: 16px;
-	font-weight: 400;
 	line-height: 1.5em;
 	margin-top: 0.25rem;
 }
@@ -283,19 +246,19 @@
 	margin-bottom: 0;
 }
 
-/* ─────────────────────────── Right CTA column ─────────────────────────── */
+/* ── Right CTA column ── */
 
 .ecbb-ev__style1-cta {
-	background-color: #e7f6fa;
+	background-color: var(--ecbb-s1-body-bg);
 	display: flex;
 	align-items: center;
 	justify-content: stretch;
 	min-width: 0;
-	font-family: "Open Sans", sans-serif;
+	font-family: var(--ecbb-s1-font);
 }
 
-.ecbb-ev__style1-cta:hover{
-	background-color: #1d9aee;
+.ecbb-ev__style1-cta:hover {
+	background-color: var(--ecbb-s1-cyan);
 }
 
 .ecbb-ev__style1-cta .ecbb-event-part--read-more {
@@ -322,11 +285,10 @@
 	line-height: 1.4;
 	transition: background-color 0.18s ease, color 0.18s ease, text-decoration-color 0.18s ease;
 }
-/* If a user dropped read_more in the body too (or removed read_more entirely),
-   keep any in-body read_more readable rather than letting it fall back to
-   theme-link styling. */
+
+/* Fallback when read_more lands in the body instead of the CTA column */
 .ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--read-more .ecbb-event__link {
-	color: #111827;
+	color: var(--ecbb-s1-cta-text);
 	text-decoration: underline;
 	text-underline-offset: 3px;
 	font-size: 14px;
@@ -334,30 +296,34 @@
 }
 
 .ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--read-more:not(.ecbb-no-hover) .ecbb-event__link:hover {
-	color: #1ac8e8;
+	color: var(--ecbb-s1-accent);
 }
 
-/* ─────────────────────────── Responsive ─────────────────────────── */
+/* ── Responsive ── */
 
 @media (max-width: 640px) {
 	.ecbb-ev__item-inner--style1,
 	.ecbb-ev__item-inner--style1-has-cta {
 		grid-template-columns: 1fr;
 	}
+
 	.ecbb-ev__style1-date {
 		flex-direction: row;
 		justify-content: flex-start;
 		padding: 0.85rem 1rem;
 		gap: 0.5rem;
 	}
+
 	.ecbb-ev__style1-date-day {
 		font-size: 20px;
 	}
+
 	.ecbb-ev__style1-date-month,
 	.ecbb-ev__style1-date-year {
 		font-size: 15px;
 		font-weight: 600;
 	}
+
 	.ecbb-ev__style1-date--multiline {
 		flex-direction: row;
 		flex-wrap: wrap;
@@ -365,22 +331,27 @@
 		justify-content: flex-start;
 		gap: 0.35rem 0.65rem;
 	}
+
 	.ecbb-ev__style1-date--multiline .ecbb-ev__style1-date-line {
 		display: inline;
 		width: auto;
 		font-size: 15px;
 		font-weight: 600;
 	}
+
 	.ecbb-ev__style1-date--multiline .ecbb-ev__style1-date-line--1 {
 		font-size: 20px;
 		font-weight: 700;
 	}
+
 	.ecbb-ev__style1-date--multiline .ecbb-ev__style1-date-line--single {
 		font-size: 15px;
 	}
+
 	.ecbb-ev__style1-body {
-		padding: 1.25rem 1.25rem;
+		padding: 1.25rem;
 	}
+
 	.ecbb-ev__style1-cta .ecbb-event-part--read-more .ecbb-event__link {
 		padding: 0.9rem 1rem;
 		min-height: auto;

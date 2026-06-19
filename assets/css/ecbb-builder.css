@@ -104,8 +104,17 @@
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="btn_text_color"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="btn_border"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="btn_padding"],
-.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="read_more_text"],
-.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="date_text_transform"] {
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="read_more_text"] {
+	display: none !important;
+}
+
+/* Title without link: no hover controls. */
+.ecbb-parts-repeater-item[data-ecbb-part="title"][data-ecbb-title-link="false"] .repeater-item-inner[data-control-key="ecbb_use_hover"],
+.ecbb-parts-repeater-item[data-ecbb-part="title"][data-ecbb-title-link="false"] .repeater-item-inner[data-control-key="ecbb_sep_hover"],
+.ecbb-parts-repeater-item[data-ecbb-part="title"][data-ecbb-title-link="false"] .repeater-item-inner[data-control-key="ecbb_hover_color"],
+.ecbb-parts-repeater-item[data-ecbb-part="title"][data-ecbb-title-link="false"] .repeater-item-inner[data-control-key="ecbb_hover_background"],
+.ecbb-parts-repeater-item[data-ecbb-part="title"][data-ecbb-title-link="false"] .repeater-item-inner[data-control-key="ecbb_hover_text_decoration"],
+.ecbb-parts-repeater-item[data-ecbb-part="title"][data-ecbb-title-link="false"] .repeater-item-inner[data-control-key="ecbb_hover_animation"] {
 	display: none !important;
 }
 
@@ -184,12 +193,7 @@
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="date_format_preset"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="date_format_custom"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="terms_separator"],
-.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="venue_link"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="detail_link_text"],
-.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="organizer_link"],
-.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="cost_currency"],
-.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="cost_prefix"],
-.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="cost_suffix"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="btn_style"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="image_size"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="image_size_hover"],

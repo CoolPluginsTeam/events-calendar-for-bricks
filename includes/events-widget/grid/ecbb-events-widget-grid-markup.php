@@ -31,8 +31,7 @@ function ecbb_events_widget_grid_default_parts_rows() {
 			'part' => 'venue',
 		],
 		[
-			'part'          => 'event_cost',
-			'cost_currency' => 'symbol',
+			'part' => 'event_cost',
 		],
 	];
 

@@ -101,6 +101,13 @@ function ecbb_event_part_resolve_php_format( $part, array $item ) {
 		return $custom;
 	}
 
+	if ( function_exists( 'ecbb_events_widget_date_preset_php_format' ) ) {
+		$mapped = ecbb_events_widget_date_preset_php_format( $preset, (string) $part );
+		if ( $mapped !== null && $mapped !== '' ) {
+			return $mapped;
+		}
+	}
+
 	if ( $preset === 'site_date' ) {
 		return (string) get_option( 'date_format' );
 	}
@@ -113,11 +120,6 @@ function ecbb_event_part_resolve_php_format( $part, array $item ) {
 		return (string) get_option( 'date_format' ) . ' ' . (string) get_option( 'time_format' );
 	}
 
-	// If a raw PHP format string was chosen from the dropdown.
-	if ( $preset !== '' ) {
-		return $preset;
-	}
-
 	// Default per part.
 	if ( $part === 'event_time' ) {
 		return (string) get_option( 'time_format' );
@@ -128,6 +130,321 @@ function ecbb_event_part_resolve_php_format( $part, array $item ) {
 	}
 
 	return '';
+}
+
+/**
+ * Plain-text venue name for an event.
+ *
+ * @param int $event_id Event post ID.
+ * @return string Unescaped plain text; caller must escape for HTML.
+ */
+function ecbb_events_widget_venue_name_plain( $event_id ) {
+	$event_id = (int) $event_id;
+	if ( $event_id < 1 ) {
+		return '';
+	}
+
+	$venue = '';
+	if ( function_exists( 'tribe_get_venue' ) ) {
+		$venue = trim( (string) \tribe_get_venue( $event_id ) );
+	}
+	if ( $venue === '' ) {
+		$venue_id = (int) get_post_meta( $event_id, '_EventVenueID', true );
+		if ( $venue_id ) {
+			$venue = trim( (string) get_the_title( $venue_id ) );
+		}
+	}
+
+	return $venue;
+}
+
+/**
+ * Linked venue post ID for an event.
+ *
+ * @param int $event_id Event post ID.
+ * @return int Venue post ID or 0.
+ */
+function ecbb_events_widget_venue_id_for_event( $event_id ) {
+	$event_id = (int) $event_id;
+	if ( $event_id < 1 ) {
+		return 0;
+	}
+	if ( function_exists( 'tribe_get_venue_id' ) ) {
+		$venue_id = (int) \tribe_get_venue_id( $event_id );
+		if ( $venue_id > 0 ) {
+			return $venue_id;
+		}
+	}
+	return (int) get_post_meta( $event_id, '_EventVenueID', true );
+}
+
+/**
+ * Plain-text full venue address for an event.
+ *
+ * @param int $event_id Event post ID.
+ * @return string Unescaped plain text; caller must escape for HTML.
+ */
+function ecbb_events_widget_venue_full_address_plain( $event_id ) {
+	$event_id = (int) $event_id;
+	if ( $event_id < 1 ) {
+		return '';
+	}
+
+	$address_ids = [ $event_id ];
+	$venue_id    = ecbb_events_widget_venue_id_for_event( $event_id );
+	if ( $venue_id > 0 ) {
+		array_unshift( $address_ids, $venue_id );
+	}
+	$address_ids = array_values( array_unique( $address_ids ) );
+
+	if ( function_exists( 'tribe_get_full_address' ) ) {
+		foreach ( $address_ids as $try_id ) {
+			$raw = (string) \tribe_get_full_address( $try_id );
+			$raw = preg_replace( '/<br\s*\/?>/i', ', ', $raw );
+			$t   = trim( wp_strip_all_tags( html_entity_decode( $raw, ENT_QUOTES, 'UTF-8' ) ) );
+			if ( $t !== '' ) {
+				$name = ecbb_events_widget_venue_name_plain( $event_id );
+				if ( $name !== '' && strcasecmp( $t, $name ) === 0 ) {
+					continue;
+				}
+				if ( $name !== '' && stripos( $t, $name ) === 0 ) {
+					$t = trim( preg_replace( '/^' . preg_quote( $name, '/' ) . '\s*,\s*/i', '', $t ) );
+				}
+				if ( $t !== '' ) {
+					return $t;
+				}
+			}
+		}
+	}
+
+	if ( $venue_id > 0 ) {
+		$state = get_post_meta( $venue_id, '_VenueStateProvince', true );
+		if ( $state === '' || $state === null ) {
+			$state = get_post_meta( $venue_id, '_VenueState', true );
+		}
+		$bits = array_filter(
+			array_map(
+				'trim',
+				[
+					(string) get_post_meta( $venue_id, '_VenueAddress', true ),
+					(string) get_post_meta( $venue_id, '_VenueCity', true ),
+					trim( (string) $state . ' ' . (string) get_post_meta( $venue_id, '_VenueZip', true ) ),
+					(string) get_post_meta( $venue_id, '_VenueCountry', true ),
+				]
+			)
+		);
+		if ( $bits !== [] ) {
+			return implode( ', ', $bits );
+		}
+	}
+
+	return ecbb_events_widget_event_part_detail_plain( $event_id, 'venue_full_address' );
+}
+
+/**
+ * Plain-text venue name with full address for an event.
+ *
+ * @param int $event_id Event post ID.
+ * @return string Unescaped plain text; caller must escape for HTML.
+ */
+function ecbb_events_widget_venue_name_and_address_plain( $event_id ) {
+	$name    = ecbb_events_widget_venue_name_plain( $event_id );
+	$address = ecbb_events_widget_venue_full_address_plain( $event_id );
+
+	if ( $name === '' && $address === '' ) {
+		return '';
+	}
+	if ( $name === '' ) {
+		return $address;
+	}
+	if ( $address === '' ) {
+		return $name;
+	}
+
+	return $name . ', ' . $address;
+}
+
+/**
+ * Whether the venue repeater row should render name + full address.
+ *
+ * @param array<string,mixed> $item Repeater row.
+ * @param string              $skin Loop skin: '' or 'style1' or 'style2'.
+ * @return bool
+ */
+function ecbb_events_widget_venue_part_uses_full_details( array $item, $skin = '' ) {
+	$display = isset( $item['venue_display'] ) ? (string) $item['venue_display'] : 'full_details';
+	if ( $display === '' ) {
+		$display = 'full_details';
+	}
+
+	return in_array( $display, [ 'full_details', 'name_and_address' ], true );
+}
+
+/**
+ * Plain-text venue output for the consolidated venue repeater row.
+ *
+ * @param int                 $event_id Event post ID.
+ * @param array<string,mixed> $item     Repeater row.
+ * @param string              $skin     Loop skin: '' or 'style1' or 'style2'.
+ * @return string Unescaped plain text; caller must escape for HTML.
+ */
+function ecbb_events_widget_venue_part_plain_text( $event_id, array $item, $skin = '' ) {
+	$event_id = (int) $event_id;
+	if ( $event_id < 1 ) {
+		return '';
+	}
+
+	if ( ecbb_events_widget_venue_part_uses_full_details( $item, $skin ) ) {
+		return ecbb_events_widget_venue_name_and_address_plain( $event_id );
+	}
+
+	return ecbb_events_widget_venue_name_plain( $event_id );
+}
+
+/**
+ * Markup for the consolidated venue repeater row (`part` = venue).
+ *
+ * @param \WP_Post            $post  Event post.
+ * @param array<string,mixed> $item  Repeater row.
+ * @param int                 $idx   Row index.
+ * @param string              $style Inline style attribute value (contents only), or empty.
+ * @param string              $skin  Loop skin: '' or 'style1' or 'style2'.
+ * @return string Empty when nothing to show.
+ */
+function ecbb_event_part_venue_markup( $post, array $item, $idx, $style, $skin = '' ) {
+	if ( ! $post instanceof \WP_Post ) {
+		return '';
+	}
+
+	$text = ecbb_events_widget_venue_part_plain_text( $post->ID, $item, $skin );
+	if ( $text === '' ) {
+		return '';
+	}
+
+	$idx  = absint( $idx );
+	$skin = (string) $skin;
+	$attr = function_exists( 'ecbb_events_widget_part_wrapper_attrs' )
+		? ecbb_events_widget_part_wrapper_attrs( $item, $idx, $style )
+		: ( $style !== '' ? ' style="' . esc_attr( $style ) . '"' : '' );
+	$classes = esc_attr(
+		ecbb_events_widget_part_wrap_classes( 'venue', $idx, $skin, $item ) . ' ecbb-has-row-icon'
+	);
+
+	return '<div class="' . $classes . '"' . $attr . '>' . esc_html( $text ) . '</div>';
+}
+
+/**
+ * Plain-text organizer name for an event.
+ *
+ * @param int $event_id Event post ID.
+ * @return string Unescaped plain text; caller must escape for HTML.
+ */
+function ecbb_events_widget_organizer_name_plain( $event_id ) {
+	$event_id = (int) $event_id;
+	if ( $event_id < 1 ) {
+		return '';
+	}
+
+	$organizer = '';
+	if ( function_exists( 'tribe_get_organizer' ) ) {
+		$organizer = trim( (string) \tribe_get_organizer( $event_id ) );
+	}
+	if ( $organizer === '' ) {
+		$organizer_id = (int) get_post_meta( $event_id, '_EventOrganizerID', true );
+		if ( $organizer_id ) {
+			$organizer = trim( (string) get_the_title( $organizer_id ) );
+		}
+	}
+
+	return $organizer;
+}
+
+/**
+ * Plain-text organizer name with email, phone, and website for an event.
+ *
+ * @param int $event_id Event post ID.
+ * @return string Unescaped plain text; caller must escape for HTML.
+ */
+function ecbb_events_widget_organizer_full_details_plain( $event_id ) {
+	$bits = array_filter(
+		[
+			ecbb_events_widget_organizer_name_plain( $event_id ),
+			ecbb_events_widget_event_part_detail_plain( $event_id, 'organizer_email' ),
+			ecbb_events_widget_event_part_detail_plain( $event_id, 'organizer_phone' ),
+			ecbb_events_widget_event_part_detail_plain( $event_id, 'organizer_website' ),
+		]
+	);
+	$bits = array_map( 'trim', $bits );
+	$bits = array_filter( $bits );
+
+	return implode( ', ', $bits );
+}
+
+/**
+ * Whether the organizer repeater row should render full organizer details.
+ *
+ * @param array<string,mixed> $item Repeater row.
+ * @param string              $skin Loop skin: '' or 'style1' or 'style2'.
+ * @return bool
+ */
+function ecbb_events_widget_organizer_part_uses_full_details( array $item, $skin = '' ) {
+	$display = isset( $item['organizer_display'] ) ? (string) $item['organizer_display'] : 'full_details';
+	if ( $display === '' ) {
+		$display = 'full_details';
+	}
+
+	return $display === 'full_details';
+}
+
+/**
+ * Plain-text organizer output for the consolidated organizer repeater row.
+ *
+ * @param int                 $event_id Event post ID.
+ * @param array<string,mixed> $item     Repeater row.
+ * @param string              $skin     Loop skin: '' or 'style1' or 'style2'.
+ * @return string Unescaped plain text; caller must escape for HTML.
+ */
+function ecbb_events_widget_organizer_part_plain_text( $event_id, array $item, $skin = '' ) {
+	$event_id = (int) $event_id;
+	if ( $event_id < 1 ) {
+		return '';
+	}
+
+	if ( ecbb_events_widget_organizer_part_uses_full_details( $item, $skin ) ) {
+		return ecbb_events_widget_organizer_full_details_plain( $event_id );
+	}
+
+	return ecbb_events_widget_organizer_name_plain( $event_id );
+}
+
+/**
+ * Markup for the consolidated organizer repeater row (`part` = organizer).
+ *
+ * @param \WP_Post            $post  Event post.
+ * @param array<string,mixed> $item  Repeater row.
+ * @param int                 $idx   Row index.
+ * @param string              $style Inline style attribute value (contents only), or empty.
+ * @param string              $skin  Loop skin: '' or 'style1' or 'style2'.
+ * @return string Empty when nothing to show.
+ */
+function ecbb_event_part_organizer_markup( $post, array $item, $idx, $style, $skin = '' ) {
+	if ( ! $post instanceof \WP_Post ) {
+		return '';
+	}
+
+	$text = ecbb_events_widget_organizer_part_plain_text( $post->ID, $item, $skin );
+	if ( $text === '' ) {
+		return '';
+	}
+
+	$idx  = absint( $idx );
+	$skin = (string) $skin;
+	$attr = function_exists( 'ecbb_events_widget_part_wrapper_attrs' )
+		? ecbb_events_widget_part_wrapper_attrs( $item, $idx, $style )
+		: ( $style !== '' ? ' style="' . esc_attr( $style ) . '"' : '' );
+	$classes = esc_attr( ecbb_events_widget_part_wrap_classes( 'organizer', $idx, $skin, $item ) );
+
+	return '<div class="' . $classes . '"' . $attr . '>' . esc_html( $text ) . '</div>';
 }
 
 /**
@@ -148,12 +465,24 @@ function ecbb_events_widget_event_part_detail_plain( $event_id, $part ) {
 
 	switch ( $part ) {
 		case 'venue_full_address':
+			$address_ids = [ $event_id ];
+			if ( function_exists( 'tribe_get_venue_id' ) ) {
+				$venue_id = (int) \tribe_get_venue_id( $event_id );
+			} else {
+				$venue_id = (int) get_post_meta( $event_id, '_EventVenueID', true );
+			}
+			if ( $venue_id > 0 ) {
+				array_unshift( $address_ids, $venue_id );
+			}
+			$address_ids = array_values( array_unique( $address_ids ) );
 			if ( function_exists( 'tribe_get_full_address' ) ) {
-				$raw = (string) \tribe_get_full_address( $event_id );
-				$raw = preg_replace( '/<br\s*\/?>/i', ', ', $raw );
-				$t   = trim( wp_strip_all_tags( html_entity_decode( $raw, ENT_QUOTES, 'UTF-8' ) ) );
-				if ( $t !== '' ) {
-					return $t;
+				foreach ( $address_ids as $try_id ) {
+					$raw = (string) \tribe_get_full_address( $try_id );
+					$raw = preg_replace( '/<br\s*\/?>/i', ', ', $raw );
+					$t   = trim( wp_strip_all_tags( html_entity_decode( $raw, ENT_QUOTES, 'UTF-8' ) ) );
+					if ( $t !== '' ) {
+						return $t;
+					}
 				}
 			}
 			$bits = array_filter(
@@ -482,19 +811,231 @@ function ecbb_events_widget_cost_token_is_free( $token ) {
 }
 
 /**
+ * Currency choices for the Events Widget cost display (widget-level setting).
+ *
+ * @return array<string,string>
+ */
+function ecbb_events_widget_event_cost_currency_options() {
+	return [
+		'default' => esc_html__( 'Site default', 'ecbb' ),
+		'none'    => esc_html__( 'No currency symbol', 'ecbb' ),
+		'USD'     => 'USD ($)',
+		'EUR'     => 'EUR (€)',
+		'GBP'     => 'GBP (£)',
+		'CAD'     => 'CAD ($)',
+		'AUD'     => 'AUD ($)',
+		'INR'     => 'INR (₹)',
+		'JPY'     => 'JPY (¥)',
+		'CNY'     => 'CNY (¥)',
+		'CHF'     => 'CHF (Fr)',
+		'SEK'     => 'SEK (kr)',
+		'NOK'     => 'NOK (kr)',
+		'DKK'     => 'DKK (kr)',
+		'NZD'     => 'NZD ($)',
+		'ZAR'     => 'ZAR (R)',
+		'BRL'     => 'BRL (R$)',
+		'MXN'     => 'MXN ($)',
+		'SGD'     => 'SGD ($)',
+		'HKD'     => 'HKD ($)',
+		'AED'     => 'AED (د.إ)',
+		'SAR'     => 'SAR (﷼)',
+	];
+}
+
+/**
+ * @param mixed $value Saved control value.
+ * @return string One of {@see ecbb_events_widget_event_cost_currency_options()}.
+ */
+function ecbb_events_widget_sanitize_event_cost_currency( $value ) {
+	$code = is_string( $value ) ? strtoupper( trim( $value ) ) : '';
+	if ( $code === '' ) {
+		return 'default';
+	}
+	if ( 'DEFAULT' === $code ) {
+		return 'default';
+	}
+	if ( 'NONE' === $code ) {
+		return 'none';
+	}
+	if ( 'SYMBOL' === $code ) {
+		return 'default';
+	}
+	return array_key_exists( $code, ecbb_events_widget_event_cost_currency_options() ) ? $code : 'default';
+}
+
+/**
+ * Display symbol for a widget currency code.
+ *
+ * @param string $currency_code Sanitized currency code.
+ * @return string Empty when none / default should not force a symbol.
+ */
+function ecbb_events_widget_event_cost_currency_symbol( $currency_code ) {
+	$map = [
+		'USD' => '$',
+		'EUR' => '€',
+		'GBP' => '£',
+		'CAD' => '$',
+		'AUD' => '$',
+		'INR' => '₹',
+		'JPY' => '¥',
+		'CNY' => '¥',
+		'CHF' => 'Fr',
+		'SEK' => 'kr',
+		'NOK' => 'kr',
+		'DKK' => 'kr',
+		'NZD' => '$',
+		'ZAR' => 'R',
+		'BRL' => 'R$',
+		'MXN' => '$',
+		'SGD' => '$',
+		'HKD' => '$',
+		'AED' => 'د.إ',
+		'SAR' => '﷼',
+	];
+	$currency_code = ecbb_events_widget_sanitize_event_cost_currency( $currency_code );
+	return isset( $map[ $currency_code ] ) ? $map[ $currency_code ] : '';
+}
+
+/**
+ * Strip currency symbols from a single cost token.
+ *
+ * @param string $token Cost fragment.
+ * @return string
+ */
+function ecbb_events_widget_strip_cost_currency_symbols( $token ) {
+	$t = trim( wp_strip_all_tags( html_entity_decode( (string) $token, ENT_QUOTES, 'UTF-8' ) ) );
+	if ( $t === '' ) {
+		return '';
+	}
+	$t = preg_replace( '/^[\p{Sc}\s]+/u', '', $t );
+	$t = preg_replace( '/[\p{Sc}\s]+$/u', '', $t );
+	return trim( (string) $t );
+}
+
+/**
+ * Apply one currency symbol to a single cost token.
+ *
+ * @param string $token         Cost fragment.
+ * @param string $currency_code Widget currency code.
+ * @return string
+ */
+function ecbb_events_widget_format_cost_token_with_currency( $token, $currency_code ) {
+	$token = trim( wp_strip_all_tags( html_entity_decode( (string) $token, ENT_QUOTES, 'UTF-8' ) ) );
+	if ( $token === '' ) {
+		return '';
+	}
+	if ( ecbb_events_widget_cost_token_is_free( $token ) ) {
+		return __( 'Free', 'ecbb' );
+	}
+
+	$currency_code = ecbb_events_widget_sanitize_event_cost_currency( $currency_code );
+	if ( $currency_code === 'default' ) {
+		return $token;
+	}
+	if ( $currency_code === 'none' ) {
+		$plain = ecbb_events_widget_strip_cost_currency_symbols( $token );
+		return $plain !== '' ? $plain : $token;
+	}
+
+	$symbol = ecbb_events_widget_event_cost_currency_symbol( $currency_code );
+	$amount = ecbb_events_widget_strip_cost_currency_symbols( $token );
+	if ( $amount === '' ) {
+		return $token;
+	}
+	if ( $symbol === '' ) {
+		return $amount;
+	}
+
+	return $symbol . $amount;
+}
+
+/**
+ * Apply widget currency formatting to a cost label.
+ *
+ * @param string $cost_text     Plain cost label.
+ * @param string $currency_code Widget currency code.
+ * @return string
+ */
+function ecbb_events_widget_apply_event_cost_currency( $cost_text, $currency_code ) {
+	$cost_text = trim( wp_strip_all_tags( html_entity_decode( (string) $cost_text, ENT_QUOTES, 'UTF-8' ) ) );
+	if ( $cost_text === '' ) {
+		return '';
+	}
+
+	$currency_code = ecbb_events_widget_sanitize_event_cost_currency( $currency_code );
+	if ( $currency_code === 'default' ) {
+		return $cost_text;
+	}
+
+	if ( ecbb_events_widget_cost_token_is_free( $cost_text ) ) {
+		return __( 'Free', 'ecbb' );
+	}
+
+	if ( preg_match( '/^(.+?)([-–—])(.+)$/u', $cost_text, $m ) ) {
+		$left  = ecbb_events_widget_format_cost_token_with_currency( trim( $m[1] ), $currency_code );
+		$right = ecbb_events_widget_format_cost_token_with_currency( trim( $m[3] ), $currency_code );
+		if ( $left !== '' && $right !== '' ) {
+			if ( strcasecmp( $left, $right ) === 0 ) {
+				return $left;
+			}
+			return $left . ' – ' . $right;
+		}
+	}
+
+	return ecbb_events_widget_format_cost_token_with_currency( $cost_text, $currency_code );
+}
+
+/**
+ * Active widget settings while an Events Widget is rendering.
+ *
+ * @param array<string,mixed>|null $settings Pass null to read only.
+ * @return array<string,mixed>
+ */
+function ecbb_events_widget_render_settings( $settings = null ) {
+	static $active = [];
+
+	if ( is_array( $settings ) ) {
+		$active = $settings;
+	}
+
+	return $active;
+}
+
+/**
+ * Resolve widget-level cost currency for display.
+ *
+ * @param array<string,mixed> $item Optional repeater row (legacy fallback only).
+ * @return string
+ */
+function ecbb_events_widget_resolve_event_cost_currency( array $item = [] ) {
+	$settings = ecbb_events_widget_render_settings();
+	if ( isset( $settings['event_cost_currency'] ) ) {
+		return ecbb_events_widget_sanitize_event_cost_currency( $settings['event_cost_currency'] );
+	}
+
+	if ( isset( $item['cost_currency'] ) ) {
+		$legacy = (string) $item['cost_currency'];
+		return $legacy === 'none' ? 'none' : 'default';
+	}
+
+	return 'default';
+}
+
+/**
  * Build cost label: "Free", a single amount, or "min – max" for ranges.
  *
- * @param int   $post_id Event post ID.
- * @param array $item    Repeater row (cost_currency).
+ * @param int                 $post_id Event post ID.
+ * @param array<string,mixed> $item    Repeater row (legacy fallback only).
  * @return string Plain text (escaped by caller).
  */
-function ecbb_events_widget_format_event_cost_display( $post_id, array $item ) {
+function ecbb_events_widget_format_event_cost_display( $post_id, array $item = [] ) {
 	$post_id = (int) $post_id;
 	if ( $post_id < 1 ) {
 		return '';
 	}
 
-	$with_currency = ! isset( $item['cost_currency'] ) || (string) $item['cost_currency'] === 'symbol';
+	$currency_code = ecbb_events_widget_resolve_event_cost_currency( $item );
+	$with_currency = $currency_code === 'default';
 
 	$formatted = '';
 	if ( function_exists( 'tribe_get_cost' ) ) {
@@ -518,18 +1059,18 @@ function ecbb_events_widget_format_event_cost_display( $post_id, array $item ) {
 		$right = trim( $m[3] );
 		if ( $left !== '' && $right !== '' ) {
 			if ( strcasecmp( $left, $right ) === 0 ) {
-				return ecbb_events_widget_cost_token_is_free( $left )
+				$candidate = ecbb_events_widget_cost_token_is_free( $left )
 					? __( 'Free', 'ecbb' )
 					: $left;
+			} elseif ( ecbb_events_widget_cost_token_is_free( $left ) && ecbb_events_widget_cost_token_is_free( $right ) ) {
+				$candidate = __( 'Free', 'ecbb' );
+			} else {
+				$candidate = $left . ' – ' . $right;
 			}
-			if ( ecbb_events_widget_cost_token_is_free( $left ) && ecbb_events_widget_cost_token_is_free( $right ) ) {
-				return __( 'Free', 'ecbb' );
-			}
-			return $left . ' – ' . $right;
 		}
 	}
 
-	return $candidate;
+	return ecbb_events_widget_apply_event_cost_currency( $candidate, $currency_code );
 }
 
 /**
@@ -597,11 +1138,21 @@ function ecbb_events_widget_part_idx_class( $idx ) {
 }
 
 /**
+ * Whether the title row links to the event (Bricks checkbox).
+ *
+ * @param array<string,mixed> $item Repeater row.
+ * @return bool
+ */
+function ecbb_event_part_title_link_active( array $item ) {
+	return ecbb_events_widget_is_truthy_setting( $item['link'] ?? false, false );
+}
+
+/**
  * Outer classes for a rendered part wrapper.
  *
  * @param string              $part  Part slug.
  * @param int                 $idx   Row index.
- * @param string              $skin  '' or 'style2'.
+ * @param string              $skin  ''|style1|style2.
  * @param array<string,mixed> $item  Repeater row (optional; used for hover class).
  * @return string        Space-separated classes (not escaped).
  */
@@ -620,6 +1171,12 @@ function ecbb_events_widget_part_wrap_classes( $part, $idx, $skin = '', array $i
 		}
 		$ui_part = isset( $item['part'] ) ? (string) $item['part'] : (string) $part;
 		if (
+			$ui_part === 'title'
+			&& function_exists( 'ecbb_event_part_title_link_active' )
+			&& ! ecbb_event_part_title_link_active( $row )
+		) {
+			$classes .= ' ecbb-no-hover';
+		} elseif (
 			function_exists( 'ecbb_event_part_hover_style_active' )
 			&& function_exists( 'ecbb_event_part_supports_hover_style_controls' )
 			&& ecbb_event_part_supports_hover_style_controls( $ui_part )
@@ -738,7 +1295,7 @@ function ecbb_event_part_extended_markup( $post, array $item, $idx, $style, $ski
 		'organizer_phone',
 		'organizer_website',
 	];
-	$extended = [ 'event_date', 'event_time', 'event_day', 'event_cost', 'event_tickets', 'event_rsvp', 'read_more' ];
+	$extended = [ 'event_date', 'event_time', 'event_day', 'event_cost', 'event_tickets', 'event_rsvp', 'read_more', 'venue', 'organizer' ];
 	if ( ! in_array( $part, $extended, true ) && ! in_array( $part, $detail_parts, true ) ) {
 		return false;
 	}
@@ -746,6 +1303,14 @@ function ecbb_event_part_extended_markup( $post, array $item, $idx, $style, $ski
 	$wrap = function ( $slug ) use ( $skin, $idx, $item ) {
 		return esc_attr( ecbb_events_widget_part_wrap_classes( $slug, $idx, $skin, $item ) );
 	};
+
+	if ( $part === 'venue' ) {
+		return ecbb_event_part_venue_markup( $post, $item, $idx, $style, $skin );
+	}
+
+	if ( $part === 'organizer' ) {
+		return ecbb_event_part_organizer_markup( $post, $item, $idx, $style, $skin );
+	}
 
 	$format = ( $part === 'event_date' || $part === 'event_time' )
 		? ecbb_event_part_resolve_php_format( $part, $item )
@@ -814,15 +1379,6 @@ function ecbb_event_part_extended_markup( $post, array $item, $idx, $style, $ski
 		}
 		$venue_physical = [ 'venue_full_address', 'venue_street', 'venue_city', 'venue_state', 'venue_zip', 'venue_country', 'venue_phone' ];
 		$loc_icon       = in_array( $part, $venue_physical, true ) ? ' ecbb-has-row-icon' : '';
-		$use_venue_link = ! empty( $item['venue_link'] ) && in_array( $part, $venue_physical, true );
-		$venue_url      = '';
-		if ( $use_venue_link ) {
-			$vid = (int) get_post_meta( $post->ID, '_EventVenueID', true );
-			if ( $vid > 0 ) {
-				$venue_url = get_permalink( $vid );
-			}
-		}
-		$venue_url = $venue_url ? esc_url( $venue_url ) : '';
 
 		if ( $part === 'organizer_email' && is_email( $html ) ) {
 			return '<div class="' . $wrap( $part ) . '"' . $attr . '><a class="ecbb-event__link" href="' . esc_url( 'mailto:' . $html ) . '"' . $link_attr . '>' . esc_html( $html ) . '</a></div>';
@@ -849,10 +1405,6 @@ function ecbb_event_part_extended_markup( $post, array $item, $idx, $style, $ski
 			return '<div class="' . $wrap( $part ) . '"' . $attr . '><a class="ecbb-event__link" href="' . esc_url( $safe ) . '" rel="noopener noreferrer" target="_blank"' . $link_attr . '>' . esc_html( $label ) . '</a></div>';
 		}
 
-		if ( $use_venue_link && $venue_url ) {
-			return '<div class="' . $wrap( $part ) . $loc_icon . '"' . $attr . '><a class="ecbb-event__link" href="' . $venue_url . '"' . $link_attr . '>' . esc_html( $html ) . '</a></div>';
-		}
-
 		return '<div class="' . $wrap( $part ) . $loc_icon . '"' . $attr . '>' . esc_html( $html ) . '</div>';
 	}
 
@@ -863,9 +1415,7 @@ function ecbb_event_part_extended_markup( $post, array $item, $idx, $style, $ski
 		if ( $cost === '' ) {
 			return '';
 		}
-		$prefix = isset( $item['cost_prefix'] ) ? (string) $item['cost_prefix'] : '';
-		$suffix = isset( $item['cost_suffix'] ) ? (string) $item['cost_suffix'] : '';
-		return '<div class="' . $wrap( 'event_cost' ) . '"' . $attr . '>' . esc_html( $prefix . $cost . $suffix ) . '</div>';
+		return '<div class="' . $wrap( 'event_cost' ) . '"' . $attr . '>' . esc_html( $cost ) . '</div>';
 	}
 
 	if ( $part === 'event_tickets' ) {
@@ -1210,6 +1760,13 @@ function ecbb_event_part_hover_style_active( array $item ) {
 	if ( ! ecbb_event_part_supports_hover_style_controls( $ui_part ) ) {
 		return false;
 	}
+	if (
+		$ui_part === 'title'
+		&& function_exists( 'ecbb_event_part_title_link_active' )
+		&& ! ecbb_event_part_title_link_active( $item )
+	) {
+		return false;
+	}
 	if ( ! array_key_exists( 'ecbb_use_hover', $item ) ) {
 		return true;
 	}
@@ -1446,9 +2003,11 @@ function ecbb_sanitize_list_item_style( $value ) {
 function ecbb_events_widget_parts_rows_clean( array $parts ) {
 	$out = [];
 	foreach ( $parts as $row ) {
-		if ( is_array( $row ) && isset( $row['part'] ) && trim( (string) $row['part'] ) !== '' ) {
-			$out[] = $row;
+		if ( ! is_array( $row ) || ! isset( $row['part'] ) || trim( (string) $row['part'] ) === '' ) {
+			continue;
 		}
+		unset( $row['venue_link'], $row['organizer_link'], $row['cost_currency'], $row['cost_prefix'], $row['cost_suffix'] );
+		$out[] = $row;
 	}
 	return $out;
 }

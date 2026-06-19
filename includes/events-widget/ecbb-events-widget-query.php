@@ -264,6 +264,10 @@ function ecbb_events_widget_sanitize_load_more_settings( array $settings ) {
 		$out['date_format'] = ecbb_list1_sanitize_date_format( $out['date_format'] );
 	}
 
+	if ( isset( $out['event_cost_currency'] ) && function_exists( 'ecbb_events_widget_sanitize_event_cost_currency' ) ) {
+		$out['event_cost_currency'] = ecbb_events_widget_sanitize_event_cost_currency( $out['event_cost_currency'] );
+	}
+
 	if ( isset( $out['event_categories'] ) && is_array( $out['event_categories'] ) ) {
 		$out['event_categories'] = array_values(
 			array_filter(
