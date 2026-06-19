@@ -184,8 +184,9 @@ function ecbb_events_widget_get_repeater_fields() {
 			'label'    => esc_html__( 'Venue display', 'ecbb' ),
 			'type'     => 'select',
 			'options'  => [
-				'full_details' => esc_html__( 'Full venue details', 'ecbb' ),
-				'name'         => esc_html__( 'Venue name only', 'ecbb' ),
+				'full_details'   => esc_html__( 'Full venue details', 'ecbb' ),
+				'name_and_state' => esc_html__( 'Venue name and state', 'ecbb' ),
+				'name'           => esc_html__( 'Venue name only', 'ecbb' ),
 				'full_address' => esc_html__( 'Full address only', 'ecbb' ),
 				'street'       => esc_html__( 'Street', 'ecbb' ),
 				'city'         => esc_html__( 'City', 'ecbb' ),
@@ -222,21 +223,6 @@ function ecbb_events_widget_get_repeater_fields() {
 			],
 			'default'  => 'website',
 			'required' => [ 'part', '=', 'event_link' ],
-		],
-		'tag' => [
-			'label'    => esc_html__( 'Title HTML tag', 'ecbb' ),
-			'type'     => 'select',
-			'options'  => [
-				'h1'  => 'h1',
-				'h2'  => 'h2',
-				'h3'  => 'h3',
-				'h4'  => 'h4',
-				'h5'  => 'h5',
-				'h6'  => 'h6',
-				'div' => 'div',
-			],
-			'default'  => 'h3',
-			'required' => [ 'part', '=', 'title' ],
 		],
 		'link' => [
 			'label'    => esc_html__( 'Link title to event', 'ecbb' ),
@@ -336,20 +322,15 @@ function ecbb_events_widget_get_repeater_fields() {
 				[ 'btn_style', '=', true ],
 			],
 		],
-		'btn_border' => [
-			'label'      => esc_html__( 'Button border', 'ecbb' ),
-			'type'       => 'border',
-			'responsive' => true,
-			'required'   => [
+		'btn_border_color' => [
+			'label'       => esc_html__( 'Border color', 'ecbb' ),
+			'type'        => 'color',
+			'placeholder' => '#cccccc',
+			'responsive'  => true,
+			'required'    => [
 				[ 'part', '=', [ 'event_tickets', 'event_rsvp', 'read_more' ] ],
 				[ 'btn_style', '=', true ],
 			],
-			'css'        => ecbb_events_widget_repeater_control_css(
-				'border',
-				function_exists( 'ecbb_events_widget_repeater_button_inner_css_selector' )
-					? ecbb_events_widget_repeater_button_inner_css_selector()
-					: '& .ecbb-event__link, & > a'
-			),
 		],
 		'btn_padding' => [
 			'label'    => esc_html__( 'Button padding', 'ecbb' ),

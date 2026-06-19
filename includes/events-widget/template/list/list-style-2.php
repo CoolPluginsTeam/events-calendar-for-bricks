@@ -143,13 +143,13 @@ function ecbb_list2_default_parts_rows() {
 		],
 		[
 			'part'       => 'title',
-			'tag'        => 'h3',
 			'link'       => true,
 			'ecbb_color' => '',
 		],
 		[
-			'part'       => 'venue',
-			'ecbb_color' => '',
+			'part'          => 'venue',
+			'venue_display' => 'name_and_state',
+			'ecbb_color'    => '',
 		],
 		[
 			'part'        => 'description',
@@ -202,6 +202,27 @@ function ecbb_list2_normalize_parts( array $parts ) {
 			'image_size' => '',
 		];
 	}
+
+	$clean = array_map(
+		static function ( $row ) {
+			if ( ! is_array( $row ) ) {
+				return $row;
+			}
+
+			if ( (string) ( $row['part'] ?? '' ) !== 'venue' ) {
+				return $row;
+			}
+
+			$display = (string) ( $row['venue_display'] ?? '' );
+			if ( $display === '' || $display === 'name_and_address' ) {
+				$row['venue_display'] = 'name_and_state';
+			}
+
+			return $row;
+		},
+		$clean
+	);
+
 	return $clean;
 }
 

@@ -448,7 +448,7 @@ function ecbb_events_widget_button_part_slugs() {
  * @return string
  */
 function ecbb_events_widget_repeater_button_inner_css_selector() {
-	return '& .ecbb-event__link, & > a';
+	return '& .ecbb-event__link, & > a, & .ecbb-event__plain';
 }
 
 /**
@@ -459,17 +459,8 @@ function ecbb_events_widget_repeater_button_inner_css_selector() {
  */
 function ecbb_events_widget_part_button_inner_selectors( $scope_sel ) {
 	return $scope_sel . ' .ecbb-event__link,'
-		. $scope_sel . ' > a';
-}
-
-/**
- * Style 2 uses Style-tab Typography + Background for button colors (not btn_bg / btn_text_color).
- *
- * @param string $list_style style-1|style-2|grid
- * @return bool
- */
-function ecbb_events_widget_list_uses_shared_button_colors( $list_style ) {
-	return (string) $list_style === 'style-2';
+		. $scope_sel . ' > a,'
+		. $scope_sel . ' .ecbb-event__plain';
 }
 
 /**
@@ -661,6 +652,7 @@ function ecbb_events_widget_normalize_part_item( array $item ) {
 		}
 		$map = [
 			'full_details'   => 'venue',
+			'name_and_state' => 'venue',
 			'name'           => 'venue',
 			'full_address'   => 'venue_full_address',
 			'street'         => 'venue_street',
@@ -896,58 +888,53 @@ function ecbb_events_widget_read_responsive_spacing( array $item, $key, $device 
  * @param array<string,mixed> $item              Repeater row.
  * @param string              $device            desktop|tablet|mobile.
  * @param callable            $color_fn          function( $value ): string
- * @param bool                $skip_color_fields Skip btn_bg/btn_text_color (Style 2 uses Typography + Background).
  * @return string[]
  */
-function ecbb_events_widget_button_declarations( array $item, $device, callable $color_fn, $skip_color_fields = false ) {
+function ecbb_events_widget_button_declarations( array $item, $device, callable $color_fn ) {
 	if ( empty( $item['btn_style'] ) ) {
+		return [];
+	}
+	if ( function_exists( 'ecbb_event_part_button_style_active' ) && ! ecbb_event_part_button_style_active( $item ) ) {
 		return [];
 	}
 
 	$styles = [];
 
-	if ( ! $skip_color_fields ) {
-		$bg_raw = ecbb_events_widget_responsive_pick( $item['btn_bg'] ?? '', $device );
-		if ( $bg_raw !== '' && $bg_raw !== null ) {
-			$bg = $color_fn( $bg_raw );
-			if ( $bg !== '' ) {
-				$styles[] = 'background-color:' . $bg;
-			}
-		}
-
-		$tc_raw = ecbb_events_widget_responsive_pick( $item['btn_text_color'] ?? '', $device );
-		if ( $tc_raw !== '' && $tc_raw !== null ) {
-			$tc = $color_fn( $tc_raw );
-			if ( $tc !== '' ) {
-				$styles[] = 'color:' . $tc . ' !important';
-			}
+	$bg_raw = ecbb_events_widget_responsive_pick( $item['btn_bg'] ?? '', $device );
+	if ( $bg_raw === '' || $bg_raw === null ) {
+		$bg_raw = ecbb_events_widget_responsive_pick( $item['ecbb_background'] ?? '', $device );
+	}
+	if ( $bg_raw !== '' && $bg_raw !== null ) {
+		$bg = $color_fn( $bg_raw );
+		if ( $bg !== '' ) {
+			$styles[] = 'background-color:' . $bg . ' !important';
 		}
 	}
 
-	$border_raw = ecbb_events_widget_responsive_pick( $item['btn_border'] ?? '', $device );
-	$has_border_radius = false;
-	if ( ! empty( $border_raw ) && function_exists( 'ecbb_events_widget_border_declarations' ) ) {
-		$border_decls = ecbb_events_widget_border_declarations( $border_raw );
-		if ( ! empty( $border_decls ) ) {
-			foreach ( $border_decls as $decl ) {
-				$styles[] = $decl;
-				if ( strpos( $decl, 'border-radius:' ) === 0 ) {
-					$has_border_radius = true;
-				}
-			}
-			$styles[] = 'box-sizing:border-box';
-		}
-	} elseif ( ! empty( $border_raw ) && function_exists( 'ecbb_events_widget_border_to_css' ) ) {
-		$border = ecbb_events_widget_border_to_css( $border_raw );
-		if ( $border !== '' ) {
-			$styles[] = 'border:' . $border;
-			$styles[] = 'box-sizing:border-box';
+	$tc_raw = ecbb_events_widget_responsive_pick( $item['btn_text_color'] ?? '', $device );
+	if ( ( $tc_raw === '' || $tc_raw === null ) && ! empty( $item['ecbb_typography'] ) && is_array( $item['ecbb_typography'] ) ) {
+		$tc_raw = ecbb_events_widget_responsive_pick( $item['ecbb_typography']['color'] ?? '', $device );
+	}
+	if ( $tc_raw !== '' && $tc_raw !== null ) {
+		$tc = $color_fn( $tc_raw );
+		if ( $tc !== '' ) {
+			$styles[] = 'color:' . $tc . ' !important';
 		}
 	}
 
-	$radius = isset( $item['btn_radius'] ) ? trim( (string) $item['btn_radius'] ) : '';
-	if ( $radius !== '' && ! $has_border_radius ) {
-		$styles[] = 'border-radius:' . $radius;
+	$border_color_raw = ecbb_events_widget_responsive_pick( $item['btn_border_color'] ?? '', $device );
+	if ( ( $border_color_raw === '' || $border_color_raw === null ) && ! empty( $item['btn_border'] ) ) {
+		$border_legacy = ecbb_events_widget_responsive_pick( $item['btn_border'], $device );
+		if ( is_array( $border_legacy ) && ! empty( $border_legacy['color'] ) ) {
+			$border_color_raw = $border_legacy['color'];
+		}
+	}
+	if ( $border_color_raw !== '' && $border_color_raw !== null ) {
+		$border_color = $color_fn( $border_color_raw );
+		if ( $border_color !== '' ) {
+			$styles[] = 'border:1px solid ' . $border_color;
+			$styles[] = 'box-sizing:border-box';
+		}
 	}
 
 	$padding_raw = ecbb_events_widget_read_responsive_spacing( $item, 'btn_padding', $device );
@@ -1097,8 +1084,6 @@ function ecbb_events_widget_typography_declarations( array $typo, $device = 'des
  * @return array{0:string[],1:string[]}  [base rules, hover rules]
  */
 function ecbb_events_widget_build_parts_scoped_css( array $parts, $scope_class, callable $color_fn, $list_item_style = 'style-1' ) {
-	$shared_btn_colors = function_exists( 'ecbb_events_widget_list_uses_shared_button_colors' )
-		&& ecbb_events_widget_list_uses_shared_button_colors( $list_item_style );
 	$scope_class = preg_replace( '/[^a-zA-Z0-9\-_]/', '', (string) $scope_class );
 	$style_css   = [];
 	$hover_css   = [];
@@ -1119,7 +1104,9 @@ function ecbb_events_widget_build_parts_scoped_css( array $parts, $scope_class, 
 			: 'ecbb-p' . absint( $idx ) );
 		$scope_sel = '.' . $scope_class . ' ' . $idx_class;
 		$part_type = isset( $p['part'] ) ? (string) $p['part'] : '';
-		$btn_style_on = ! empty( $p['btn_style'] )
+		$hover_style_on = function_exists( 'ecbb_event_part_hover_style_active' ) && ecbb_event_part_hover_style_active( $p );
+		$btn_style_on   = ! empty( $p['btn_style'] )
+			&& $hover_style_on
 			&& function_exists( 'ecbb_events_widget_button_part_slugs' )
 			&& in_array( $part_type, ecbb_events_widget_button_part_slugs(), true );
 		$chip_surface = function_exists( 'ecbb_events_widget_part_chip_surface_part_slugs' )
@@ -1140,11 +1127,12 @@ function ecbb_events_widget_build_parts_scoped_css( array $parts, $scope_class, 
 				}
 			}
 
-			if ( ! empty( $p['btn_style'] ) ) {
-				$btn_decls = ecbb_events_widget_button_declarations( $p, $device, $color_fn, $shared_btn_colors );
+			if ( $btn_style_on ) {
+				$btn_decls = ecbb_events_widget_button_declarations( $p, $device, $color_fn );
 				if ( ! empty( $btn_decls ) ) {
-					$btn_sel = $scope_sel . ' .ecbb-event__link,'
-						. $scope_sel . ' > a';
+					$btn_sel = function_exists( 'ecbb_events_widget_part_button_inner_selectors' )
+						? ecbb_events_widget_part_button_inner_selectors( $scope_sel )
+						: $scope_sel . ' .ecbb-event__link,' . $scope_sel . ' > a,' . $scope_sel . ' .ecbb-event__plain';
 					$btn_rule = $btn_sel . '{'
 						. implode( ';', $btn_decls )
 						. ';display:inline-flex;align-items:center;justify-content:center;text-decoration:none}';
@@ -1152,8 +1140,6 @@ function ecbb_events_widget_build_parts_scoped_css( array $parts, $scope_class, 
 				}
 			}
 		}
-
-		$hover_style_on = function_exists( 'ecbb_event_part_hover_style_active' ) && ecbb_event_part_hover_style_active( $p );
 
 		if ( $hover_style_on ) {
 			$hover_sel = ecbb_events_widget_hover_interaction_selectors( $scope_sel, $part_type );
@@ -1229,12 +1215,15 @@ function ecbb_events_widget_build_parts_scoped_css( array $parts, $scope_class, 
 					$style_css[] = ( $mq !== '' ? $mq . '{' . $chip_rule . '}' : $chip_rule );
 				}
 			} elseif ( $btn_style_on ) {
-				$bg_raw = ecbb_events_widget_responsive_pick( $p['ecbb_background'] ?? '', $device );
-				$bg     = $bg_raw !== '' && $bg_raw !== null ? $color_fn( $bg_raw ) : '';
-				if ( $bg !== '' ) {
-					$btn_inner   = ecbb_events_widget_part_button_inner_selectors( $scope_sel );
-					$btn_bg_rule = $btn_inner . '{background-color:' . $bg . ' !important;}';
-					$style_css[] = ( $mq !== '' ? $mq . '{' . $btn_bg_rule . '}' : $btn_bg_rule );
+				$btn_bg_raw = ecbb_events_widget_responsive_pick( $p['btn_bg'] ?? '', $device );
+				$bg_raw     = ecbb_events_widget_responsive_pick( $p['ecbb_background'] ?? '', $device );
+				if ( ( $btn_bg_raw === '' || $btn_bg_raw === null ) && $bg_raw !== '' && $bg_raw !== null ) {
+					$bg = $color_fn( $bg_raw );
+					if ( $bg !== '' ) {
+						$btn_inner   = ecbb_events_widget_part_button_inner_selectors( $scope_sel );
+						$btn_bg_rule = $btn_inner . '{background-color:' . $bg . ' !important;}';
+						$style_css[] = ( $mq !== '' ? $mq . '{' . $btn_bg_rule . '}' : $btn_bg_rule );
+					}
 				}
 			} else {
 				$bg_raw = ecbb_events_widget_responsive_pick( $p['ecbb_background'] ?? '', $device );

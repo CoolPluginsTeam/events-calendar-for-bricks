@@ -403,8 +403,8 @@ class Element_ECBB_Events_Widget extends \Bricks\Element {
 			return;
 		}
 
-		// Title: uses repeater `tag` + `link`; no link/hover when link or hover is off.
-		$tag   = ! empty( $item['tag'] ) ? \Bricks\Helpers::sanitize_html_tag( (string) $item['tag'], 'h3' ) : 'h3';
+		// Title: always h3; no link/hover when link or hover is off.
+		$tag   = 'h3';
 		$hover = ! function_exists( 'ecbb_event_part_hover_style_active' ) || ecbb_event_part_hover_style_active( $item );
 		$link  = function_exists( 'ecbb_event_part_title_link_active' )
 			? ( ecbb_event_part_title_link_active( $item ) && $hover )
@@ -498,7 +498,7 @@ class Element_ECBB_Events_Widget extends \Bricks\Element {
 			|| ( function_exists( 'ecbb_events_widget_parts_array_is_effectively_empty' ) && ecbb_events_widget_parts_array_is_effectively_empty( $parts_effective ) )
 		) {
 			$parts_effective = [
-				[ 'part' => 'title', 'tag' => 'h3', 'link' => true ],
+				[ 'part' => 'title', 'link' => true ],
 				[ 'part' => 'description', 'desc_source' => 'content' ],
 				[ 'part' => 'date', 'date_text_transform' => 'uppercase' ],
 			];

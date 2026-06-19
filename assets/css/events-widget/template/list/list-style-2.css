@@ -67,7 +67,7 @@
 	flex: 0 0 auto;
 	font-size: 20px;
 	font-weight: 600;
-	color: var(--ecbb-s2-accent);
+	color: #008CFF;
 	letter-spacing: 0.01em;
 	white-space: nowrap;
 }
@@ -76,7 +76,7 @@
 	flex: 1 1 auto;
 	min-width: 0;
 	height: 1px;
-	background: var(--ecbb-s2-border);
+	background: rgba(0, 0, 0, 0.12);
 }
 
 /* ── Date rail ── */
@@ -356,21 +356,31 @@
 	mask: var(--ecbb-s2-icon-pin) center / contain no-repeat;
 }
 
-/* Read more */
-.ecbb-style2-read-more .ecbb-event__link {
+/* Read more — default text link chrome (button styling uses repeater controls; arrow kept unless removed via link text) */
+.ecbb-style2-read-more:not(.ecbb-has-btn) .ecbb-event__link {
 	color: var(--ecbb-s2-accent);
 	font-family: var(--ecbb-s2-font);
 	font-size: 14px;
 	text-decoration: none;
 }
 
-.ecbb-style2-read-more .ecbb-event__link::after {
+.ecbb-style2-read-more .ecbb-event__link::after,
+.ecbb-style2-read-more.ecbb-has-btn .ecbb-event__plain::after {
 	content: " \2192";
 }
 
-.ecbb-style2-read-more:not(.ecbb-no-hover) .ecbb-event__link:hover {
+.ecbb-style2-read-more:not(.ecbb-no-hover):not(.ecbb-has-btn) .ecbb-event__link:hover {
 	color: #000;
 	text-decoration: underline;
+}
+
+/* Hover off, no button: plain muted label. */
+.ecbb-style2-read-more.ecbb-no-hover:not(.ecbb-has-btn) .ecbb-event__plain {
+	font-family: var(--ecbb-s2-font);
+	font-size: 14px;
+	color: var(--ecbb-s2-muted);
+	text-decoration: none;
+	cursor: default;
 }
 
 /* ── Image trail ── */

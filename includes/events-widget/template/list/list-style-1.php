@@ -32,7 +32,6 @@ function ecbb_list1_default_parts_rows() {
 				],
 				[
 					'part' => 'title',
-					'tag'  => 'h3',
 					'link' => true,
 				],
 				[
@@ -55,7 +54,6 @@ function ecbb_list1_default_parts_rows() {
 			],
 			[
 				'part' => 'title',
-				'tag'  => 'h3',
 				'link' => true,
 			],
 			[

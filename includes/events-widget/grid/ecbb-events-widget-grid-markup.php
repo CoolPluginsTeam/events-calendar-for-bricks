@@ -24,7 +24,6 @@ function ecbb_events_widget_grid_default_parts_rows() {
 		],
 		[
 			'part' => 'title',
-			'tag'  => 'h3',
 			'link' => true,
 		],
 		[

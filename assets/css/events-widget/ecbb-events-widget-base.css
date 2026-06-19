@@ -32,13 +32,26 @@
 }
 
 .ecbb-event-part.ecbb-has-btn > .ecbb-event__link,
-.ecbb-event-part.ecbb-has-btn .ecbb-event__link {
+.ecbb-event-part.ecbb-has-btn .ecbb-event__link,
+.ecbb-event-part.ecbb-has-btn > .ecbb-event__plain,
+.ecbb-event-part.ecbb-has-btn .ecbb-event__plain {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	width: auto;
 	max-width: 100%;
 	box-sizing: border-box;
+	background-color: var(--ecbb-btn-bg, transparent);
+	color: var(--ecbb-btn-fg, inherit);
+}
+
+.ecbb-event-part.ecbb-has-btn.ecbb-no-hover .ecbb-event__plain {
+	cursor: default;
+	pointer-events: none;
+}
+
+.ecbb-event-part.ecbb-has-btn:not(.ecbb-no-hover) .ecbb-event__link {
+	transition: opacity 0.2s ease, transform 0.2s ease, background-color 0.2s ease, color 0.2s ease, text-decoration-color 0.2s ease;
 }
 
 /* Smooth hover transitions for interactive event parts (when hover is enabled per row). */
@@ -49,6 +62,7 @@
 .ecbb-event-part--categories:not(.ecbb-no-hover),
 .ecbb-event-part--tags:not(.ecbb-no-hover),
 .ecbb-event-part--read-more:not(.ecbb-no-hover),
+.ecbb-style2-read-more:not(.ecbb-no-hover),
 .ecbb-event-part--event-tickets:not(.ecbb-no-hover),
 .ecbb-event-part--event-rsvp:not(.ecbb-no-hover) {
 	transition: opacity 0.2s ease, transform 0.2s ease, background-color 0.2s ease, color 0.2s ease, text-decoration-color 0.2s ease;
@@ -60,8 +74,8 @@
 	color: inherit;
 }
 
-/* Interactive parts with hover off: plain text, no link affordance. */
-.ecbb-event-part.ecbb-no-hover .ecbb-event__plain,
+/* Interactive parts with hover off: plain text, no link affordance (not button-styled rows). */
+.ecbb-event-part.ecbb-no-hover:not(.ecbb-has-btn) .ecbb-event__plain,
 .ecbb-event-part.ecbb-no-hover .ecbb-event__term {
 	color: inherit;
 	text-decoration: none;
@@ -90,12 +104,12 @@
 	transition: none !important;
 }
 
-.ecbb-no-hover:hover,
-.ecbb-no-hover:focus-within,
-.ecbb-no-hover .ecbb-event__link:hover,
-.ecbb-no-hover a:hover,
-.ecbb-no-hover .ecbb-event__term:hover,
-.ecbb-no-hover .ecbb-event__term-chip:hover {
+.ecbb-no-hover:not(.ecbb-has-btn):hover,
+.ecbb-no-hover:not(.ecbb-has-btn):focus-within,
+.ecbb-no-hover:not(.ecbb-has-btn) .ecbb-event__link:hover,
+.ecbb-no-hover:not(.ecbb-has-btn) a:hover,
+.ecbb-no-hover:not(.ecbb-has-btn) .ecbb-event__term:hover,
+.ecbb-no-hover:not(.ecbb-has-btn) .ecbb-event__term-chip:hover {
 	color: inherit !important;
 	background-color: inherit !important;
 	text-decoration: inherit !important;

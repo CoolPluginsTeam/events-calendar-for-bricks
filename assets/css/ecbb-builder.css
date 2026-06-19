@@ -102,7 +102,7 @@
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="btn_sep_style"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="btn_bg"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="btn_text_color"],
-.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="btn_border"],
+.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="btn_border_color"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="btn_padding"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="content"] .repeater-item-inner[data-control-key="read_more_text"] {
 	display: none !important;
@@ -177,7 +177,7 @@
 
 .ecbb-parts-repeater-item[data-ecbb-btn-open="false"] .repeater-item-inner[data-control-key="btn_bg"],
 .ecbb-parts-repeater-item[data-ecbb-btn-open="false"] .repeater-item-inner[data-control-key="btn_text_color"],
-.ecbb-parts-repeater-item[data-ecbb-btn-open="false"] .repeater-item-inner[data-control-key="btn_border"],
+.ecbb-parts-repeater-item[data-ecbb-btn-open="false"] .repeater-item-inner[data-control-key="btn_border_color"],
 .ecbb-parts-repeater-item[data-ecbb-btn-open="false"] .repeater-item-inner[data-control-key="btn_padding"] {
 	display: none !important;
 }
@@ -187,7 +187,6 @@
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="venue_display"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="organizer_display"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="event_link_display"],
-.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="tag"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="link"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="desc_source"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="date_format_preset"],
@@ -230,15 +229,5 @@
 #bricks-panel-element:has([data-control-key="parts_style1"])
 	.ecbb-parts-repeater-item[data-ecbb-part="categories"]
 	.repeater-item-inner[data-control-key="terms_separator"] {
-	display: none !important;
-}
-
-/* Style 2: button colors come from Style-tab Typography + Background. */
-#bricks-panel-element:has([data-control-key="parts_style2"])
-	.ecbb-parts-repeater-item
-	.repeater-item-inner[data-control-key="btn_bg"],
-#bricks-panel-element:has([data-control-key="parts_style2"])
-	.ecbb-parts-repeater-item
-	.repeater-item-inner[data-control-key="btn_text_color"] {
 	display: none !important;
 }

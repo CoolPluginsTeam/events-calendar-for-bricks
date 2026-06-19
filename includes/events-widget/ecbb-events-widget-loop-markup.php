@@ -265,6 +265,47 @@ function ecbb_events_widget_venue_name_and_address_plain( $event_id ) {
 }
 
 /**
+ * Plain-text venue name with state / province for an event.
+ *
+ * @param int $event_id Event post ID.
+ * @return string Unescaped plain text; caller must escape for HTML.
+ */
+function ecbb_events_widget_venue_name_and_state_plain( $event_id ) {
+	$name  = ecbb_events_widget_venue_name_plain( $event_id );
+	$state = ecbb_events_widget_event_part_detail_plain( $event_id, 'venue_state' );
+	$name  = trim( (string) $name );
+	$state = trim( (string) $state );
+
+	if ( $name === '' && $state === '' ) {
+		return '';
+	}
+	if ( $name === '' ) {
+		return $state;
+	}
+	if ( $state === '' ) {
+		return $name;
+	}
+
+	return $name . ', ' . $state;
+}
+
+/**
+ * Resolved venue display format for a repeater row (Style 2 defaults to name + state).
+ *
+ * @param array<string,mixed> $item Repeater row.
+ * @param string              $skin Loop skin: '' or 'style1' or 'style2'.
+ * @return string
+ */
+function ecbb_events_widget_venue_resolved_display( array $item, $skin = '' ) {
+	$display = isset( $item['venue_display'] ) ? (string) $item['venue_display'] : '';
+	if ( $display === '' || $display === 'name_and_address' ) {
+		return (string) $skin === 'style2' ? 'name_and_state' : 'full_details';
+	}
+
+	return $display;
+}
+
+/**
  * Whether the venue repeater row should render name + full address.
  *
  * @param array<string,mixed> $item Repeater row.
@@ -272,10 +313,9 @@ function ecbb_events_widget_venue_name_and_address_plain( $event_id ) {
  * @return bool
  */
 function ecbb_events_widget_venue_part_uses_full_details( array $item, $skin = '' ) {
-	$display = isset( $item['venue_display'] ) ? (string) $item['venue_display'] : 'full_details';
-	if ( $display === '' ) {
-		$display = 'full_details';
-	}
+	$display = function_exists( 'ecbb_events_widget_venue_resolved_display' )
+		? ecbb_events_widget_venue_resolved_display( $item, $skin )
+		: ( isset( $item['venue_display'] ) ? (string) $item['venue_display'] : 'full_details' );
 
 	return in_array( $display, [ 'full_details', 'name_and_address' ], true );
 }
@@ -296,6 +336,13 @@ function ecbb_events_widget_venue_part_plain_text( $event_id, array $item, $skin
 
 	if ( ecbb_events_widget_venue_part_uses_full_details( $item, $skin ) ) {
 		return ecbb_events_widget_venue_name_and_address_plain( $event_id );
+	}
+
+	$display = function_exists( 'ecbb_events_widget_venue_resolved_display' )
+		? ecbb_events_widget_venue_resolved_display( $item, $skin )
+		: ( isset( $item['venue_display'] ) ? (string) $item['venue_display'] : 'full_details' );
+	if ( $display === 'name_and_state' ) {
+		return ecbb_events_widget_venue_name_and_state_plain( $event_id );
 	}
 
 	return ecbb_events_widget_venue_name_plain( $event_id );
@@ -752,8 +799,64 @@ function ecbb_event_part_build_day_time_range_parts( $post_id, array $item ) {
 	return [ 'day' => $day_str, 'time' => $t_start . ' - ' . $t_end ];
 }
 
-function ecbb_event_part_button_style_attr( array $item, $skin = '' ) {
+/**
+ * Part slugs that support the action-link row (read more, tickets, RSVP).
+ *
+ * @param string $part Part slug.
+ * @return bool
+ */
+function ecbb_event_part_is_action_link_part( $part ) {
+	return in_array( (string) $part, [ 'read_more', 'event_tickets', 'event_rsvp' ], true );
+}
+
+/**
+ * Whether button chrome applies (button styles + hover enabled).
+ *
+ * @param array<string,mixed> $item Repeater row.
+ * @return bool
+ */
+function ecbb_event_part_button_style_active( array $item ) {
 	if ( empty( $item['btn_style'] ) ) {
+		return false;
+	}
+	if ( function_exists( 'ecbb_event_part_hover_style_active' ) && ! ecbb_event_part_hover_style_active( $item ) ) {
+		return false;
+	}
+	return true;
+}
+
+/**
+ * Inner markup for read more / tickets / RSVP.
+ *
+ * Hover on: clickable link (optional button chrome). Hover off: plain text only.
+ *
+ * @param array<string,mixed> $item         Repeater row.
+ * @param string              $href         Destination URL.
+ * @param string              $label        Visible label.
+ * @param string              $btn_attr     Optional button layout inline attr (no colors).
+ * @param string              $link_attr    Fallback inline attr.
+ * @param string              $extra_attrs  Extra attributes before btn/link attr (e.g. target, rel).
+ * @return string HTML (not escaped as a whole).
+ */
+function ecbb_event_part_action_link_inner_html( array $item, $href, $label, $btn_attr = '', $link_attr = '', $extra_attrs = '' ) {
+	$hover_on = ! function_exists( 'ecbb_event_part_hover_style_active' ) || ecbb_event_part_hover_style_active( $item );
+
+	if ( ! $hover_on ) {
+		return '<span class="ecbb-event__plain">' . esc_html( $label ) . '</span>';
+	}
+
+	$attr = $extra_attrs;
+	if ( $btn_attr !== '' ) {
+		$attr .= $btn_attr;
+	} elseif ( $link_attr !== '' ) {
+		$attr .= $link_attr;
+	}
+
+	return '<a class="ecbb-event__link" href="' . esc_url( $href ) . '"' . $attr . '>' . esc_html( $label ) . '</a>';
+}
+
+function ecbb_event_part_button_style_attr( array $item, $skin = '' ) {
+	if ( ! function_exists( 'ecbb_event_part_button_style_active' ) || ! ecbb_event_part_button_style_active( $item ) ) {
 		return '';
 	}
 
@@ -773,10 +876,14 @@ function ecbb_event_part_button_style_attr( array $item, $skin = '' ) {
 				? ecbb_normalize_bricks_color( $value )
 				: '';
 		};
-		$skip_btn_colors = (string) $skin === 'style2';
-		$decls = ecbb_events_widget_button_declarations( $item, 'desktop', $color_fn, $skip_btn_colors );
+		$decls = ecbb_events_widget_button_declarations( $item, 'desktop', $color_fn );
 		if ( ! empty( $decls ) ) {
-			$styles = array_merge( $styles, $decls );
+			foreach ( $decls as $decl ) {
+				if ( strncmp( $decl, 'background-color:', 17 ) === 0 || strncmp( $decl, 'color:', 6 ) === 0 ) {
+					continue;
+				}
+				$styles[] = $decl;
+			}
 		}
 	}
 
@@ -1185,7 +1292,8 @@ function ecbb_events_widget_part_wrap_classes( $part, $idx, $skin = '', array $i
 			$classes .= ' ecbb-no-hover';
 		}
 		if (
-			! empty( $row['btn_style'] )
+			function_exists( 'ecbb_event_part_button_style_active' )
+			&& ecbb_event_part_button_style_active( $row )
 			&& function_exists( 'ecbb_events_widget_button_part_slugs' )
 			&& in_array( $ui_part, ecbb_events_widget_button_part_slugs(), true )
 		) {
@@ -1439,11 +1547,15 @@ function ecbb_event_part_extended_markup( $post, array $item, $idx, $style, $ski
 		} else {
 			$label = sanitize_text_field( $label );
 		}
-		$btn_attr  = ecbb_event_part_button_style_attr( $item, $skin );
-		$hover_on  = ! function_exists( 'ecbb_event_part_hover_style_active' ) || ecbb_event_part_hover_style_active( $item );
-		$inner_el  = $hover_on
-			? '<a class="ecbb-event__link" href="' . esc_url( $url ) . '" rel="noopener noreferrer" target="_blank"' . ( $btn_attr !== '' ? $btn_attr : $link_attr ) . '>' . esc_html( $label ) . '</a>'
-			: '<span class="ecbb-event__plain">' . esc_html( $label ) . '</span>';
+		$btn_attr = ecbb_event_part_button_style_attr( $item, $skin );
+		$inner_el = ecbb_event_part_action_link_inner_html(
+			$item,
+			$url,
+			$label,
+			$btn_attr,
+			$link_attr,
+			' rel="noopener noreferrer" target="_blank"'
+		);
 		return '<div class="' . $wrap( 'event_tickets' ) . '"' . $attr . '>' . $inner_el . '</div>';
 	}
 
@@ -1460,10 +1572,7 @@ function ecbb_event_part_extended_markup( $post, array $item, $idx, $style, $ski
 			$url = $url . $frag;
 		}
 		$btn_attr = ecbb_event_part_button_style_attr( $item, $skin );
-		$hover_on = ! function_exists( 'ecbb_event_part_hover_style_active' ) || ecbb_event_part_hover_style_active( $item );
-		$inner_el = $hover_on
-			? '<a class="ecbb-event__link" href="' . esc_url( $url ) . '"' . ( $btn_attr !== '' ? $btn_attr : $link_attr ) . '>' . esc_html( $label ) . '</a>'
-			: '<span class="ecbb-event__plain">' . esc_html( $label ) . '</span>';
+		$inner_el = ecbb_event_part_action_link_inner_html( $item, $url, $label, $btn_attr, $link_attr );
 		return '<div class="' . $wrap( 'event_rsvp' ) . '"' . $attr . '>' . $inner_el . '</div>';
 	}
 
@@ -1479,10 +1588,13 @@ function ecbb_event_part_extended_markup( $post, array $item, $idx, $style, $ski
 			$label = sanitize_text_field( $label );
 		}
 		$btn_attr = ecbb_event_part_button_style_attr( $item, $skin );
-		$hover_on = ! function_exists( 'ecbb_event_part_hover_style_active' ) || ecbb_event_part_hover_style_active( $item );
-		$inner_el = $hover_on
-			? '<a class="ecbb-event__link" href="' . esc_url( get_permalink( $post->ID ) ) . '"' . ( $btn_attr !== '' ? $btn_attr : $link_attr ) . '>' . esc_html( $label ) . '</a>'
-			: '<span class="ecbb-event__plain">' . esc_html( $label ) . '</span>';
+		$inner_el = ecbb_event_part_action_link_inner_html(
+			$item,
+			get_permalink( $post->ID ),
+			$label,
+			$btn_attr,
+			$link_attr
+		);
 		return '<div class="' . $wrap( 'read_more' ) . '"' . $attr . '>' . $inner_el . '</div>';
 	}
 

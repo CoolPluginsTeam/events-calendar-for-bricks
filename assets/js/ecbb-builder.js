@@ -491,29 +491,30 @@
 	var BTN_PAINT_KEYS = [
 		"btn_bg",
 		"btn_text_color",
-		"btn_border",
+		"btn_border_color",
 		"btn_padding",
 		"ecbb_background",
 	];
-
-	function isStyle2PartsPanel() {
-		return !!document.querySelector(
-			'#bricks-panel-element [data-control-key="parts_style2"]'
-		);
-	}
 
 	function readControlInnerColor(controlInner) {
 		if (!controlInner) {
 			return "";
 		}
 
-		var textInput = controlInner.querySelector('input[type="text"]');
-		if (textInput && textInput.value) {
-			var value = textInput.value.trim();
+		var inputs = controlInner.querySelectorAll(
+			'input[type="text"], input[type="color"]'
+		);
+		var i;
+		for (i = 0; i < inputs.length; i++) {
+			var value = (inputs[i].value || "").trim();
+			if (!value) {
+				continue;
+			}
 			if (
 				value.indexOf("#") === 0 ||
 				value.indexOf("rgb") === 0 ||
-				value.indexOf("hsl") === 0
+				value.indexOf("hsl") === 0 ||
+				value.indexOf("hwb") === 0
 			) {
 				return value;
 			}
@@ -527,31 +528,58 @@
 		return "";
 	}
 
+	function applyButtonColors(repeaterItem, link, preview, wrapper) {
+		if (!repeaterItem || !link || !wrapper) {
+			return;
+		}
+
+		var bg = readControlInnerColor(
+			repeaterItem.querySelector(
+				'.repeater-item-inner[data-control-key="btn_bg"]'
+			)
+		);
+		if (!bg) {
+			bg = readControlInnerColor(
+				repeaterItem.querySelector(
+					'.repeater-item-inner[data-control-key="ecbb_background"]'
+				)
+			);
+		}
+		if (bg) {
+			wrapper.style.setProperty("--ecbb-btn-bg", bg);
+		} else {
+			wrapper.style.removeProperty("--ecbb-btn-bg");
+		}
+
+		var textColor = readControlInnerColor(
+			repeaterItem.querySelector(
+				'.repeater-item-inner[data-control-key="btn_text_color"]'
+			)
+		);
+		if (
+			!textColor &&
+			wrapper &&
+			preview &&
+			preview.defaultView
+		) {
+			textColor = preview.defaultView.getComputedStyle(wrapper).color;
+		}
+		if (textColor) {
+			wrapper.style.setProperty("--ecbb-btn-fg", textColor);
+		} else {
+			wrapper.style.removeProperty("--ecbb-btn-fg");
+		}
+
+		link.style.removeProperty("background-color");
+		link.style.removeProperty("color");
+	}
+
 	function copyComputedButtonChrome(wrapper, link, preview) {
 		if (!wrapper || !link || !preview || !preview.defaultView) {
 			return;
 		}
 
 		var cs = preview.defaultView.getComputedStyle(wrapper);
-
-		if (cs.borderTopWidth && cs.borderTopWidth !== "0px") {
-			link.style.borderTopWidth = cs.borderTopWidth;
-			link.style.borderTopStyle = cs.borderTopStyle;
-			link.style.borderTopColor = cs.borderTopColor;
-			link.style.borderRightWidth = cs.borderRightWidth;
-			link.style.borderRightStyle = cs.borderRightStyle;
-			link.style.borderRightColor = cs.borderRightColor;
-			link.style.borderBottomWidth = cs.borderBottomWidth;
-			link.style.borderBottomStyle = cs.borderBottomStyle;
-			link.style.borderBottomColor = cs.borderBottomColor;
-			link.style.borderLeftWidth = cs.borderLeftWidth;
-			link.style.borderLeftStyle = cs.borderLeftStyle;
-			link.style.borderLeftColor = cs.borderLeftColor;
-		}
-
-		if (cs.borderRadius && cs.borderRadius !== "0px") {
-			link.style.borderRadius = cs.borderRadius;
-		}
 
 		if (cs.paddingTop && cs.paddingTop !== "0px") {
 			link.style.paddingTop = cs.paddingTop;
@@ -561,8 +589,73 @@
 		}
 	}
 
+	function applyButtonBorderColor(repeaterItem, link) {
+		if (!repeaterItem || !link) {
+			return;
+		}
+
+		var borderColor = readControlInnerColor(
+			repeaterItem.querySelector(
+				'.repeater-item-inner[data-control-key="btn_border_color"]'
+			)
+		);
+		if (borderColor) {
+			link.style.setProperty("border", "1px solid " + borderColor);
+			link.style.setProperty("box-sizing", "border-box");
+		} else {
+			link.style.removeProperty("border");
+		}
+	}
+
 	/**
-	 * Bricks repeater live CSS paints the row wrapper; keep button paint on the link.
+	 * Button paint target: link when hover is on, plain span when hover is off + button styles.
+	 */
+	function getButtonPaintSurface(wrapper) {
+		if (!wrapper) {
+			return null;
+		}
+		var link = wrapper.querySelector(".ecbb-event__link");
+		if (link) {
+			return link;
+		}
+		if (wrapper.classList.contains("ecbb-has-btn")) {
+			return wrapper.querySelector(".ecbb-event__plain");
+		}
+		return null;
+	}
+
+	function clearButtonPaintFromWrapper(wrapper) {
+		if (!wrapper) {
+			return;
+		}
+
+		wrapper.classList.remove("ecbb-has-btn");
+		wrapper.style.removeProperty("--ecbb-btn-bg");
+		wrapper.style.removeProperty("--ecbb-btn-fg");
+		[
+			"backgroundColor",
+			"background",
+			"color",
+			"padding",
+			"border",
+			"borderRadius",
+			"display",
+			"alignItems",
+			"justifyContent",
+			"width",
+			"maxWidth",
+			"boxSizing",
+		].forEach(function (prop) {
+			wrapper.style[prop] = "";
+		});
+
+		wrapper.querySelectorAll(".ecbb-event__link, .ecbb-event__plain").forEach(function (node) {
+			node.removeAttribute("style");
+		});
+	}
+
+	/**
+	 * Bricks repeater live CSS paints the row wrapper; keep button paint on the inner surface.
 	 */
 	function syncButtonPaintToInnerLink(repeaterItem) {
 		var preview = getPreviewDocument();
@@ -590,15 +683,17 @@
 				btnStyleOn = btnCb.checked;
 			}
 		}
-		if (!btnStyleOn && !wrapper.classList.contains("ecbb-has-btn")) {
+		var hoverOn = readUseHoverValue(repeaterItem);
+
+		if (!hoverOn || !btnStyleOn) {
+			clearButtonPaintFromWrapper(wrapper);
 			return;
 		}
-		if (btnStyleOn) {
-			wrapper.classList.add("ecbb-has-btn");
-		}
 
-		var link = wrapper.querySelector(".ecbb-event__link");
-		if (!link) {
+		wrapper.classList.add("ecbb-has-btn");
+
+		var surface = getButtonPaintSurface(wrapper);
+		if (!surface) {
 			return;
 		}
 
@@ -611,50 +706,21 @@
 			"borderRadius",
 		].forEach(function (prop) {
 			if (wrapper.style[prop]) {
-				link.style[prop] = wrapper.style[prop];
+				surface.style[prop] = wrapper.style[prop];
 				wrapper.style[prop] = "";
 			}
 		});
 
-		copyComputedButtonChrome(wrapper, link, preview);
+		copyComputedButtonChrome(wrapper, surface, preview);
+		applyButtonBorderColor(repeaterItem, surface);
+		applyButtonColors(repeaterItem, surface, preview, wrapper);
 
-		var style2 = isStyle2PartsPanel();
-
-		if (style2) {
-			var partBg = readControlInnerColor(
-				repeaterItem.querySelector(
-					'.repeater-item-inner[data-control-key="ecbb_background"]'
-				)
-			);
-			if (partBg) {
-				link.style.setProperty("background-color", partBg);
-			}
-		} else {
-			var bg = readControlInnerColor(
-				repeaterItem.querySelector(
-					'.repeater-item-inner[data-control-key="btn_bg"]'
-				)
-			);
-			if (bg) {
-				link.style.setProperty("background-color", bg);
-			}
-
-			var textColor = readControlInnerColor(
-				repeaterItem.querySelector(
-					'.repeater-item-inner[data-control-key="btn_text_color"]'
-				)
-			);
-			if (textColor) {
-				link.style.setProperty("color", textColor);
-			}
-		}
-
-		link.style.setProperty("display", "inline-flex");
-		link.style.setProperty("align-items", "center");
-		link.style.setProperty("justify-content", "center");
-		link.style.setProperty("width", "auto");
-		link.style.setProperty("max-width", "100%");
-		link.style.setProperty("box-sizing", "border-box");
+		surface.style.setProperty("display", "inline-flex");
+		surface.style.setProperty("align-items", "center");
+		surface.style.setProperty("justify-content", "center");
+		surface.style.setProperty("width", "auto");
+		surface.style.setProperty("max-width", "100%");
+		surface.style.setProperty("box-sizing", "border-box");
 	}
 
 	var btnSyncTimer = null;
@@ -728,16 +794,21 @@
 			}
 			if (e.target.closest('.repeater-item-inner[data-control-key="ecbb_use_hover"]')) {
 				syncUseHoverEnabled(item);
+				scheduleButtonPaintSync(item);
+				return;
 			}
 			if (e.target.closest('.repeater-item-inner[data-control-key="ecbb_typography"]')) {
 				scheduleTypographyColorSync(item);
+				scheduleButtonPaintSync(item);
 			}
 			if (e.target.closest('.repeater-item-inner[data-control-key="ecbb_background_inner"]')) {
 				scheduleTitleInnerBackgroundSync(item);
 			}
 			if (
 				e.target.closest('.repeater-item-inner[data-control-key="btn_style"]') ||
-				e.target.closest('.repeater-item-inner[data-control-key="btn_border"]') ||
+				e.target.closest('.repeater-item-inner[data-control-key="btn_bg"]') ||
+				e.target.closest('.repeater-item-inner[data-control-key="btn_text_color"]') ||
+				e.target.closest('.repeater-item-inner[data-control-key="btn_border_color"]') ||
 				e.target.closest('.repeater-item-inner[data-control-key="btn_padding"]') ||
 				e.target.closest('.repeater-item-inner[data-control-key="ecbb_background"]')
 			) {
