@@ -393,8 +393,24 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
  * @return string
  */
 
+	public static function ecbb_repeater_date_typography_inner_relative_selectors() {
+	return '& .ecbb-event__date-day, & .ecbb-event__date-time, & .ecbb-event__date-sep';
+}
+
+	public static function ecbb_date_typography_part_slugs() {
+	return [ 'date', 'event_date', 'event_time', 'event_day' ];
+}
+
 	public static function ecbb_repeater_typography_css_selector() {
-	return '&, & .ecbb-event__term-chip, & .ecbb-event__link, & > .ecbb-event__link, & .ecbb-event__term, & > .ecbb-event__term';
+	return '&, & .ecbb-event__term-chip, & .ecbb-event__link, & > .ecbb-event__link, & .ecbb-event__term, & > .ecbb-event__term, '
+		. self::ecbb_repeater_date_typography_inner_relative_selectors();
+}
+
+	public static function ecbb_date_part_typography_selectors( $scope_sel ) {
+	return $scope_sel . ','
+		. $scope_sel . ' .ecbb-event__date-day,'
+		. $scope_sel . ' .ecbb-event__date-time,'
+		. $scope_sel . ' .ecbb-event__date-sep';
 }
 
 	public static function ecbb_part_title_inner_selectors( $scope_sel ) {
@@ -436,6 +452,10 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
  */
 
 	public static function ecbb_part_typography_selectors( $scope_sel, $part_type ) {
+	if ( 'date' === $part_type ) {
+		return self::ecbb_date_part_typography_selectors( $scope_sel );
+	}
+
 	if ( function_exists( 'ecbb_part_chip_surface_part_slugs' )
 		&& in_array( $part_type, self::ecbb_part_chip_surface_part_slugs(), true ) ) {
 		return self::ecbb_part_chip_surface_selectors( $scope_sel );
@@ -1218,8 +1238,8 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 			? self::ecbb_part_chip_surface_selectors( $scope_sel )
 			: $scope_sel;
 
-		// Grid: emit repeater typography/spacing on the frontend (Bricks fieldId CSS + grid defaults).
-		if ( 'grid' === (string) $list_item_style && 'image' !== $part_type ) {
+		// Emit repeater typography/spacing on the frontend (Bricks fieldId misses nested date text nodes).
+		if ( 'image' !== $part_type ) {
 			foreach ( self::ecbb_style_breakpoints() as $device => $mq ) {
 				if ( ! empty( $p['ecbb_typography'] ) && is_array( $p['ecbb_typography'] ) ) {
 					$typo_decls = self::ecbb_typography_declarations( $p['ecbb_typography'], $device );

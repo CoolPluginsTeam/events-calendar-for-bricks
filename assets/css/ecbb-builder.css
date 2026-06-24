@@ -4,11 +4,14 @@
 
 .ecbb-parts-repeater-item.open .ecbb-repeater-tabs,
 .ecbb-parts-repeater-item.always-open .ecbb-repeater-tabs {
-	display: inline-flex;
+	display: flex;
+	justify-content: center;
 	align-items: center;
-	gap: 2px;
-	margin: 6px 0 10px;
-	padding: 3px;
+	width: 100%;
+	box-sizing: border-box;
+	gap: 8px;
+	margin: 8px 0 12px;
+	padding: 4px 6px;
 	border-radius: 8px;
 	background: rgba(255, 255, 255, 0.07);
 	border: 1px solid rgba(255, 255, 255, 0.08);
@@ -30,18 +33,20 @@
 .ecbb-parts-repeater-item.open .ecbb-repeater-tabs__btn,
 .ecbb-parts-repeater-item.always-open .ecbb-repeater-tabs__btn {
 	margin: 0;
-	padding: 5px 12px;
+	padding: 6px 18px;
+	min-width: 72px;
 	border: 0;
 	border-radius: 6px;
 	background: transparent;
 	color: rgba(255, 255, 255, 0.42);
-	font-size: 11px;
+	font-size: 13px;
 	font-weight: 600;
 	letter-spacing: 0.06em;
 	line-height: 1;
 	cursor: pointer;
 	font-family: inherit;
 	text-transform: uppercase;
+	text-align: center;
 	transition:
 		color 0.18s ease,
 		background 0.18s ease,

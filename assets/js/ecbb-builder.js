@@ -303,6 +303,7 @@
 		});
 		syncAllButtonPaint();
 		syncAllTitleInnerBackground();
+		syncAllCategoryChipBackgrounds();
 	}
 
 	var t = null;
@@ -378,11 +379,85 @@
 
 		wrapper
 			.querySelectorAll(
-				".ecbb-event__term-chip, .ecbb-event__link, .ecbb-event__term"
+				".ecbb-event__term-chip, .ecbb-event__link, .ecbb-event__term, .ecbb-event__date-day, .ecbb-event__date-time, .ecbb-event__date-sep"
 			)
 			.forEach(function (node) {
 				node.style.setProperty("color", color);
 			});
+	}
+
+	/** Style 1 categories: Bricks paints the wrapper; chips need the background. */
+	function syncCategoryChipBackground(repeaterItem) {
+		if (!repeaterItem || readPartValue(repeaterItem) !== "categories") {
+			return;
+		}
+
+		var preview = getPreviewDocument();
+		if (!preview) {
+			return;
+		}
+
+		var rowId = readRepeaterRowId(repeaterItem);
+		if (!rowId) {
+			return;
+		}
+
+		var wrapper = preview.querySelector('[data-field-id="' + rowId + '"]');
+		if (!wrapper) {
+			return;
+		}
+
+		var bg = readControlInnerColor(
+			repeaterItem.querySelector(
+				'.repeater-item-inner[data-control-key="ecbb_background"]'
+			)
+		);
+
+		wrapper.querySelectorAll(".ecbb-event__term-chip").forEach(function (chip) {
+			if (bg) {
+				chip.style.setProperty("background-color", bg, "important");
+			} else {
+				chip.style.removeProperty("background-color");
+			}
+		});
+	}
+
+	var categoryChipBgTimer = null;
+	function scheduleCategoryChipBackgroundSync(repeaterItem) {
+		if (!repeaterItem) {
+			return;
+		}
+		if (categoryChipBgTimer) {
+			clearTimeout(categoryChipBgTimer);
+		}
+		categoryChipBgTimer = setTimeout(function () {
+			categoryChipBgTimer = null;
+			syncCategoryChipBackground(repeaterItem);
+		}, 60);
+	}
+
+	function syncAllCategoryChipBackgrounds() {
+		document
+			.querySelectorAll(".ecbb-parts-repeater-item")
+			.forEach(function (item) {
+				if (readPartValue(item) === "categories") {
+					syncCategoryChipBackground(item);
+				}
+			});
+	}
+
+	function onCategoryChipBackgroundInteraction(e) {
+		var item = e.target.closest(".ecbb-parts-repeater-item");
+		if (!item || readPartValue(item) !== "categories") {
+			return;
+		}
+		if (
+			e.target.closest(
+				'.repeater-item-inner[data-control-key="ecbb_background"]'
+			)
+		) {
+			scheduleCategoryChipBackgroundSync(item);
+		}
 	}
 
 	function syncTitleInnerBackground(repeaterItem) {
@@ -795,9 +870,7 @@
 				btnStyleOn = btnCb.checked;
 			}
 		}
-		var hoverOn = readUseHoverValue(repeaterItem);
-
-		if (!hoverOn || !btnStyleOn) {
+		if (!btnStyleOn) {
 			clearButtonPaintFromWrapper(wrapper);
 			return;
 		}
@@ -938,6 +1011,8 @@
 	document.addEventListener("change", onButtonControlInteraction, true);
 	document.addEventListener("input", onTitleInnerBackgroundInteraction, true);
 	document.addEventListener("change", onTitleInnerBackgroundInteraction, true);
+	document.addEventListener("input", onCategoryChipBackgroundInteraction, true);
+	document.addEventListener("change", onCategoryChipBackgroundInteraction, true);
 
 	document.addEventListener(
 		"click",
