@@ -1,9 +1,9 @@
 <?php
 /**
  * Events Widget: shared TEC event part markup (date, tickets, images, hover helpers). List Style 2 shell:
- * `template/list/list-style-2.php`.
+ * `widgets/layouts/ecbb-list-2.php`.
  *
- * File: `includes/events-widget/ecbb-events-widget-loop-markup.php`.
+ * File: `includes/markup.php`.
  *
  * @package ECBB
  */
@@ -19,7 +19,12 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @param mixed $value Saved control value (array, object, string, JSON string).
  * @return string Usable CSS color or empty string.
  */
-function ecbb_normalize_bricks_color( $value ) {
+
+if ( ! class_exists( 'ECBB_Markup', false ) ) {
+
+	final class ECBB_Markup {
+
+	public static function ecbb_normalize_bricks_color( $value ) {
 	if ( $value === null || $value === false ) {
 		return '';
 	}
@@ -93,7 +98,7 @@ function ecbb_normalize_bricks_color( $value ) {
 	return '';
 }
 
-function ecbb_event_part_resolve_php_format( $part, array $item ) {
+	public static function ecbb_event_part_resolve_php_format( $part, array $item ) {
 	$preset = isset( $item['date_format_preset'] ) ? (string) $item['date_format_preset'] : '';
 	$custom = isset( $item['date_format_custom'] ) ? trim( (string) $item['date_format_custom'] ) : '';
 
@@ -101,8 +106,8 @@ function ecbb_event_part_resolve_php_format( $part, array $item ) {
 		return $custom;
 	}
 
-	if ( function_exists( 'ecbb_events_widget_date_preset_php_format' ) ) {
-		$mapped = ecbb_events_widget_date_preset_php_format( $preset, (string) $part );
+	if ( function_exists( 'ecbb_date_preset_php_format' ) ) {
+		$mapped = ecbb_date_preset_php_format( $preset, (string) $part );
 		if ( $mapped !== null && $mapped !== '' ) {
 			return $mapped;
 		}
@@ -138,7 +143,8 @@ function ecbb_event_part_resolve_php_format( $part, array $item ) {
  * @param int $event_id Event post ID.
  * @return string Unescaped plain text; caller must escape for HTML.
  */
-function ecbb_events_widget_venue_name_plain( $event_id ) {
+
+	public static function ecbb_venue_name_plain( $event_id ) {
 	$event_id = (int) $event_id;
 	if ( $event_id < 1 ) {
 		return '';
@@ -164,7 +170,8 @@ function ecbb_events_widget_venue_name_plain( $event_id ) {
  * @param int $event_id Event post ID.
  * @return int Venue post ID or 0.
  */
-function ecbb_events_widget_venue_id_for_event( $event_id ) {
+
+	public static function ecbb_venue_id_for_event( $event_id ) {
 	$event_id = (int) $event_id;
 	if ( $event_id < 1 ) {
 		return 0;
@@ -184,14 +191,15 @@ function ecbb_events_widget_venue_id_for_event( $event_id ) {
  * @param int $event_id Event post ID.
  * @return string Unescaped plain text; caller must escape for HTML.
  */
-function ecbb_events_widget_venue_full_address_plain( $event_id ) {
+
+	public static function ecbb_venue_full_address_plain( $event_id ) {
 	$event_id = (int) $event_id;
 	if ( $event_id < 1 ) {
 		return '';
 	}
 
 	$address_ids = [ $event_id ];
-	$venue_id    = ecbb_events_widget_venue_id_for_event( $event_id );
+	$venue_id    = self::ecbb_venue_id_for_event( $event_id );
 	if ( $venue_id > 0 ) {
 		array_unshift( $address_ids, $venue_id );
 	}
@@ -203,7 +211,7 @@ function ecbb_events_widget_venue_full_address_plain( $event_id ) {
 			$raw = preg_replace( '/<br\s*\/?>/i', ', ', $raw );
 			$t   = trim( wp_strip_all_tags( html_entity_decode( $raw, ENT_QUOTES, 'UTF-8' ) ) );
 			if ( $t !== '' ) {
-				$name = ecbb_events_widget_venue_name_plain( $event_id );
+				$name = self::ecbb_venue_name_plain( $event_id );
 				if ( $name !== '' && strcasecmp( $t, $name ) === 0 ) {
 					continue;
 				}
@@ -238,7 +246,7 @@ function ecbb_events_widget_venue_full_address_plain( $event_id ) {
 		}
 	}
 
-	return ecbb_events_widget_event_part_detail_plain( $event_id, 'venue_full_address' );
+	return self::ecbb_event_part_detail_plain( $event_id, 'venue_full_address' );
 }
 
 /**
@@ -247,9 +255,10 @@ function ecbb_events_widget_venue_full_address_plain( $event_id ) {
  * @param int $event_id Event post ID.
  * @return string Unescaped plain text; caller must escape for HTML.
  */
-function ecbb_events_widget_venue_name_and_address_plain( $event_id ) {
-	$name    = ecbb_events_widget_venue_name_plain( $event_id );
-	$address = ecbb_events_widget_venue_full_address_plain( $event_id );
+
+	public static function ecbb_venue_name_and_address_plain( $event_id ) {
+	$name    = self::ecbb_venue_name_plain( $event_id );
+	$address = self::ecbb_venue_full_address_plain( $event_id );
 
 	if ( $name === '' && $address === '' ) {
 		return '';
@@ -270,9 +279,10 @@ function ecbb_events_widget_venue_name_and_address_plain( $event_id ) {
  * @param int $event_id Event post ID.
  * @return string Unescaped plain text; caller must escape for HTML.
  */
-function ecbb_events_widget_venue_name_and_state_plain( $event_id ) {
-	$name  = ecbb_events_widget_venue_name_plain( $event_id );
-	$state = ecbb_events_widget_event_part_detail_plain( $event_id, 'venue_state' );
+
+	public static function ecbb_venue_name_and_state_plain( $event_id ) {
+	$name  = self::ecbb_venue_name_plain( $event_id );
+	$state = self::ecbb_event_part_detail_plain( $event_id, 'venue_state' );
 	$name  = trim( (string) $name );
 	$state = trim( (string) $state );
 
@@ -296,7 +306,8 @@ function ecbb_events_widget_venue_name_and_state_plain( $event_id ) {
  * @param string              $skin Loop skin: '' or 'style1' or 'style2'.
  * @return string
  */
-function ecbb_events_widget_venue_resolved_display( array $item, $skin = '' ) {
+
+	public static function ecbb_venue_resolved_display( array $item, $skin = '' ) {
 	$display = isset( $item['venue_display'] ) ? (string) $item['venue_display'] : '';
 	if ( $display === '' || $display === 'name_and_address' ) {
 		return (string) $skin === 'style2' ? 'name_and_state' : 'full_details';
@@ -312,9 +323,10 @@ function ecbb_events_widget_venue_resolved_display( array $item, $skin = '' ) {
  * @param string              $skin Loop skin: '' or 'style1' or 'style2'.
  * @return bool
  */
-function ecbb_events_widget_venue_part_uses_full_details( array $item, $skin = '' ) {
-	$display = function_exists( 'ecbb_events_widget_venue_resolved_display' )
-		? ecbb_events_widget_venue_resolved_display( $item, $skin )
+
+	public static function ecbb_venue_part_uses_full_details( array $item, $skin = '' ) {
+	$display = function_exists( 'ecbb_venue_resolved_display' )
+		? self::ecbb_venue_resolved_display( $item, $skin )
 		: ( isset( $item['venue_display'] ) ? (string) $item['venue_display'] : 'full_details' );
 
 	return in_array( $display, [ 'full_details', 'name_and_address' ], true );
@@ -328,24 +340,25 @@ function ecbb_events_widget_venue_part_uses_full_details( array $item, $skin = '
  * @param string              $skin     Loop skin: '' or 'style1' or 'style2'.
  * @return string Unescaped plain text; caller must escape for HTML.
  */
-function ecbb_events_widget_venue_part_plain_text( $event_id, array $item, $skin = '' ) {
+
+	public static function ecbb_venue_part_plain_text( $event_id, array $item, $skin = '' ) {
 	$event_id = (int) $event_id;
 	if ( $event_id < 1 ) {
 		return '';
 	}
 
-	if ( ecbb_events_widget_venue_part_uses_full_details( $item, $skin ) ) {
-		return ecbb_events_widget_venue_name_and_address_plain( $event_id );
+	if ( self::ecbb_venue_part_uses_full_details( $item, $skin ) ) {
+		return self::ecbb_venue_name_and_address_plain( $event_id );
 	}
 
-	$display = function_exists( 'ecbb_events_widget_venue_resolved_display' )
-		? ecbb_events_widget_venue_resolved_display( $item, $skin )
+	$display = function_exists( 'ecbb_venue_resolved_display' )
+		? self::ecbb_venue_resolved_display( $item, $skin )
 		: ( isset( $item['venue_display'] ) ? (string) $item['venue_display'] : 'full_details' );
 	if ( $display === 'name_and_state' ) {
-		return ecbb_events_widget_venue_name_and_state_plain( $event_id );
+		return self::ecbb_venue_name_and_state_plain( $event_id );
 	}
 
-	return ecbb_events_widget_venue_name_plain( $event_id );
+	return self::ecbb_venue_name_plain( $event_id );
 }
 
 /**
@@ -358,23 +371,24 @@ function ecbb_events_widget_venue_part_plain_text( $event_id, array $item, $skin
  * @param string              $skin  Loop skin: '' or 'style1' or 'style2'.
  * @return string Empty when nothing to show.
  */
-function ecbb_event_part_venue_markup( $post, array $item, $idx, $style, $skin = '' ) {
+
+	public static function ecbb_event_part_venue_markup( $post, array $item, $idx, $style, $skin = '' ) {
 	if ( ! $post instanceof \WP_Post ) {
 		return '';
 	}
 
-	$text = ecbb_events_widget_venue_part_plain_text( $post->ID, $item, $skin );
+	$text = self::ecbb_venue_part_plain_text( $post->ID, $item, $skin );
 	if ( $text === '' ) {
 		return '';
 	}
 
 	$idx  = absint( $idx );
 	$skin = (string) $skin;
-	$attr = function_exists( 'ecbb_events_widget_part_wrapper_attrs' )
-		? ecbb_events_widget_part_wrapper_attrs( $item, $idx, $style )
+	$attr = function_exists( 'ecbb_part_wrapper_attrs' )
+		? self::ecbb_part_wrapper_attrs( $item, $idx, $style )
 		: ( $style !== '' ? ' style="' . esc_attr( $style ) . '"' : '' );
 	$classes = esc_attr(
-		ecbb_events_widget_part_wrap_classes( 'venue', $idx, $skin, $item ) . ' ecbb-has-row-icon'
+		self::ecbb_part_wrap_classes( 'venue', $idx, $skin, $item ) . ' ecbb-has-row-icon'
 	);
 
 	return '<div class="' . $classes . '"' . $attr . '>' . esc_html( $text ) . '</div>';
@@ -386,7 +400,8 @@ function ecbb_event_part_venue_markup( $post, array $item, $idx, $style, $skin =
  * @param int $event_id Event post ID.
  * @return string Unescaped plain text; caller must escape for HTML.
  */
-function ecbb_events_widget_organizer_name_plain( $event_id ) {
+
+	public static function ecbb_organizer_name_plain( $event_id ) {
 	$event_id = (int) $event_id;
 	if ( $event_id < 1 ) {
 		return '';
@@ -412,13 +427,14 @@ function ecbb_events_widget_organizer_name_plain( $event_id ) {
  * @param int $event_id Event post ID.
  * @return string Unescaped plain text; caller must escape for HTML.
  */
-function ecbb_events_widget_organizer_full_details_plain( $event_id ) {
+
+	public static function ecbb_organizer_full_details_plain( $event_id ) {
 	$bits = array_filter(
 		[
-			ecbb_events_widget_organizer_name_plain( $event_id ),
-			ecbb_events_widget_event_part_detail_plain( $event_id, 'organizer_email' ),
-			ecbb_events_widget_event_part_detail_plain( $event_id, 'organizer_phone' ),
-			ecbb_events_widget_event_part_detail_plain( $event_id, 'organizer_website' ),
+			self::ecbb_organizer_name_plain( $event_id ),
+			self::ecbb_event_part_detail_plain( $event_id, 'organizer_email' ),
+			self::ecbb_event_part_detail_plain( $event_id, 'organizer_phone' ),
+			self::ecbb_event_part_detail_plain( $event_id, 'organizer_website' ),
 		]
 	);
 	$bits = array_map( 'trim', $bits );
@@ -434,7 +450,8 @@ function ecbb_events_widget_organizer_full_details_plain( $event_id ) {
  * @param string              $skin Loop skin: '' or 'style1' or 'style2'.
  * @return bool
  */
-function ecbb_events_widget_organizer_part_uses_full_details( array $item, $skin = '' ) {
+
+	public static function ecbb_organizer_part_uses_full_details( array $item, $skin = '' ) {
 	$display = isset( $item['organizer_display'] ) ? (string) $item['organizer_display'] : 'full_details';
 	if ( $display === '' ) {
 		$display = 'full_details';
@@ -451,17 +468,18 @@ function ecbb_events_widget_organizer_part_uses_full_details( array $item, $skin
  * @param string              $skin     Loop skin: '' or 'style1' or 'style2'.
  * @return string Unescaped plain text; caller must escape for HTML.
  */
-function ecbb_events_widget_organizer_part_plain_text( $event_id, array $item, $skin = '' ) {
+
+	public static function ecbb_organizer_part_plain_text( $event_id, array $item, $skin = '' ) {
 	$event_id = (int) $event_id;
 	if ( $event_id < 1 ) {
 		return '';
 	}
 
-	if ( ecbb_events_widget_organizer_part_uses_full_details( $item, $skin ) ) {
-		return ecbb_events_widget_organizer_full_details_plain( $event_id );
+	if ( self::ecbb_organizer_part_uses_full_details( $item, $skin ) ) {
+		return self::ecbb_organizer_full_details_plain( $event_id );
 	}
 
-	return ecbb_events_widget_organizer_name_plain( $event_id );
+	return self::ecbb_organizer_name_plain( $event_id );
 }
 
 /**
@@ -474,22 +492,23 @@ function ecbb_events_widget_organizer_part_plain_text( $event_id, array $item, $
  * @param string              $skin  Loop skin: '' or 'style1' or 'style2'.
  * @return string Empty when nothing to show.
  */
-function ecbb_event_part_organizer_markup( $post, array $item, $idx, $style, $skin = '' ) {
+
+	public static function ecbb_event_part_organizer_markup( $post, array $item, $idx, $style, $skin = '' ) {
 	if ( ! $post instanceof \WP_Post ) {
 		return '';
 	}
 
-	$text = ecbb_events_widget_organizer_part_plain_text( $post->ID, $item, $skin );
+	$text = self::ecbb_organizer_part_plain_text( $post->ID, $item, $skin );
 	if ( $text === '' ) {
 		return '';
 	}
 
 	$idx  = absint( $idx );
 	$skin = (string) $skin;
-	$attr = function_exists( 'ecbb_events_widget_part_wrapper_attrs' )
-		? ecbb_events_widget_part_wrapper_attrs( $item, $idx, $style )
+	$attr = function_exists( 'ecbb_part_wrapper_attrs' )
+		? self::ecbb_part_wrapper_attrs( $item, $idx, $style )
 		: ( $style !== '' ? ' style="' . esc_attr( $style ) . '"' : '' );
-	$classes = esc_attr( ecbb_events_widget_part_wrap_classes( 'organizer', $idx, $skin, $item ) );
+	$classes = esc_attr( self::ecbb_part_wrap_classes( 'organizer', $idx, $skin, $item ) );
 
 	return '<div class="' . $classes . '"' . $attr . '>' . esc_html( $text ) . '</div>';
 }
@@ -503,7 +522,8 @@ function ecbb_event_part_organizer_markup( $post, array $item, $idx, $style, $sk
  * @param string $part     Part slug (e.g. venue_city, organizer_email).
  * @return string          Unescaped plain text; caller must escape for HTML.
  */
-function ecbb_events_widget_event_part_detail_plain( $event_id, $part ) {
+
+	public static function ecbb_event_part_detail_plain( $event_id, $part ) {
 	$event_id = (int) $event_id;
 	$part     = (string) $part;
 	if ( $event_id < 1 ) {
@@ -534,14 +554,14 @@ function ecbb_events_widget_event_part_detail_plain( $event_id, $part ) {
 			}
 			$bits = array_filter(
 				[
-					ecbb_events_widget_event_part_detail_plain( $event_id, 'venue_street' ),
-					ecbb_events_widget_event_part_detail_plain( $event_id, 'venue_city' ),
+					ecbb_event_part_detail_plain( $event_id, 'venue_street' ),
+					ecbb_event_part_detail_plain( $event_id, 'venue_city' ),
 					trim(
-						ecbb_events_widget_event_part_detail_plain( $event_id, 'venue_state' )
+						ecbb_event_part_detail_plain( $event_id, 'venue_state' )
 						. ' '
-						. ecbb_events_widget_event_part_detail_plain( $event_id, 'venue_zip' )
+						. ecbb_event_part_detail_plain( $event_id, 'venue_zip' )
 					),
-					ecbb_events_widget_event_part_detail_plain( $event_id, 'venue_country' ),
+					ecbb_event_part_detail_plain( $event_id, 'venue_country' ),
 				]
 			);
 			$bits = array_map( 'trim', $bits );
@@ -735,7 +755,8 @@ function ecbb_events_widget_event_part_detail_plain( $event_id, $part ) {
  * @param array $item    Unused (signature kept for callers).
  * @return array{day:string,time:string} Both may be empty strings.
  */
-function ecbb_event_part_build_day_time_range_parts( $post_id, array $item ) {
+
+	public static function ecbb_event_part_build_day_time_range_parts( $post_id, array $item ) {
 	$post_id = (int) $post_id;
 	$start_raw = (string) get_post_meta( $post_id, '_EventStartDate', true );
 	$end_raw   = (string) get_post_meta( $post_id, '_EventEndDate', true );
@@ -805,7 +826,8 @@ function ecbb_event_part_build_day_time_range_parts( $post_id, array $item ) {
  * @param string $part Part slug.
  * @return bool
  */
-function ecbb_event_part_is_action_link_part( $part ) {
+
+	public static function ecbb_event_part_is_action_link_part( $part ) {
 	return in_array( (string) $part, [ 'read_more', 'event_tickets', 'event_rsvp' ], true );
 }
 
@@ -815,11 +837,12 @@ function ecbb_event_part_is_action_link_part( $part ) {
  * @param array<string,mixed> $item Repeater row.
  * @return bool
  */
-function ecbb_event_part_button_style_active( array $item ) {
+
+	public static function ecbb_event_part_button_style_active( array $item ) {
 	if ( empty( $item['btn_style'] ) ) {
 		return false;
 	}
-	if ( function_exists( 'ecbb_event_part_hover_style_active' ) && ! ecbb_event_part_hover_style_active( $item ) ) {
+	if ( function_exists( 'ecbb_event_part_hover_style_active' ) && ! self::ecbb_event_part_hover_style_active( $item ) ) {
 		return false;
 	}
 	return true;
@@ -838,8 +861,9 @@ function ecbb_event_part_button_style_active( array $item ) {
  * @param string              $extra_attrs  Extra attributes before btn/link attr (e.g. target, rel).
  * @return string HTML (not escaped as a whole).
  */
-function ecbb_event_part_action_link_inner_html( array $item, $href, $label, $btn_attr = '', $link_attr = '', $extra_attrs = '' ) {
-	$hover_on = ! function_exists( 'ecbb_event_part_hover_style_active' ) || ecbb_event_part_hover_style_active( $item );
+
+	public static function ecbb_event_part_action_link_inner_html( array $item, $href, $label, $btn_attr = '', $link_attr = '', $extra_attrs = '' ) {
+	$hover_on = ! function_exists( 'ecbb_event_part_hover_style_active' ) || self::ecbb_event_part_hover_style_active( $item );
 
 	if ( ! $hover_on ) {
 		return '<span class="ecbb-event__plain">' . esc_html( $label ) . '</span>';
@@ -855,8 +879,8 @@ function ecbb_event_part_action_link_inner_html( array $item, $href, $label, $bt
 	return '<a class="ecbb-event__link" href="' . esc_url( $href ) . '"' . $attr . '>' . esc_html( $label ) . '</a>';
 }
 
-function ecbb_event_part_button_style_attr( array $item, $skin = '' ) {
-	if ( ! function_exists( 'ecbb_event_part_button_style_active' ) || ! ecbb_event_part_button_style_active( $item ) ) {
+	public static function ecbb_event_part_button_style_attr( array $item, $skin = '' ) {
+	if ( ! function_exists( 'ecbb_event_part_button_style_active' ) || ! self::ecbb_event_part_button_style_active( $item ) ) {
 		return '';
 	}
 
@@ -870,13 +894,13 @@ function ecbb_event_part_button_style_attr( array $item, $skin = '' ) {
 		'box-sizing:border-box',
 	];
 
-	if ( function_exists( 'ecbb_events_widget_button_declarations' ) ) {
+	if ( function_exists( 'ecbb_button_declarations' ) ) {
 		$color_fn = static function ( $value ) {
 			return function_exists( 'ecbb_normalize_bricks_color' )
-				? ecbb_normalize_bricks_color( $value )
+				? self::ecbb_normalize_bricks_color( $value )
 				: '';
 		};
-		$decls = ecbb_events_widget_button_declarations( $item, 'desktop', $color_fn );
+		$decls = ecbb_button_declarations( $item, 'desktop', $color_fn );
 		if ( ! empty( $decls ) ) {
 			foreach ( $decls as $decl ) {
 				if ( strncmp( $decl, 'background-color:', 17 ) === 0 || strncmp( $decl, 'color:', 6 ) === 0 ) {
@@ -896,7 +920,8 @@ function ecbb_event_part_button_style_attr( array $item, $skin = '' ) {
  * @param string $token Single price fragment or whole cost.
  * @return bool
  */
-function ecbb_events_widget_cost_token_is_free( $token ) {
+
+	public static function ecbb_cost_token_is_free( $token ) {
 	$t = trim( wp_strip_all_tags( html_entity_decode( (string) $token, ENT_QUOTES, 'UTF-8' ) ) );
 	if ( $t === '' ) {
 		return false;
@@ -922,7 +947,8 @@ function ecbb_events_widget_cost_token_is_free( $token ) {
  *
  * @return array<string,string>
  */
-function ecbb_events_widget_event_cost_currency_options() {
+
+	public static function ecbb_event_cost_currency_options() {
 	return [
 		'default' => esc_html__( 'Site default', 'ecbb' ),
 		'none'    => esc_html__( 'No currency symbol', 'ecbb' ),
@@ -951,9 +977,10 @@ function ecbb_events_widget_event_cost_currency_options() {
 
 /**
  * @param mixed $value Saved control value.
- * @return string One of {@see ecbb_events_widget_event_cost_currency_options()}.
+ * @return string One of {@see ecbb_event_cost_currency_options()}.
  */
-function ecbb_events_widget_sanitize_event_cost_currency( $value ) {
+
+	public static function ecbb_sanitize_event_cost_currency( $value ) {
 	$code = is_string( $value ) ? strtoupper( trim( $value ) ) : '';
 	if ( $code === '' ) {
 		return 'default';
@@ -967,7 +994,7 @@ function ecbb_events_widget_sanitize_event_cost_currency( $value ) {
 	if ( 'SYMBOL' === $code ) {
 		return 'default';
 	}
-	return array_key_exists( $code, ecbb_events_widget_event_cost_currency_options() ) ? $code : 'default';
+	return array_key_exists( $code, self::ecbb_event_cost_currency_options() ) ? $code : 'default';
 }
 
 /**
@@ -976,7 +1003,8 @@ function ecbb_events_widget_sanitize_event_cost_currency( $value ) {
  * @param string $currency_code Sanitized currency code.
  * @return string Empty when none / default should not force a symbol.
  */
-function ecbb_events_widget_event_cost_currency_symbol( $currency_code ) {
+
+	public static function ecbb_event_cost_currency_symbol( $currency_code ) {
 	$map = [
 		'USD' => '$',
 		'EUR' => '€',
@@ -999,7 +1027,7 @@ function ecbb_events_widget_event_cost_currency_symbol( $currency_code ) {
 		'AED' => 'د.إ',
 		'SAR' => '﷼',
 	];
-	$currency_code = ecbb_events_widget_sanitize_event_cost_currency( $currency_code );
+	$currency_code = self::ecbb_sanitize_event_cost_currency( $currency_code );
 	return isset( $map[ $currency_code ] ) ? $map[ $currency_code ] : '';
 }
 
@@ -1009,7 +1037,8 @@ function ecbb_events_widget_event_cost_currency_symbol( $currency_code ) {
  * @param string $token Cost fragment.
  * @return string
  */
-function ecbb_events_widget_strip_cost_currency_symbols( $token ) {
+
+	public static function ecbb_strip_cost_currency_symbols( $token ) {
 	$t = trim( wp_strip_all_tags( html_entity_decode( (string) $token, ENT_QUOTES, 'UTF-8' ) ) );
 	if ( $t === '' ) {
 		return '';
@@ -1026,26 +1055,27 @@ function ecbb_events_widget_strip_cost_currency_symbols( $token ) {
  * @param string $currency_code Widget currency code.
  * @return string
  */
-function ecbb_events_widget_format_cost_token_with_currency( $token, $currency_code ) {
+
+	public static function ecbb_format_cost_token_with_currency( $token, $currency_code ) {
 	$token = trim( wp_strip_all_tags( html_entity_decode( (string) $token, ENT_QUOTES, 'UTF-8' ) ) );
 	if ( $token === '' ) {
 		return '';
 	}
-	if ( ecbb_events_widget_cost_token_is_free( $token ) ) {
+	if ( self::ecbb_cost_token_is_free( $token ) ) {
 		return __( 'Free', 'ecbb' );
 	}
 
-	$currency_code = ecbb_events_widget_sanitize_event_cost_currency( $currency_code );
+	$currency_code = self::ecbb_sanitize_event_cost_currency( $currency_code );
 	if ( $currency_code === 'default' ) {
 		return $token;
 	}
 	if ( $currency_code === 'none' ) {
-		$plain = ecbb_events_widget_strip_cost_currency_symbols( $token );
+		$plain = self::ecbb_strip_cost_currency_symbols( $token );
 		return $plain !== '' ? $plain : $token;
 	}
 
-	$symbol = ecbb_events_widget_event_cost_currency_symbol( $currency_code );
-	$amount = ecbb_events_widget_strip_cost_currency_symbols( $token );
+	$symbol = self::ecbb_event_cost_currency_symbol( $currency_code );
+	$amount = self::ecbb_strip_cost_currency_symbols( $token );
 	if ( $amount === '' ) {
 		return $token;
 	}
@@ -1063,24 +1093,25 @@ function ecbb_events_widget_format_cost_token_with_currency( $token, $currency_c
  * @param string $currency_code Widget currency code.
  * @return string
  */
-function ecbb_events_widget_apply_event_cost_currency( $cost_text, $currency_code ) {
+
+	public static function ecbb_apply_event_cost_currency( $cost_text, $currency_code ) {
 	$cost_text = trim( wp_strip_all_tags( html_entity_decode( (string) $cost_text, ENT_QUOTES, 'UTF-8' ) ) );
 	if ( $cost_text === '' ) {
 		return '';
 	}
 
-	$currency_code = ecbb_events_widget_sanitize_event_cost_currency( $currency_code );
+	$currency_code = self::ecbb_sanitize_event_cost_currency( $currency_code );
 	if ( $currency_code === 'default' ) {
 		return $cost_text;
 	}
 
-	if ( ecbb_events_widget_cost_token_is_free( $cost_text ) ) {
+	if ( self::ecbb_cost_token_is_free( $cost_text ) ) {
 		return __( 'Free', 'ecbb' );
 	}
 
 	if ( preg_match( '/^(.+?)([-–—])(.+)$/u', $cost_text, $m ) ) {
-		$left  = ecbb_events_widget_format_cost_token_with_currency( trim( $m[1] ), $currency_code );
-		$right = ecbb_events_widget_format_cost_token_with_currency( trim( $m[3] ), $currency_code );
+		$left  = self::ecbb_format_cost_token_with_currency( trim( $m[1] ), $currency_code );
+		$right = self::ecbb_format_cost_token_with_currency( trim( $m[3] ), $currency_code );
 		if ( $left !== '' && $right !== '' ) {
 			if ( strcasecmp( $left, $right ) === 0 ) {
 				return $left;
@@ -1089,7 +1120,7 @@ function ecbb_events_widget_apply_event_cost_currency( $cost_text, $currency_cod
 		}
 	}
 
-	return ecbb_events_widget_format_cost_token_with_currency( $cost_text, $currency_code );
+	return self::ecbb_format_cost_token_with_currency( $cost_text, $currency_code );
 }
 
 /**
@@ -1098,7 +1129,8 @@ function ecbb_events_widget_apply_event_cost_currency( $cost_text, $currency_cod
  * @param array<string,mixed>|null $settings Pass null to read only.
  * @return array<string,mixed>
  */
-function ecbb_events_widget_render_settings( $settings = null ) {
+
+	public static function ecbb_render_settings( $settings = null ) {
 	static $active = [];
 
 	if ( is_array( $settings ) ) {
@@ -1114,14 +1146,15 @@ function ecbb_events_widget_render_settings( $settings = null ) {
  * @param array<string,mixed> $item Repeater row.
  * @return string
  */
-function ecbb_events_widget_resolve_event_cost_currency( array $item = [] ) {
+
+	public static function ecbb_resolve_event_cost_currency( array $item = [] ) {
 	if ( isset( $item['cost_currency'] ) && (string) $item['cost_currency'] !== '' ) {
-		return ecbb_events_widget_sanitize_event_cost_currency( $item['cost_currency'] );
+		return self::ecbb_sanitize_event_cost_currency( $item['cost_currency'] );
 	}
 
-	$settings = ecbb_events_widget_render_settings();
+	$settings = self::ecbb_render_settings();
 	if ( isset( $settings['event_cost_currency'] ) ) {
-		return ecbb_events_widget_sanitize_event_cost_currency( $settings['event_cost_currency'] );
+		return self::ecbb_sanitize_event_cost_currency( $settings['event_cost_currency'] );
 	}
 
 	return 'default';
@@ -1133,12 +1166,13 @@ function ecbb_events_widget_resolve_event_cost_currency( array $item = [] ) {
  * @param array<string,mixed> $settings Element settings.
  * @return array<string,mixed>
  */
-function ecbb_events_widget_migrate_event_cost_currency_into_repeaters( array $settings ) {
+
+	public static function ecbb_migrate_event_cost_currency_into_repeaters( array $settings ) {
 	if ( ! isset( $settings['event_cost_currency'] ) ) {
 		return $settings;
 	}
 
-	$currency = ecbb_events_widget_sanitize_event_cost_currency( $settings['event_cost_currency'] );
+	$currency = self::ecbb_sanitize_event_cost_currency( $settings['event_cost_currency'] );
 
 	foreach ( [ 'parts_style1', 'parts_style2', 'parts_grid', 'parts' ] as $key ) {
 		if ( empty( $settings[ $key ] ) || ! is_array( $settings[ $key ] ) ) {
@@ -1164,13 +1198,14 @@ function ecbb_events_widget_migrate_event_cost_currency_into_repeaters( array $s
  * @param array<string,mixed> $item    Repeater row (legacy fallback only).
  * @return string Plain text (escaped by caller).
  */
-function ecbb_events_widget_format_event_cost_display( $post_id, array $item = [] ) {
+
+	public static function ecbb_format_event_cost_display( $post_id, array $item = [] ) {
 	$post_id = (int) $post_id;
 	if ( $post_id < 1 ) {
 		return '';
 	}
 
-	$currency_code = ecbb_events_widget_resolve_event_cost_currency( $item );
+	$currency_code = self::ecbb_resolve_event_cost_currency( $item );
 	$with_currency = $currency_code === 'default';
 
 	$formatted = '';
@@ -1186,7 +1221,7 @@ function ecbb_events_widget_format_event_cost_display( $post_id, array $item = [
 		return __( 'Free', 'ecbb' );
 	}
 
-	if ( ecbb_events_widget_cost_token_is_free( $candidate ) ) {
+	if ( self::ecbb_cost_token_is_free( $candidate ) ) {
 		return __( 'Free', 'ecbb' );
 	}
 
@@ -1195,10 +1230,10 @@ function ecbb_events_widget_format_event_cost_display( $post_id, array $item = [
 		$right = trim( $m[3] );
 		if ( $left !== '' && $right !== '' ) {
 			if ( strcasecmp( $left, $right ) === 0 ) {
-				$candidate = ecbb_events_widget_cost_token_is_free( $left )
+				$candidate = self::ecbb_cost_token_is_free( $left )
 					? __( 'Free', 'ecbb' )
 					: $left;
-			} elseif ( ecbb_events_widget_cost_token_is_free( $left ) && ecbb_events_widget_cost_token_is_free( $right ) ) {
+			} elseif ( self::ecbb_cost_token_is_free( $left ) && self::ecbb_cost_token_is_free( $right ) ) {
 				$candidate = __( 'Free', 'ecbb' );
 			} else {
 				$candidate = $left . ' – ' . $right;
@@ -1206,7 +1241,7 @@ function ecbb_events_widget_format_event_cost_display( $post_id, array $item = [
 		}
 	}
 
-	return ecbb_events_widget_apply_event_cost_currency( $candidate, $currency_code );
+	return self::ecbb_apply_event_cost_currency( $candidate, $currency_code );
 }
 
 /**
@@ -1219,13 +1254,14 @@ function ecbb_events_widget_format_event_cost_display( $post_id, array $item = [
  * @param string     $part       Part slug: categories|tags.
  * @return string HTML or empty when no terms.
  */
-function ecbb_events_widget_terms_list_html( array $terms, array $item, $style_attr = '', $skin = '', $part = 'categories' ) {
+
+	public static function ecbb_terms_list_html( array $terms, array $item, $style_attr = '', $skin = '', $part = 'categories' ) {
 	$style_attr = (string) $style_attr;
 	$skin       = (string) $skin;
 	$part       = sanitize_key( (string) $part );
 	$link_style = $style_attr !== '' ? ' style="' . esc_attr( $style_attr ) . '"' : '';
 	$chip_each  = ( 'style1' === $skin && 'categories' === $part );
-	$link_terms = ! function_exists( 'ecbb_event_part_hover_style_active' ) || ecbb_event_part_hover_style_active( $item );
+	$link_terms = ! function_exists( 'ecbb_event_part_hover_style_active' ) || self::ecbb_event_part_hover_style_active( $item );
 
 	$sep = isset( $item['terms_separator'] ) ? (string) $item['terms_separator'] : ', ';
 	$sep = $sep !== '' ? $sep : ', ';
@@ -1269,7 +1305,8 @@ function ecbb_events_widget_terms_list_html( array $terms, array $item, $style_a
  * @param int $idx Row index.
  * @return string
  */
-function ecbb_events_widget_part_idx_class( $idx ) {
+
+	public static function ecbb_part_idx_class( $idx ) {
 	return 'ecbb-p' . absint( $idx );
 }
 
@@ -1279,8 +1316,9 @@ function ecbb_events_widget_part_idx_class( $idx ) {
  * @param array<string,mixed> $item Repeater row.
  * @return bool
  */
-function ecbb_event_part_title_link_active( array $item ) {
-	return ecbb_events_widget_is_truthy_setting( $item['link'] ?? false, false );
+
+	public static function ecbb_event_part_title_link_active( array $item ) {
+	return self::ecbb_is_truthy_setting( $item['link'] ?? false, false );
 }
 
 /**
@@ -1292,8 +1330,9 @@ function ecbb_event_part_title_link_active( array $item ) {
  * @param array<string,mixed> $item  Repeater row (optional; used for hover class).
  * @return string        Space-separated classes (not escaped).
  */
-function ecbb_events_widget_part_wrap_classes( $part, $idx, $skin = '', array $item = [] ) {
-	$idx_c = ecbb_events_widget_part_idx_class( $idx );
+
+	public static function ecbb_part_wrap_classes( $part, $idx, $skin = '', array $item = [] ) {
+	$idx_c = self::ecbb_part_idx_class( $idx );
 	if ( (string) $skin === 'style2' ) {
 		$classes = 'ecbb-event-part ' . ecbb_list2_part_class( $part ) . ' ' . $idx_c;
 	} else {
@@ -1302,29 +1341,29 @@ function ecbb_events_widget_part_wrap_classes( $part, $idx, $skin = '', array $i
 	}
 	if ( $item !== [] ) {
 		$row = $item;
-		if ( function_exists( 'ecbb_events_widget_normalize_part_item' ) ) {
-			$row = ecbb_events_widget_normalize_part_item( $row );
+		if ( function_exists( 'ecbb_normalize_part_item' ) ) {
+			$row = ecbb_normalize_part_item( $row );
 		}
 		$ui_part = isset( $item['part'] ) ? (string) $item['part'] : (string) $part;
 		if (
 			$ui_part === 'title'
 			&& function_exists( 'ecbb_event_part_title_link_active' )
-			&& ! ecbb_event_part_title_link_active( $row )
+			&& ! self::ecbb_event_part_title_link_active( $row )
 		) {
 			$classes .= ' ecbb-no-hover';
 		} elseif (
 			function_exists( 'ecbb_event_part_hover_style_active' )
 			&& function_exists( 'ecbb_event_part_supports_hover_style_controls' )
-			&& ecbb_event_part_supports_hover_style_controls( $ui_part )
-			&& ! ecbb_event_part_hover_style_active( $row )
+			&& self::ecbb_event_part_supports_hover_style_controls( $ui_part )
+			&& ! self::ecbb_event_part_hover_style_active( $row )
 		) {
 			$classes .= ' ecbb-no-hover';
 		}
 		if (
 			function_exists( 'ecbb_event_part_button_style_active' )
-			&& ecbb_event_part_button_style_active( $row )
-			&& function_exists( 'ecbb_events_widget_button_part_slugs' )
-			&& in_array( $ui_part, ecbb_events_widget_button_part_slugs(), true )
+			&& self::ecbb_event_part_button_style_active( $row )
+			&& function_exists( 'ecbb_button_part_slugs' )
+			&& in_array( $ui_part, ecbb_button_part_slugs(), true )
 		) {
 			$classes .= ' ecbb-has-btn';
 		}
@@ -1339,7 +1378,8 @@ function ecbb_events_widget_part_wrap_classes( $part, $idx, $skin = '', array $i
  * @param int                 $idx  Row index fallback.
  * @return string
  */
-function ecbb_events_widget_part_field_id( array $item, $idx ) {
+
+	public static function ecbb_part_field_id( array $item, $idx ) {
 	if ( ! empty( $item['id'] ) ) {
 		return (string) $item['id'];
 	}
@@ -1353,8 +1393,9 @@ function ecbb_events_widget_part_field_id( array $item, $idx ) {
  * @param int                 $idx  Row index.
  * @return string HTML attribute fragment (leading space + data-field-id), or empty.
  */
-function ecbb_events_widget_part_field_id_attr( array $item, $idx ) {
-	$id = ecbb_events_widget_part_field_id( $item, $idx );
+
+	public static function ecbb_part_field_id_attr( array $item, $idx ) {
+	$id = self::ecbb_part_field_id( $item, $idx );
 	if ( $id === '' ) {
 		return '';
 	}
@@ -1369,8 +1410,9 @@ function ecbb_events_widget_part_field_id_attr( array $item, $idx ) {
  * @param string              $style Inline style declaration string (no style="" wrapper).
  * @return string HTML attribute fragment.
  */
-function ecbb_events_widget_part_wrapper_attrs( array $item, $idx, $style = '' ) {
-	$attrs = ecbb_events_widget_part_field_id_attr( $item, $idx );
+
+	public static function ecbb_part_wrapper_attrs( array $item, $idx, $style = '' ) {
+	$attrs = self::ecbb_part_field_id_attr( $item, $idx );
 	if ( $style !== '' ) {
 		$attrs .= ' style="' . esc_attr( $style ) . '"';
 	}
@@ -1383,7 +1425,8 @@ function ecbb_events_widget_part_wrapper_attrs( array $item, $idx, $style = '' )
  * @param array<int,array<string,mixed>> $rows Repeater rows.
  * @return array<int,array<string,mixed>>
  */
-function ecbb_events_widget_parts_rows_assign_ids( array $rows ) {
+
+	public static function ecbb_parts_rows_assign_ids( array $rows ) {
 	foreach ( $rows as $index => $row ) {
 		if ( ! is_array( $row ) || ! empty( $row['id'] ) ) {
 			continue;
@@ -1405,15 +1448,16 @@ function ecbb_events_widget_parts_rows_assign_ids( array $rows ) {
  * @param string   $skin     Loop skin: '' or 'style2'.
  * @return string|false      Markup, empty string when nothing to show, false if not an extended part.
  */
-function ecbb_event_part_extended_markup( $post, array $item, $idx, $style, $skin = '' ) {
-	if ( function_exists( 'ecbb_events_widget_normalize_part_item' ) ) {
-		$item = ecbb_events_widget_normalize_part_item( $item );
+
+	public static function ecbb_event_part_extended_markup( $post, array $item, $idx, $style, $skin = '' ) {
+	if ( function_exists( 'ecbb_normalize_part_item' ) ) {
+		$item = ecbb_normalize_part_item( $item );
 	}
 	$part = isset( $item['part'] ) ? (string) $item['part'] : '';
 	$idx  = absint( $idx );
 	$skin = (string) $skin;
-	$attr = function_exists( 'ecbb_events_widget_part_wrapper_attrs' )
-		? ecbb_events_widget_part_wrapper_attrs( $item, $idx, $style )
+	$attr = function_exists( 'ecbb_part_wrapper_attrs' )
+		? self::ecbb_part_wrapper_attrs( $item, $idx, $style )
 		: ( $style !== '' ? ' style="' . esc_attr( $style ) . '"' : '' );
 	$link_attr = '';
 	$detail_parts = [
@@ -1438,19 +1482,19 @@ function ecbb_event_part_extended_markup( $post, array $item, $idx, $style, $ski
 	}
 
 	$wrap = function ( $slug ) use ( $skin, $idx, $item ) {
-		return esc_attr( ecbb_events_widget_part_wrap_classes( $slug, $idx, $skin, $item ) );
+		return esc_attr( self::ecbb_part_wrap_classes( $slug, $idx, $skin, $item ) );
 	};
 
 	if ( $part === 'venue' ) {
-		return ecbb_event_part_venue_markup( $post, $item, $idx, $style, $skin );
+		return self::ecbb_event_part_venue_markup( $post, $item, $idx, $style, $skin );
 	}
 
 	if ( $part === 'organizer' ) {
-		return ecbb_event_part_organizer_markup( $post, $item, $idx, $style, $skin );
+		return self::ecbb_event_part_organizer_markup( $post, $item, $idx, $style, $skin );
 	}
 
 	$format = ( $part === 'event_date' || $part === 'event_time' )
-		? ecbb_event_part_resolve_php_format( $part, $item )
+		? self::ecbb_event_part_resolve_php_format( $part, $item )
 		: '';
 
 	if ( $part === 'event_date' ) {
@@ -1495,7 +1539,7 @@ function ecbb_event_part_extended_markup( $post, array $item, $idx, $style, $ski
 	if ( $part === 'event_day' ) {
 		$html = '';
 		if ( function_exists( 'ecbb_event_part_build_day_time_range_parts' ) ) {
-			$pr = ecbb_event_part_build_day_time_range_parts( $post->ID, [] );
+			$pr = self::ecbb_event_part_build_day_time_range_parts( $post->ID, [] );
 			$html = isset( $pr['day'] ) ? trim( (string) $pr['day'] ) : '';
 		}
 		if ( $html === '' ) {
@@ -1510,7 +1554,7 @@ function ecbb_event_part_extended_markup( $post, array $item, $idx, $style, $ski
 	}
 
 	if ( in_array( $part, $detail_parts, true ) ) {
-		$html = ecbb_events_widget_event_part_detail_plain( $post->ID, $part );
+		$html = self::ecbb_event_part_detail_plain( $post->ID, $part );
 		if ( $html === '' ) {
 			return '';
 		}
@@ -1546,8 +1590,8 @@ function ecbb_event_part_extended_markup( $post, array $item, $idx, $style, $ski
 	}
 
 	if ( $part === 'event_cost' ) {
-		$cost = function_exists( 'ecbb_events_widget_format_event_cost_display' )
-			? ecbb_events_widget_format_event_cost_display( $post->ID, $item )
+		$cost = function_exists( 'ecbb_format_event_cost_display' )
+			? self::ecbb_format_event_cost_display( $post->ID, $item )
 			: '';
 		if ( $cost === '' ) {
 			return '';
@@ -1576,8 +1620,8 @@ function ecbb_event_part_extended_markup( $post, array $item, $idx, $style, $ski
 		} else {
 			$label = sanitize_text_field( $label );
 		}
-		$btn_attr = ecbb_event_part_button_style_attr( $item, $skin );
-		$inner_el = ecbb_event_part_action_link_inner_html(
+		$btn_attr = self::ecbb_event_part_button_style_attr( $item, $skin );
+		$inner_el = self::ecbb_event_part_action_link_inner_html(
 			$item,
 			$url,
 			$label,
@@ -1600,8 +1644,8 @@ function ecbb_event_part_extended_markup( $post, array $item, $idx, $style, $ski
 		if ( function_exists( 'tribe_events_has_tickets' ) && tribe_events_has_tickets( $post->ID ) ) {
 			$url = $url . $frag;
 		}
-		$btn_attr = ecbb_event_part_button_style_attr( $item, $skin );
-		$inner_el = ecbb_event_part_action_link_inner_html( $item, $url, $label, $btn_attr, $link_attr );
+		$btn_attr = self::ecbb_event_part_button_style_attr( $item, $skin );
+		$inner_el = self::ecbb_event_part_action_link_inner_html( $item, $url, $label, $btn_attr, $link_attr );
 		return '<div class="' . $wrap( 'event_rsvp' ) . '"' . $attr . '>' . $inner_el . '</div>';
 	}
 
@@ -1616,8 +1660,8 @@ function ecbb_event_part_extended_markup( $post, array $item, $idx, $style, $ski
 		} else {
 			$label = sanitize_text_field( $label );
 		}
-		$btn_attr = ecbb_event_part_button_style_attr( $item, $skin );
-		$inner_el = ecbb_event_part_action_link_inner_html(
+		$btn_attr = self::ecbb_event_part_button_style_attr( $item, $skin );
+		$inner_el = self::ecbb_event_part_action_link_inner_html(
 			$item,
 			get_permalink( $post->ID ),
 			$label,
@@ -1635,7 +1679,8 @@ function ecbb_event_part_extended_markup( $post, array $item, $idx, $style, $ski
  *
  * @return array<string, string> Slug => label.
  */
-function ecbb_get_image_size_control_options() {
+
+	public static function ecbb_get_image_size_control_options() {
 	$opts = [
 		'' => esc_html__( 'Default', 'ecbb' ),
 	];
@@ -1664,7 +1709,8 @@ function ecbb_get_image_size_control_options() {
  * @param string $fallback Used when empty or invalid.
  * @return string
  */
-function ecbb_sanitize_attachment_image_size( $slug, $fallback = 'large' ) {
+
+	public static function ecbb_sanitize_attachment_image_size( $slug, $fallback = 'large' ) {
 	$slug = is_string( $slug ) ? trim( $slug ) : '';
 	if ( $slug === '' ) {
 		return $fallback;
@@ -1691,7 +1737,8 @@ function ecbb_sanitize_attachment_image_size( $slug, $fallback = 'large' ) {
  *
  * @return array<string, string>
  */
-function ecbb_get_image_object_align_control_options() {
+
+	public static function ecbb_get_image_object_align_control_options() {
 	return [
 		''   => esc_html__( 'Default', 'ecbb' ),
 		'tl' => esc_html__( 'Top left', 'ecbb' ),
@@ -1710,7 +1757,8 @@ function ecbb_get_image_object_align_control_options() {
  * @param string $key Short key (tl, mc, …) or empty.
  * @return string CSS object-position value or empty when default.
  */
-function ecbb_object_position_from_image_align( $key ) {
+
+	public static function ecbb_object_position_from_image_align( $key ) {
 	$key = is_string( $key ) ? strtolower( trim( $key ) ) : '';
 	$map = [
 		'tl' => 'left top',
@@ -1735,11 +1783,12 @@ function ecbb_object_position_from_image_align( $key ) {
  * @param bool  $has_more  Whether more events exist beyond the current list.
  * @return string HTML or empty string.
  */
-function ecbb_events_widget_render_load_more_markup( array $settings, $offset, $limit, $has_more ) {
+
+	public static function ecbb_render_load_more_markup( array $settings, $offset, $limit, $has_more ) {
 	if ( ! $has_more || $limit < 1 ) {
 		return '';
 	}
-	if ( ! function_exists( 'ecbb_events_widget_load_more_enabled' ) || ! ecbb_events_widget_load_more_enabled( $settings ) ) {
+	if ( ! function_exists( 'ecbb_load_more_enabled' ) || ! ecbb_load_more_enabled( $settings ) ) {
 		return '';
 	}
 
@@ -1786,7 +1835,8 @@ function ecbb_events_widget_render_load_more_markup( array $settings, $offset, $
  *
  * @return string[]
  */
-function ecbb_event_part_interactive_hover_part_slugs() {
+
+	public static function ecbb_event_part_interactive_hover_part_slugs() {
 	return [ 'title', 'categories', 'tags', 'read_more', 'event_tickets', 'event_rsvp' ];
 }
 
@@ -1797,9 +1847,10 @@ function ecbb_event_part_interactive_hover_part_slugs() {
  *
  * @return string[]
  */
-function ecbb_event_part_types_with_hover_style_controls() {
+
+	public static function ecbb_event_part_types_with_hover_style_controls() {
 	return array_merge(
-		ecbb_event_part_interactive_hover_part_slugs(),
+		self::ecbb_event_part_interactive_hover_part_slugs(),
 		[ 'image' ]
 	);
 }
@@ -1808,8 +1859,9 @@ function ecbb_event_part_types_with_hover_style_controls() {
  * @param string $part Part slug.
  * @return bool
  */
-function ecbb_event_part_supports_hover_style_controls( $part ) {
-	return in_array( (string) $part, ecbb_event_part_types_with_hover_style_controls(), true );
+
+	public static function ecbb_event_part_supports_hover_style_controls( $part ) {
+	return in_array( (string) $part, self::ecbb_event_part_types_with_hover_style_controls(), true );
 }
 
 /**
@@ -1817,7 +1869,8 @@ function ecbb_event_part_supports_hover_style_controls( $part ) {
  *
  * @return array<int|string|bool>
  */
-function ecbb_events_widget_hover_toggle_on_values() {
+
+	public static function ecbb_hover_toggle_on_values() {
 	return [ 'yes', true, 1, '1' ];
 }
 
@@ -1827,8 +1880,9 @@ function ecbb_events_widget_hover_toggle_on_values() {
  * @param mixed $value Raw `ecbb_use_hover` from a repeater row.
  * @return bool
  */
-function ecbb_events_widget_hover_toggle_value_is_on( $value ) {
-	if ( in_array( $value, ecbb_events_widget_hover_toggle_on_values(), true ) ) {
+
+	public static function ecbb_hover_toggle_value_is_on( $value ) {
+	if ( in_array( $value, self::ecbb_hover_toggle_on_values(), true ) ) {
 		return true;
 	}
 	if ( $value === false || $value === 0 || $value === '0' || $value === 'no' ) {
@@ -1837,7 +1891,7 @@ function ecbb_events_widget_hover_toggle_value_is_on( $value ) {
 	if ( $value === null || $value === '' ) {
 		return false;
 	}
-	return ecbb_events_widget_is_truthy_setting( $value, true );
+	return self::ecbb_is_truthy_setting( $value, true );
 }
 
 /**
@@ -1846,11 +1900,12 @@ function ecbb_events_widget_hover_toggle_value_is_on( $value ) {
  * @param array<string,mixed> $row Repeater row.
  * @return array<string,mixed>
  */
-function ecbb_events_widget_normalize_part_hover_toggle_row( array $row ) {
+
+	public static function ecbb_normalize_part_hover_toggle_row( array $row ) {
 	if ( ! array_key_exists( 'ecbb_use_hover', $row ) ) {
 		return $row;
 	}
-	$row['ecbb_use_hover'] = ecbb_events_widget_hover_toggle_value_is_on( $row['ecbb_use_hover'] ) ? 'yes' : 'no';
+	$row['ecbb_use_hover'] = self::ecbb_hover_toggle_value_is_on( $row['ecbb_use_hover'] ) ? 'yes' : 'no';
 	return $row;
 }
 
@@ -1858,7 +1913,8 @@ function ecbb_events_widget_normalize_part_hover_toggle_row( array $row ) {
  * @param array<int,array<string,mixed>> $rows Repeater rows.
  * @return array<int,array<string,mixed>>
  */
-function ecbb_events_widget_normalize_parts_repeater_rows_hover( array $rows ) {
+
+	public static function ecbb_normalize_parts_repeater_rows_hover( array $rows ) {
 	foreach ( $rows as $index => $row ) {
 		if ( ! is_array( $row ) ) {
 			continue;
@@ -1867,11 +1923,11 @@ function ecbb_events_widget_normalize_parts_repeater_rows_hover( array $rows ) {
 		if (
 			$part === ''
 			|| ! function_exists( 'ecbb_event_part_supports_hover_style_controls' )
-			|| ! ecbb_event_part_supports_hover_style_controls( $part )
+			|| ! self::ecbb_event_part_supports_hover_style_controls( $part )
 		) {
 			continue;
 		}
-		$rows[ $index ] = ecbb_events_widget_normalize_part_hover_toggle_row( $row );
+		$rows[ $index ] = self::ecbb_normalize_part_hover_toggle_row( $row );
 	}
 	return $rows;
 }
@@ -1880,12 +1936,13 @@ function ecbb_events_widget_normalize_parts_repeater_rows_hover( array $rows ) {
  * @param array<string,mixed> $settings Element settings.
  * @return array<string,mixed>
  */
-function ecbb_events_widget_normalize_element_parts_hover_toggles( array $settings ) {
+
+	public static function ecbb_normalize_element_parts_hover_toggles( array $settings ) {
 	foreach ( [ 'parts_style1', 'parts_style2', 'parts_grid', 'parts' ] as $key ) {
 		if ( empty( $settings[ $key ] ) || ! is_array( $settings[ $key ] ) ) {
 			continue;
 		}
-		$settings[ $key ] = ecbb_events_widget_normalize_parts_repeater_rows_hover( $settings[ $key ] );
+		$settings[ $key ] = self::ecbb_normalize_parts_repeater_rows_hover( $settings[ $key ] );
 	}
 	return $settings;
 }
@@ -1896,22 +1953,23 @@ function ecbb_events_widget_normalize_element_parts_hover_toggles( array $settin
  * @param array $item Repeater row.
  * @return bool
  */
-function ecbb_event_part_hover_style_active( array $item ) {
+
+	public static function ecbb_event_part_hover_style_active( array $item ) {
 	$ui_part = isset( $item['part'] ) ? (string) $item['part'] : '';
-	if ( ! ecbb_event_part_supports_hover_style_controls( $ui_part ) ) {
+	if ( ! self::ecbb_event_part_supports_hover_style_controls( $ui_part ) ) {
 		return false;
 	}
 	if (
 		$ui_part === 'title'
 		&& function_exists( 'ecbb_event_part_title_link_active' )
-		&& ! ecbb_event_part_title_link_active( $item )
+		&& ! self::ecbb_event_part_title_link_active( $item )
 	) {
 		return false;
 	}
 	if ( ! array_key_exists( 'ecbb_use_hover', $item ) ) {
 		return true;
 	}
-	return ecbb_events_widget_hover_toggle_value_is_on( $item['ecbb_use_hover'] );
+	return self::ecbb_hover_toggle_value_is_on( $item['ecbb_use_hover'] );
 }
 
 /**
@@ -1921,7 +1979,8 @@ function ecbb_event_part_hover_style_active( array $item ) {
  * @param bool  $default Default when value is null (not when key is absent).
  * @return bool
  */
-function ecbb_events_widget_is_truthy_setting( $value, $default = false ) {
+
+	public static function ecbb_is_truthy_setting( $value, $default = false ) {
 	if ( $value === null ) {
 		return $default;
 	}
@@ -1952,16 +2011,17 @@ function ecbb_events_widget_is_truthy_setting( $value, $default = false ) {
  * @param array $item Repeater row.
  * @return bool
  */
-function ecbb_loop_image_uses_dual_layer( array $item ) {
-	if ( function_exists( 'ecbb_event_part_hover_style_active' ) && ! ecbb_event_part_hover_style_active( $item ) ) {
+
+	public static function ecbb_loop_image_uses_dual_layer( array $item ) {
+	if ( function_exists( 'ecbb_event_part_hover_style_active' ) && ! self::ecbb_event_part_hover_style_active( $item ) ) {
 		return false;
 	}
-	$base = ecbb_sanitize_attachment_image_size( $item['image_size'] ?? '', 'large' );
+	$base = self::ecbb_sanitize_attachment_image_size( $item['image_size'] ?? '', 'large' );
 	$raw  = isset( $item['image_size_hover'] ) ? trim( (string) $item['image_size_hover'] ) : '';
 	if ( $raw === '' ) {
 		return false;
 	}
-	$hover = ecbb_sanitize_attachment_image_size( $raw, $base );
+	$hover = self::ecbb_sanitize_attachment_image_size( $raw, $base );
 	return $hover !== $base;
 }
 
@@ -1973,24 +2033,25 @@ function ecbb_loop_image_uses_dual_layer( array $item ) {
  * @param string $shared_style CSS declarations for both images (no trailing object-position).
  * @return string HTML or empty.
  */
-function ecbb_render_loop_featured_images( $thumb_id, array $item, $shared_style ) {
+
+	public static function ecbb_render_loop_featured_images( $thumb_id, array $item, $shared_style ) {
 	$thumb_id = (int) $thumb_id;
 	if ( ! $thumb_id ) {
 		return '';
 	}
 
-	if ( function_exists( 'ecbb_event_part_hover_style_active' ) && ! ecbb_event_part_hover_style_active( $item ) ) {
+	if ( function_exists( 'ecbb_event_part_hover_style_active' ) && ! self::ecbb_event_part_hover_style_active( $item ) ) {
 		$item['image_size_hover']              = '';
 		$item['ecbb_image_object_align_hover'] = '';
 	}
 
-	$size_base = ecbb_sanitize_attachment_image_size( $item['image_size'] ?? '', 'large' );
+	$size_base = self::ecbb_sanitize_attachment_image_size( $item['image_size'] ?? '', 'large' );
 	$raw_hover = isset( $item['image_size_hover'] ) ? trim( (string) $item['image_size_hover'] ) : '';
-	$size_hover = $raw_hover !== '' ? ecbb_sanitize_attachment_image_size( $raw_hover, $size_base ) : '';
+	$size_hover = $raw_hover !== '' ? self::ecbb_sanitize_attachment_image_size( $raw_hover, $size_base ) : '';
 	$dual       = ( $raw_hover !== '' && $size_hover !== $size_base );
 
-	$op_base = ecbb_object_position_from_image_align( $item['ecbb_image_object_align'] ?? '' );
-	$op_hov  = ecbb_object_position_from_image_align( $item['ecbb_image_object_align_hover'] ?? '' );
+	$op_base = self::ecbb_object_position_from_image_align( $item['ecbb_image_object_align'] ?? '' );
+	$op_hov  = self::ecbb_object_position_from_image_align( $item['ecbb_image_object_align_hover'] ?? '' );
 	if ( $op_hov === '' ) {
 		$op_hov = $op_base;
 	}
@@ -2047,7 +2108,8 @@ function ecbb_render_loop_featured_images( $thumb_id, array $item, $shared_style
  * @param string $scope_sel
  * @return string
  */
-function ecbb_event_part_hover_state_selectors( $scope_sel ) {
+
+	public static function ecbb_event_part_hover_state_selectors( $scope_sel ) {
 	$scope_sel = trim( (string) $scope_sel );
 	if ( $scope_sel === '' ) {
 		return '';
@@ -2077,7 +2139,8 @@ function ecbb_event_part_hover_state_selectors( $scope_sel ) {
  * @param string $anim      One of fade_in_up, fade_in_right, …
  * @return array{base:string, hover:string}
  */
-function ecbb_event_part_hover_animation_css( $scope_sel, $anim ) {
+
+	public static function ecbb_event_part_hover_animation_css( $scope_sel, $anim ) {
 	$anim = is_string( $anim ) ? $anim : '';
 	$dur  = '0.38s';
 	$ease = 'ease';
@@ -2087,7 +2150,7 @@ function ecbb_event_part_hover_animation_css( $scope_sel, $anim ) {
 	}
 
 	$base  = "{$scope_sel}{transition:transform {$dur} {$ease};transform:none;transform-origin:center center;}";
-	$hover = ecbb_event_part_hover_state_selectors( $scope_sel );
+	$hover = self::ecbb_event_part_hover_state_selectors( $scope_sel );
 
 	switch ( $anim ) {
 		case 'fade_in_up':
@@ -2129,7 +2192,8 @@ function ecbb_event_part_hover_animation_css( $scope_sel, $anim ) {
  * @param mixed $value Saved control value.
  * @return string style-1 or style-2
  */
-function ecbb_sanitize_list_item_style( $value ) {
+
+	public static function ecbb_sanitize_list_item_style( $value ) {
 	$v = is_string( $value ) ? trim( $value ) : '';
 	return in_array( $v, [ 'style-1', 'style-2' ], true ) ? $v : 'style-1';
 }
@@ -2141,7 +2205,8 @@ function ecbb_sanitize_list_item_style( $value ) {
  * @param array $parts Raw Bricks repeater rows.
  * @return array<int,array>
  */
-function ecbb_events_widget_parts_rows_clean( array $parts ) {
+
+	public static function ecbb_parts_rows_clean( array $parts ) {
 	$out = [];
 	foreach ( $parts as $row ) {
 		if ( ! is_array( $row ) || ! isset( $row['part'] ) || trim( (string) $row['part'] ) === '' ) {
@@ -2159,8 +2224,9 @@ function ecbb_events_widget_parts_rows_clean( array $parts ) {
  * @param array $parts Raw repeater rows.
  * @return string[]
  */
-function ecbb_events_widget_parts_slug_stack( array $parts ) {
-	$clean = ecbb_events_widget_parts_rows_clean( $parts );
+
+	public static function ecbb_parts_slug_stack( array $parts ) {
+	$clean = self::ecbb_parts_rows_clean( $parts );
 	$out   = [];
 	foreach ( $clean as $row ) {
 		if ( ! is_array( $row ) ) {
@@ -2178,8 +2244,9 @@ function ecbb_events_widget_parts_slug_stack( array $parts ) {
  * @param array $default_rows Rows from an `ecbb_*_default_parts_rows()` helper.
  * @return bool
  */
-function ecbb_events_widget_parts_stack_matches_defaults( array $parts, array $default_rows ) {
-	return ecbb_events_widget_parts_slug_stack( $parts ) === ecbb_events_widget_parts_slug_stack( $default_rows );
+
+	public static function ecbb_parts_stack_matches_defaults( array $parts, array $default_rows ) {
+	return self::ecbb_parts_slug_stack( $parts ) === self::ecbb_parts_slug_stack( $default_rows );
 }
 
 /**
@@ -2188,8 +2255,9 @@ function ecbb_events_widget_parts_stack_matches_defaults( array $parts, array $d
  * @param array $parts Raw repeater rows.
  * @return bool
  */
-function ecbb_events_widget_parts_array_is_effectively_empty( array $parts ) {
-	return ecbb_events_widget_parts_rows_clean( $parts ) === [];
+
+	public static function ecbb_parts_array_is_effectively_empty( array $parts ) {
+	return self::ecbb_parts_rows_clean( $parts ) === [];
 }
 
 /**
@@ -2203,16 +2271,17 @@ function ecbb_events_widget_parts_array_is_effectively_empty( array $parts ) {
  * @param mixed  $item_chrome `list_item_style`: style-1|style-2 (ignored when grid).
  * @return array<int,array<string,mixed>>
  */
-function ecbb_events_widget_resolve_event_parts_for_context( array $settings, $template, $item_chrome ) {
+
+	public static function ecbb_resolve_event_parts_for_context( array $settings, $template, $item_chrome ) {
 	$prepare = static function ( $parts ) {
 		if ( ! is_array( $parts ) ) {
 			return [];
 		}
-		if ( function_exists( 'ecbb_events_widget_parts_rows_assign_ids' ) ) {
-			$parts = ecbb_events_widget_parts_rows_assign_ids( $parts );
+		if ( function_exists( 'ecbb_parts_rows_assign_ids' ) ) {
+			$parts = self::ecbb_parts_rows_assign_ids( $parts );
 		}
-		if ( function_exists( 'ecbb_events_widget_normalize_parts_repeater_rows_hover' ) ) {
-			$parts = ecbb_events_widget_normalize_parts_repeater_rows_hover( $parts );
+		if ( function_exists( 'ecbb_normalize_parts_repeater_rows_hover' ) ) {
+			$parts = self::ecbb_normalize_parts_repeater_rows_hover( $parts );
 		}
 		return $parts;
 	};
@@ -2226,7 +2295,7 @@ function ecbb_events_widget_resolve_event_parts_for_context( array $settings, $t
 	}
 
 	$item_chrome = function_exists( 'ecbb_sanitize_list_item_style' )
-		? ecbb_sanitize_list_item_style( $item_chrome )
+		? self::ecbb_sanitize_list_item_style( $item_chrome )
 		: ( in_array( (string) $item_chrome, [ 'style-1', 'style-2' ], true ) ? (string) $item_chrome : 'style-1' );
 
 	$non_empty = static function ( $key ) use ( $settings ) {
@@ -2234,8 +2303,8 @@ function ecbb_events_widget_resolve_event_parts_for_context( array $settings, $t
 		if ( ! is_array( $v ) || [] === $v ) {
 			return null;
 		}
-		if ( function_exists( 'ecbb_events_widget_parts_array_is_effectively_empty' )
-			&& ecbb_events_widget_parts_array_is_effectively_empty( $v ) ) {
+		if ( function_exists( 'ecbb_parts_array_is_effectively_empty' )
+			&& self::ecbb_parts_array_is_effectively_empty( $v ) ) {
 			return null;
 		}
 		return $v;
@@ -2277,11 +2346,12 @@ function ecbb_events_widget_resolve_event_parts_for_context( array $settings, $t
 }
 
 /**
- * @param array  $parts Clean rows (see ecbb_events_widget_parts_rows_clean).
+ * @param array  $parts Clean rows (see ecbb_parts_rows_clean).
  * @param string $slug  Part slug.
  * @return bool
  */
-function ecbb_events_widget_parts_has_part( array $parts, $slug ) {
+
+	public static function ecbb_parts_has_part( array $parts, $slug ) {
 	$slug = (string) $slug;
 	foreach ( $parts as $row ) {
 		if ( ! is_array( $row ) ) {
@@ -2294,3 +2364,347 @@ function ecbb_events_widget_parts_has_part( array $parts, $slug ) {
 	return false;
 }
 
+	}
+
+}
+
+if ( ! function_exists( 'ecbb_normalize_bricks_color' ) ) {
+	function ecbb_normalize_bricks_color( ...$args ) {
+		return ECBB_Markup::ecbb_normalize_bricks_color( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_event_part_resolve_php_format' ) ) {
+	function ecbb_event_part_resolve_php_format( ...$args ) {
+		return ECBB_Markup::ecbb_event_part_resolve_php_format( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_venue_name_plain' ) ) {
+	function ecbb_venue_name_plain( ...$args ) {
+		return ECBB_Markup::ecbb_venue_name_plain( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_venue_id_for_event' ) ) {
+	function ecbb_venue_id_for_event( ...$args ) {
+		return ECBB_Markup::ecbb_venue_id_for_event( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_venue_full_address_plain' ) ) {
+	function ecbb_venue_full_address_plain( ...$args ) {
+		return ECBB_Markup::ecbb_venue_full_address_plain( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_venue_name_and_address_plain' ) ) {
+	function ecbb_venue_name_and_address_plain( ...$args ) {
+		return ECBB_Markup::ecbb_venue_name_and_address_plain( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_venue_name_and_state_plain' ) ) {
+	function ecbb_venue_name_and_state_plain( ...$args ) {
+		return ECBB_Markup::ecbb_venue_name_and_state_plain( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_venue_resolved_display' ) ) {
+	function ecbb_venue_resolved_display( ...$args ) {
+		return ECBB_Markup::ecbb_venue_resolved_display( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_venue_part_uses_full_details' ) ) {
+	function ecbb_venue_part_uses_full_details( ...$args ) {
+		return ECBB_Markup::ecbb_venue_part_uses_full_details( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_venue_part_plain_text' ) ) {
+	function ecbb_venue_part_plain_text( ...$args ) {
+		return ECBB_Markup::ecbb_venue_part_plain_text( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_event_part_venue_markup' ) ) {
+	function ecbb_event_part_venue_markup( ...$args ) {
+		return ECBB_Markup::ecbb_event_part_venue_markup( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_organizer_name_plain' ) ) {
+	function ecbb_organizer_name_plain( ...$args ) {
+		return ECBB_Markup::ecbb_organizer_name_plain( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_organizer_full_details_plain' ) ) {
+	function ecbb_organizer_full_details_plain( ...$args ) {
+		return ECBB_Markup::ecbb_organizer_full_details_plain( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_organizer_part_uses_full_details' ) ) {
+	function ecbb_organizer_part_uses_full_details( ...$args ) {
+		return ECBB_Markup::ecbb_organizer_part_uses_full_details( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_organizer_part_plain_text' ) ) {
+	function ecbb_organizer_part_plain_text( ...$args ) {
+		return ECBB_Markup::ecbb_organizer_part_plain_text( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_event_part_organizer_markup' ) ) {
+	function ecbb_event_part_organizer_markup( ...$args ) {
+		return ECBB_Markup::ecbb_event_part_organizer_markup( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_event_part_detail_plain' ) ) {
+	function ecbb_event_part_detail_plain( ...$args ) {
+		return ECBB_Markup::ecbb_event_part_detail_plain( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_event_part_build_day_time_range_parts' ) ) {
+	function ecbb_event_part_build_day_time_range_parts( ...$args ) {
+		return ECBB_Markup::ecbb_event_part_build_day_time_range_parts( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_event_part_is_action_link_part' ) ) {
+	function ecbb_event_part_is_action_link_part( ...$args ) {
+		return ECBB_Markup::ecbb_event_part_is_action_link_part( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_event_part_button_style_active' ) ) {
+	function ecbb_event_part_button_style_active( ...$args ) {
+		return ECBB_Markup::ecbb_event_part_button_style_active( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_event_part_action_link_inner_html' ) ) {
+	function ecbb_event_part_action_link_inner_html( ...$args ) {
+		return ECBB_Markup::ecbb_event_part_action_link_inner_html( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_event_part_button_style_attr' ) ) {
+	function ecbb_event_part_button_style_attr( ...$args ) {
+		return ECBB_Markup::ecbb_event_part_button_style_attr( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_cost_token_is_free' ) ) {
+	function ecbb_cost_token_is_free( ...$args ) {
+		return ECBB_Markup::ecbb_cost_token_is_free( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_event_cost_currency_options' ) ) {
+	function ecbb_event_cost_currency_options( ...$args ) {
+		return ECBB_Markup::ecbb_event_cost_currency_options( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_sanitize_event_cost_currency' ) ) {
+	function ecbb_sanitize_event_cost_currency( ...$args ) {
+		return ECBB_Markup::ecbb_sanitize_event_cost_currency( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_event_cost_currency_symbol' ) ) {
+	function ecbb_event_cost_currency_symbol( ...$args ) {
+		return ECBB_Markup::ecbb_event_cost_currency_symbol( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_strip_cost_currency_symbols' ) ) {
+	function ecbb_strip_cost_currency_symbols( ...$args ) {
+		return ECBB_Markup::ecbb_strip_cost_currency_symbols( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_format_cost_token_with_currency' ) ) {
+	function ecbb_format_cost_token_with_currency( ...$args ) {
+		return ECBB_Markup::ecbb_format_cost_token_with_currency( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_apply_event_cost_currency' ) ) {
+	function ecbb_apply_event_cost_currency( ...$args ) {
+		return ECBB_Markup::ecbb_apply_event_cost_currency( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_render_settings' ) ) {
+	function ecbb_render_settings( ...$args ) {
+		return ECBB_Markup::ecbb_render_settings( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_resolve_event_cost_currency' ) ) {
+	function ecbb_resolve_event_cost_currency( ...$args ) {
+		return ECBB_Markup::ecbb_resolve_event_cost_currency( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_migrate_event_cost_currency_into_repeaters' ) ) {
+	function ecbb_migrate_event_cost_currency_into_repeaters( ...$args ) {
+		return ECBB_Markup::ecbb_migrate_event_cost_currency_into_repeaters( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_format_event_cost_display' ) ) {
+	function ecbb_format_event_cost_display( ...$args ) {
+		return ECBB_Markup::ecbb_format_event_cost_display( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_terms_list_html' ) ) {
+	function ecbb_terms_list_html( ...$args ) {
+		return ECBB_Markup::ecbb_terms_list_html( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_part_idx_class' ) ) {
+	function ecbb_part_idx_class( ...$args ) {
+		return ECBB_Markup::ecbb_part_idx_class( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_event_part_title_link_active' ) ) {
+	function ecbb_event_part_title_link_active( ...$args ) {
+		return ECBB_Markup::ecbb_event_part_title_link_active( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_part_wrap_classes' ) ) {
+	function ecbb_part_wrap_classes( ...$args ) {
+		return ECBB_Markup::ecbb_part_wrap_classes( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_part_field_id' ) ) {
+	function ecbb_part_field_id( ...$args ) {
+		return ECBB_Markup::ecbb_part_field_id( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_part_field_id_attr' ) ) {
+	function ecbb_part_field_id_attr( ...$args ) {
+		return ECBB_Markup::ecbb_part_field_id_attr( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_part_wrapper_attrs' ) ) {
+	function ecbb_part_wrapper_attrs( ...$args ) {
+		return ECBB_Markup::ecbb_part_wrapper_attrs( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_parts_rows_assign_ids' ) ) {
+	function ecbb_parts_rows_assign_ids( ...$args ) {
+		return ECBB_Markup::ecbb_parts_rows_assign_ids( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_event_part_extended_markup' ) ) {
+	function ecbb_event_part_extended_markup( ...$args ) {
+		return ECBB_Markup::ecbb_event_part_extended_markup( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_get_image_size_control_options' ) ) {
+	function ecbb_get_image_size_control_options( ...$args ) {
+		return ECBB_Markup::ecbb_get_image_size_control_options( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_sanitize_attachment_image_size' ) ) {
+	function ecbb_sanitize_attachment_image_size( ...$args ) {
+		return ECBB_Markup::ecbb_sanitize_attachment_image_size( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_get_image_object_align_control_options' ) ) {
+	function ecbb_get_image_object_align_control_options( ...$args ) {
+		return ECBB_Markup::ecbb_get_image_object_align_control_options( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_object_position_from_image_align' ) ) {
+	function ecbb_object_position_from_image_align( ...$args ) {
+		return ECBB_Markup::ecbb_object_position_from_image_align( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_render_load_more_markup' ) ) {
+	function ecbb_render_load_more_markup( ...$args ) {
+		return ECBB_Markup::ecbb_render_load_more_markup( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_event_part_interactive_hover_part_slugs' ) ) {
+	function ecbb_event_part_interactive_hover_part_slugs( ...$args ) {
+		return ECBB_Markup::ecbb_event_part_interactive_hover_part_slugs( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_event_part_types_with_hover_style_controls' ) ) {
+	function ecbb_event_part_types_with_hover_style_controls( ...$args ) {
+		return ECBB_Markup::ecbb_event_part_types_with_hover_style_controls( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_event_part_supports_hover_style_controls' ) ) {
+	function ecbb_event_part_supports_hover_style_controls( ...$args ) {
+		return ECBB_Markup::ecbb_event_part_supports_hover_style_controls( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_hover_toggle_on_values' ) ) {
+	function ecbb_hover_toggle_on_values( ...$args ) {
+		return ECBB_Markup::ecbb_hover_toggle_on_values( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_hover_toggle_value_is_on' ) ) {
+	function ecbb_hover_toggle_value_is_on( ...$args ) {
+		return ECBB_Markup::ecbb_hover_toggle_value_is_on( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_normalize_part_hover_toggle_row' ) ) {
+	function ecbb_normalize_part_hover_toggle_row( ...$args ) {
+		return ECBB_Markup::ecbb_normalize_part_hover_toggle_row( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_normalize_parts_repeater_rows_hover' ) ) {
+	function ecbb_normalize_parts_repeater_rows_hover( ...$args ) {
+		return ECBB_Markup::ecbb_normalize_parts_repeater_rows_hover( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_normalize_element_parts_hover_toggles' ) ) {
+	function ecbb_normalize_element_parts_hover_toggles( ...$args ) {
+		return ECBB_Markup::ecbb_normalize_element_parts_hover_toggles( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_event_part_hover_style_active' ) ) {
+	function ecbb_event_part_hover_style_active( ...$args ) {
+		return ECBB_Markup::ecbb_event_part_hover_style_active( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_is_truthy_setting' ) ) {
+	function ecbb_is_truthy_setting( ...$args ) {
+		return ECBB_Markup::ecbb_is_truthy_setting( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_loop_image_uses_dual_layer' ) ) {
+	function ecbb_loop_image_uses_dual_layer( ...$args ) {
+		return ECBB_Markup::ecbb_loop_image_uses_dual_layer( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_render_loop_featured_images' ) ) {
+	function ecbb_render_loop_featured_images( ...$args ) {
+		return ECBB_Markup::ecbb_render_loop_featured_images( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_event_part_hover_state_selectors' ) ) {
+	function ecbb_event_part_hover_state_selectors( ...$args ) {
+		return ECBB_Markup::ecbb_event_part_hover_state_selectors( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_event_part_hover_animation_css' ) ) {
+	function ecbb_event_part_hover_animation_css( ...$args ) {
+		return ECBB_Markup::ecbb_event_part_hover_animation_css( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_sanitize_list_item_style' ) ) {
+	function ecbb_sanitize_list_item_style( ...$args ) {
+		return ECBB_Markup::ecbb_sanitize_list_item_style( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_parts_rows_clean' ) ) {
+	function ecbb_parts_rows_clean( ...$args ) {
+		return ECBB_Markup::ecbb_parts_rows_clean( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_parts_slug_stack' ) ) {
+	function ecbb_parts_slug_stack( ...$args ) {
+		return ECBB_Markup::ecbb_parts_slug_stack( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_parts_stack_matches_defaults' ) ) {
+	function ecbb_parts_stack_matches_defaults( ...$args ) {
+		return ECBB_Markup::ecbb_parts_stack_matches_defaults( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_parts_array_is_effectively_empty' ) ) {
+	function ecbb_parts_array_is_effectively_empty( ...$args ) {
+		return ECBB_Markup::ecbb_parts_array_is_effectively_empty( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_resolve_event_parts_for_context' ) ) {
+	function ecbb_resolve_event_parts_for_context( ...$args ) {
+		return ECBB_Markup::ecbb_resolve_event_parts_for_context( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_parts_has_part' ) ) {
+	function ecbb_parts_has_part( ...$args ) {
+		return ECBB_Markup::ecbb_parts_has_part( ...$args );
+	}
+}

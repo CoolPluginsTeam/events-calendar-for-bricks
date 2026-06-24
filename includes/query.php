@@ -15,7 +15,12 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @param array $settings Element or AJAX settings.
  * @return string upcoming|past|all
  */
-function ecbb_events_widget_query_resolve_event_time_type( array $settings ) {
+
+if ( ! class_exists( 'ECBB_Query', false ) ) {
+
+	final class ECBB_Query {
+
+	public static function ecbb_query_resolve_event_time_type( array $settings ) {
 	if ( isset( $settings['event_type'] ) && (string) $settings['event_type'] !== '' ) {
 		$t = (string) $settings['event_type'];
 		if ( 'future' === $t ) {
@@ -26,21 +31,25 @@ function ecbb_events_widget_query_resolve_event_time_type( array $settings ) {
 		}
 		return 'all';
 	}
-	$legacy = isset( $settings['status'] ) ? (string) $settings['status'] : 'upcoming';
+	$legacy = isset( $settings['status'] ) ? (string) $settings['status'] : 'all';
 	if ( 'past' === $legacy ) {
 		return 'past';
 	}
 	if ( 'all' === $legacy ) {
 		return 'all';
 	}
-	return 'upcoming';
+	if ( 'upcoming' === $legacy || 'future' === $legacy ) {
+		return 'upcoming';
+	}
+	return 'all';
 }
 
 /**
  * @param array $settings Element or AJAX settings.
  * @return string all|between
  */
-function ecbb_events_widget_query_event_time_mode( array $settings ) {
+
+	public static function ecbb_query_event_time_mode( array $settings ) {
 	$m = isset( $settings['event_time_mode'] ) ? (string) $settings['event_time_mode'] : 'all';
 	return 'between' === $m ? 'between' : 'all';
 }
@@ -51,7 +60,8 @@ function ecbb_events_widget_query_event_time_mode( array $settings ) {
  * @param array $settings Element or AJAX settings.
  * @return array{0:string,1:string} Two MySQL datetime strings or both empty if invalid.
  */
-function ecbb_events_widget_query_range_bounds( array $settings ) {
+
+	public static function ecbb_query_range_bounds( array $settings ) {
 	$raw_s = isset( $settings['event_range_start'] ) ? trim( (string) $settings['event_range_start'] ) : '';
 	$raw_e = isset( $settings['event_range_end'] ) ? trim( (string) $settings['event_range_end'] ) : '';
 	if ( '' === $raw_s || '' === $raw_e ) {
@@ -76,7 +86,8 @@ function ecbb_events_widget_query_range_bounds( array $settings ) {
  * @param array $settings Element or AJAX settings.
  * @return string[] Category slugs (tribe_events_cat).
  */
-function ecbb_events_widget_query_category_slugs( array $settings ) {
+
+	public static function ecbb_query_category_slugs( array $settings ) {
 	$out = [];
 	if ( ! empty( $settings['event_categories'] ) && is_array( $settings['event_categories'] ) ) {
 		foreach ( $settings['event_categories'] as $slug ) {
@@ -111,13 +122,14 @@ function ecbb_events_widget_query_category_slugs( array $settings ) {
  * @param array $settings Element or AJAX settings.
  * @return array<int|string, mixed> Meta query for WP_Query / tribe_get_events.
  */
-function ecbb_events_widget_query_build_date_meta_query( array $settings ) {
+
+	public static function ecbb_query_build_date_meta_query( array $settings ) {
 	$clauses = [];
-	$mode    = ecbb_events_widget_query_event_time_mode( $settings );
-	$type    = ecbb_events_widget_query_resolve_event_time_type( $settings );
+	$mode    = self::ecbb_query_event_time_mode( $settings );
+	$type    = self::ecbb_query_resolve_event_time_type( $settings );
 
 	if ( 'between' === $mode ) {
-		list( $s, $e ) = ecbb_events_widget_query_range_bounds( $settings );
+		list( $s, $e ) = self::ecbb_query_range_bounds( $settings );
 		if ( '' !== $s && '' !== $e ) {
 			$clauses[] = [
 				'key'     => '_EventStartDate',
@@ -158,8 +170,9 @@ function ecbb_events_widget_query_build_date_meta_query( array $settings ) {
  * @param array $settings Element or AJAX settings.
  * @return array<int, array<string, mixed>> Tax query clauses.
  */
-function ecbb_events_widget_query_build_tax_query( array $settings ) {
-	$slugs = ecbb_events_widget_query_category_slugs( $settings );
+
+	public static function ecbb_query_build_tax_query( array $settings ) {
+	$slugs = self::ecbb_query_category_slugs( $settings );
 	if ( empty( $slugs ) ) {
 		return [];
 	}
@@ -179,7 +192,8 @@ function ecbb_events_widget_query_build_tax_query( array $settings ) {
  * @param array $settings Element settings.
  * @return array<string, mixed>
  */
-function ecbb_events_widget_query_tribe_args( array $settings ) {
+
+	public static function ecbb_query_tribe_args( array $settings ) {
 	$ppp = array_key_exists( 'posts_per_page', $settings ) ? (int) $settings['posts_per_page'] : 10;
 	$order = ! empty( $settings['order'] ) && strtoupper( (string) $settings['order'] ) === 'DESC' ? 'DESC' : 'ASC';
 
@@ -191,12 +205,12 @@ function ecbb_events_widget_query_tribe_args( array $settings ) {
 		'meta_type'      => 'DATETIME',
 	];
 
-	$mq = ecbb_events_widget_query_build_date_meta_query( $settings );
+	$mq = self::ecbb_query_build_date_meta_query( $settings );
 	if ( ! empty( $mq ) ) {
 		$args['meta_query'] = $mq;
 	}
 
-	$tq = ecbb_events_widget_query_build_tax_query( $settings );
+	$tq = self::ecbb_query_build_tax_query( $settings );
 	if ( ! empty( $tq ) ) {
 		$args['tax_query'] = $tq;
 	}
@@ -212,7 +226,8 @@ function ecbb_events_widget_query_tribe_args( array $settings ) {
  * @param array $settings Decoded JSON settings from the client.
  * @return array
  */
-function ecbb_events_widget_sanitize_load_more_settings( array $settings ) {
+
+	public static function ecbb_sanitize_load_more_settings( array $settings ) {
 	$out = $settings;
 
 	$template = isset( $out['layout_template'] ) ? sanitize_key( (string) $out['layout_template'] ) : 'list';
@@ -276,8 +291,8 @@ function ecbb_events_widget_sanitize_load_more_settings( array $settings ) {
 		$out['date_format'] = ecbb_list1_sanitize_date_format( $out['date_format'] );
 	}
 
-	if ( isset( $out['event_cost_currency'] ) && function_exists( 'ecbb_events_widget_sanitize_event_cost_currency' ) ) {
-		$out['event_cost_currency'] = ecbb_events_widget_sanitize_event_cost_currency( $out['event_cost_currency'] );
+	if ( isset( $out['event_cost_currency'] ) && function_exists( 'ecbb_sanitize_event_cost_currency' ) ) {
+		$out['event_cost_currency'] = ecbb_sanitize_event_cost_currency( $out['event_cost_currency'] );
 	}
 
 	if ( isset( $out['event_categories'] ) && is_array( $out['event_categories'] ) ) {
@@ -294,7 +309,7 @@ function ecbb_events_widget_sanitize_load_more_settings( array $settings ) {
 
 	if ( isset( $out['event_type'] ) ) {
 		$type = sanitize_key( (string) $out['event_type'] );
-		$out['event_type'] = in_array( $type, [ 'past', 'future', 'all' ], true ) ? $type : 'future';
+		$out['event_type'] = in_array( $type, [ 'past', 'future', 'all' ], true ) ? $type : 'all';
 	}
 
 	if ( isset( $out['event_time_mode'] ) ) {
@@ -332,7 +347,8 @@ function ecbb_events_widget_sanitize_load_more_settings( array $settings ) {
  * @param array $settings Element settings.
  * @return bool
  */
-function ecbb_events_widget_load_more_enabled( array $settings ) {
+
+	public static function ecbb_load_more_enabled( array $settings ) {
 	if ( empty( $settings['load_more'] ) ) {
 		return false;
 	}
@@ -346,7 +362,8 @@ function ecbb_events_widget_load_more_enabled( array $settings ) {
  * @param array $settings Element settings.
  * @return int
  */
-function ecbb_events_widget_load_more_batch_size( array $settings ) {
+
+	public static function ecbb_load_more_batch_size( array $settings ) {
 	$ppp = array_key_exists( 'posts_per_page', $settings ) ? (int) $settings['posts_per_page'] : 10;
 	return $ppp > 0 ? $ppp : 0;
 }
@@ -357,11 +374,12 @@ function ecbb_events_widget_load_more_batch_size( array $settings ) {
  * @param array $settings Element settings.
  * @return array{0:\WP_Post[],1:bool,2:int} [events, has_more, batch_size]
  */
-function ecbb_events_widget_fetch_events_for_display( array $settings ) {
-	$batch     = ecbb_events_widget_load_more_batch_size( $settings );
-	$load_more = ecbb_events_widget_load_more_enabled( $settings ) && $batch > 0;
 
-	$args = ecbb_events_widget_query_tribe_args( $settings );
+	public static function ecbb_fetch_events_for_display( array $settings ) {
+	$batch     = self::ecbb_load_more_batch_size( $settings );
+	$load_more = self::ecbb_load_more_enabled( $settings ) && $batch > 0;
+
+	$args = self::ecbb_query_tribe_args( $settings );
 	if ( $load_more ) {
 		$args['posts_per_page'] = $batch + 1;
 	}
@@ -385,7 +403,8 @@ function ecbb_events_widget_fetch_events_for_display( array $settings ) {
  *
  * @return void
  */
-function ecbb_enqueue_load_more_assets() {
+
+	public static function ecbb_enqueue_load_more_assets() {
 	static $done = false;
 	if ( $done ) {
 		return;
@@ -413,4 +432,69 @@ function ecbb_enqueue_load_more_assets() {
 	}
 
 	wp_enqueue_script( 'ecbb-load-more' );
+}
+
+	}
+
+}
+
+if ( ! function_exists( 'ecbb_query_resolve_event_time_type' ) ) {
+	function ecbb_query_resolve_event_time_type( ...$args ) {
+		return ECBB_Query::ecbb_query_resolve_event_time_type( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_query_event_time_mode' ) ) {
+	function ecbb_query_event_time_mode( ...$args ) {
+		return ECBB_Query::ecbb_query_event_time_mode( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_query_range_bounds' ) ) {
+	function ecbb_query_range_bounds( ...$args ) {
+		return ECBB_Query::ecbb_query_range_bounds( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_query_category_slugs' ) ) {
+	function ecbb_query_category_slugs( ...$args ) {
+		return ECBB_Query::ecbb_query_category_slugs( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_query_build_date_meta_query' ) ) {
+	function ecbb_query_build_date_meta_query( ...$args ) {
+		return ECBB_Query::ecbb_query_build_date_meta_query( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_query_build_tax_query' ) ) {
+	function ecbb_query_build_tax_query( ...$args ) {
+		return ECBB_Query::ecbb_query_build_tax_query( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_query_tribe_args' ) ) {
+	function ecbb_query_tribe_args( ...$args ) {
+		return ECBB_Query::ecbb_query_tribe_args( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_sanitize_load_more_settings' ) ) {
+	function ecbb_sanitize_load_more_settings( ...$args ) {
+		return ECBB_Query::ecbb_sanitize_load_more_settings( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_load_more_enabled' ) ) {
+	function ecbb_load_more_enabled( ...$args ) {
+		return ECBB_Query::ecbb_load_more_enabled( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_load_more_batch_size' ) ) {
+	function ecbb_load_more_batch_size( ...$args ) {
+		return ECBB_Query::ecbb_load_more_batch_size( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_fetch_events_for_display' ) ) {
+	function ecbb_fetch_events_for_display( ...$args ) {
+		return ECBB_Query::ecbb_fetch_events_for_display( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_enqueue_load_more_assets' ) ) {
+	function ecbb_enqueue_load_more_assets( ...$args ) {
+		return ECBB_Query::ecbb_enqueue_load_more_assets( ...$args );
+	}
 }

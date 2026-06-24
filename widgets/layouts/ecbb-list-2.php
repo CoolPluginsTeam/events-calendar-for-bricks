@@ -2,7 +2,7 @@
 /**
  * Events Widget — List template / Style 2 (magazine list shell, month headings, date rail, inner markup).
  *
- * File: `includes/events-widget/template/list/list-style-2.php`.
+ * File: `widgets/layouts/ecbb-list-2.php`.
  *
  * Loaded after shared loop markup, Style 1, and Grid so normalizers can compare slug stacks.
  *
@@ -19,7 +19,12 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @param string $part Internal part slug (underscores).
  * @return string
  */
-function ecbb_list2_part_class( $part ) {
+
+if ( ! class_exists( 'ECBB_List_2', false ) ) {
+
+	final class ECBB_List_2 {
+
+	public static function ecbb_list2_part_class( $part ) {
 	$part = sanitize_key( (string) $part );
 	static $map = [
 		'title'              => 'ecbb-style2-title',
@@ -64,7 +69,8 @@ function ecbb_list2_part_class( $part ) {
  * @param mixed $value Raw control or AJAX value.
  * @return bool
  */
-function ecbb_sanitize_style2_show_month_headings( $value ) {
+
+	public static function ecbb_sanitize_style2_show_month_headings( $value ) {
 	if ( $value === false || $value === 0 || $value === '0' || $value === 'no' || $value === 'off' ) {
 		return false;
 	}
@@ -97,23 +103,25 @@ function ecbb_sanitize_style2_show_month_headings( $value ) {
  * @param array $settings Element or AJAX settings.
  * @return bool
  */
-function ecbb_list2_month_headings_enabled( $settings ) {
+
+	public static function ecbb_list2_month_headings_enabled( $settings ) {
 	if ( ! is_array( $settings ) ) {
 		return false;
 	}
 	if ( ! array_key_exists( 'style2_show_month_headings', $settings ) ) {
 		return false;
 	}
-	return ecbb_sanitize_style2_show_month_headings( $settings['style2_show_month_headings'] );
+	return self::ecbb_sanitize_style2_show_month_headings( $settings['style2_show_month_headings'] );
 }
 
 /**
  * Detect the old 3-row default (title + description + date) so Style 2 can upgrade to the full stack.
  *
- * @param array $clean Rows from ecbb_events_widget_parts_rows_clean().
+ * @param array $clean Rows from ecbb_parts_rows_clean().
  * @return bool
  */
-function ecbb_list2_is_legacy_stack( array $clean ) {
+
+	public static function ecbb_list2_is_legacy_stack( array $clean ) {
 	if ( count( $clean ) !== 3 ) {
 		return false;
 	}
@@ -127,12 +135,13 @@ function ecbb_list2_is_legacy_stack( array $clean ) {
 
 /**
  * Default Event parts for Style 2 list (body column). Featured image is not listed here;
- * {@see ecbb_list2_normalize_parts()} appends an `image` row when missing so the static
+ * {@see self::ecbb_list2_normalize_parts()} appends an `image` row when missing so the static
  * trail column can render. Read more is included by default at the end of the body stack.
  *
  * @return array<int,array<string,mixed>>
  */
-function ecbb_list2_default_parts_rows() {
+
+	public static function ecbb_list2_default_parts_rows() {
 	$rows = [
 		[
 			'part'                  => 'date',
@@ -162,8 +171,8 @@ function ecbb_list2_default_parts_rows() {
 		],
 	];
 
-	return function_exists( 'ecbb_events_widget_parts_rows_assign_ids' )
-		? ecbb_events_widget_parts_rows_assign_ids( $rows )
+	return function_exists( 'ecbb_parts_rows_assign_ids' )
+		? ecbb_parts_rows_assign_ids( $rows )
 		: $rows;
 }
 
@@ -173,29 +182,30 @@ function ecbb_list2_default_parts_rows() {
  * @param array $parts Raw Bricks repeater rows.
  * @return array<int,array<string,mixed>>
  */
-function ecbb_list2_normalize_parts( array $parts ) {
-	if ( ! function_exists( 'ecbb_events_widget_parts_rows_clean' ) ) {
+
+	public static function ecbb_list2_normalize_parts( array $parts ) {
+	if ( ! function_exists( 'ecbb_parts_rows_clean' ) ) {
 		return $parts;
 	}
 
-	$clean = ecbb_events_widget_parts_rows_clean( $parts );
-	$reset = ( $clean === [] ) || ecbb_list2_is_legacy_stack( $clean );
+	$clean = ecbb_parts_rows_clean( $parts );
+	$reset = ( $clean === [] ) || self::ecbb_list2_is_legacy_stack( $clean );
 
-	if ( ! $reset && function_exists( 'ecbb_events_widget_parts_stack_matches_defaults' ) ) {
-		if ( function_exists( 'ecbb_events_widget_grid_default_parts_rows' )
-			&& ecbb_events_widget_parts_stack_matches_defaults( $parts, ecbb_events_widget_grid_default_parts_rows() ) ) {
+	if ( ! $reset && function_exists( 'ecbb_parts_stack_matches_defaults' ) ) {
+		if ( function_exists( 'ecbb_grid_default_parts_rows' )
+			&& ecbb_parts_stack_matches_defaults( $parts, ecbb_grid_default_parts_rows() ) ) {
 			$reset = true;
 		} elseif ( function_exists( 'ecbb_list1_default_parts_rows' )
-			&& ecbb_events_widget_parts_stack_matches_defaults( $parts, ecbb_list1_default_parts_rows() ) ) {
+			&& ecbb_parts_stack_matches_defaults( $parts, ecbb_list1_default_parts_rows() ) ) {
 			$reset = true;
 		}
 	}
 
 	if ( $reset ) {
-		$clean = ecbb_list2_default_parts_rows();
+		$clean = self::ecbb_list2_default_parts_rows();
 	}
 
-	if ( ! ecbb_events_widget_parts_has_part( $clean, 'image' ) ) {
+	if ( ! ecbb_parts_has_part( $clean, 'image' ) ) {
 		$clean[] = [
 			'part'       => 'image',
 			'image_link' => true,
@@ -232,7 +242,8 @@ function ecbb_list2_normalize_parts( array $parts ) {
  * @param int $post_id Event post ID.
  * @return array{0:int|false,1:int|false}
  */
-function ecbb_list2_date_bounds( $post_id ) {
+
+	public static function ecbb_list2_date_bounds( $post_id ) {
 	$post_id = absint( $post_id );
 	if ( $post_id < 1 ) {
 		return [ false, false ];
@@ -258,7 +269,8 @@ function ecbb_list2_date_bounds( $post_id ) {
  * @param bool        $show            Whether month group headings are enabled (control).
  * @return string                      Markup or empty.
  */
-function ecbb_list2_maybe_month_heading_html( $post_id, &$last_month_key, $show = false ) {
+
+	public static function ecbb_list2_maybe_month_heading_html( $post_id, &$last_month_key, $show = false ) {
 	$show = (bool) $show;
 	if ( ! $show ) {
 		return '';
@@ -267,7 +279,7 @@ function ecbb_list2_maybe_month_heading_html( $post_id, &$last_month_key, $show 
 	if ( $post_id < 1 ) {
 		return '';
 	}
-	list( $start_ts ) = ecbb_list2_date_bounds( $post_id );
+	list( $start_ts ) = self::ecbb_list2_date_bounds( $post_id );
 	if ( ! $start_ts ) {
 		return '';
 	}
@@ -289,7 +301,8 @@ function ecbb_list2_maybe_month_heading_html( $post_id, &$last_month_key, $show 
  * @param int|false $end_ts   End timestamp.
  * @return string HTML fragment (no wrapper).
  */
-function ecbb_list2_date_rail_stack_html_style2( $start_ts, $end_ts ) {
+
+	public static function ecbb_list2_date_rail_stack_html_style2( $start_ts, $end_ts ) {
 	if ( ! $start_ts ) {
 		return '';
 	}
@@ -342,17 +355,18 @@ function ecbb_list2_date_rail_stack_html_style2( $start_ts, $end_ts ) {
  * @param \WP_Post $post Event post.
  * @return string Markup (aside).
  */
-function ecbb_list2_date_rail_html( $post ) {
+
+	public static function ecbb_list2_date_rail_html( $post ) {
 	if ( ! ( $post instanceof \WP_Post ) ) {
 		return '';
 	}
 
-	list( $start_ts, $end_ts ) = ecbb_list2_date_bounds( $post->ID );
+	list( $start_ts, $end_ts ) = self::ecbb_list2_date_bounds( $post->ID );
 	if ( ! $start_ts ) {
 		return '<aside class="ecbb-style2-rail" aria-hidden="true"><div class="ecbb-style2-rail-in"></div></aside>';
 	}
 
-	$stack = ecbb_list2_date_rail_stack_html_style2( $start_ts, $end_ts );
+	$stack = self::ecbb_list2_date_rail_stack_html_style2( $start_ts, $end_ts );
 
 	return '<aside class="ecbb-style2-rail" aria-hidden="true">'
 		. '<div class="ecbb-style2-rail-in">'
@@ -366,7 +380,8 @@ function ecbb_list2_date_rail_html( $post ) {
  * @param array $parts Repeater rows.
  * @return array{index:int, row:array}
  */
-function ecbb_list2_find_first_image_part_row( array $parts ) {
+
+	public static function ecbb_list2_find_first_image_part_row( array $parts ) {
 	foreach ( $parts as $i => $row ) {
 		if ( ! is_array( $row ) ) {
 			continue;
@@ -392,7 +407,8 @@ function ecbb_list2_find_first_image_part_row( array $parts ) {
  * @param string $part Part slug.
  * @return bool True = skip middle (handled elsewhere or omitted).
  */
-function ecbb_list2_skip_middle_part( $part ) {
+
+	public static function ecbb_list2_skip_middle_part( $part ) {
 	$part = sanitize_key( (string) $part );
 	return in_array( $part, [ 'image', 'event_date' ], true );
 }
@@ -405,7 +421,8 @@ function ecbb_list2_skip_middle_part( $part ) {
  * @param string       $part_gap_unit px|rem|em.
  * @return string                     Full `style=""` fragment value (no attribute wrapper).
  */
-function ecbb_list2_body_stack_gap_style( $part_gap, $part_gap_unit ) {
+
+	public static function ecbb_list2_body_stack_gap_style( $part_gap, $part_gap_unit ) {
 	$part_gap = is_numeric( $part_gap ) ? (float) $part_gap : 0.0;
 	$unit     = in_array( (string) $part_gap_unit, [ 'px', 'rem', 'em' ], true ) ? (string) $part_gap_unit : 'px';
 	if ( 'px' === $unit ) {
@@ -426,7 +443,8 @@ function ecbb_list2_body_stack_gap_style( $part_gap, $part_gap_unit ) {
  * @param callable $emit_part       function( \WP_Post $post, array $item, int $idx ): void
  * @return string
  */
-function ecbb_list2_item_inner_markup( $post, array $parts, $gap_style_value, callable $emit_part ) {
+
+	public static function ecbb_list2_item_inner_markup( $post, array $parts, $gap_style_value, callable $emit_part ) {
 	if ( ! ( $post instanceof \WP_Post ) ) {
 		return '';
 	}
@@ -434,7 +452,7 @@ function ecbb_list2_item_inner_markup( $post, array $parts, $gap_style_value, ca
 	$gap_style_value = (string) $gap_style_value;
 
 	ob_start();
-	$img_info   = ecbb_list2_find_first_image_part_row( $parts );
+	$img_info   = self::ecbb_list2_find_first_image_part_row( $parts );
 	$has_media  = ( $img_info['index'] >= 0 );
 
 	$inner_class = 'ecbb-style2';
@@ -442,7 +460,7 @@ function ecbb_list2_item_inner_markup( $post, array $parts, $gap_style_value, ca
 		$inner_class .= ' ecbb-style2--has-media';
 	}
 	echo '<div class="' . esc_attr( $inner_class ) . '">';
-	echo ecbb_list2_date_rail_html( $post ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- builder-internal HTML, fields escaped at source.
+	echo self::ecbb_list2_date_rail_html( $post ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- builder-internal HTML, fields escaped at source.
 
 	$gap_esc = esc_attr( $gap_style_value );
 	echo '<div class="ecbb-style2-body" style="' . $gap_esc . '">';
@@ -454,7 +472,7 @@ function ecbb_list2_item_inner_markup( $post, array $parts, $gap_style_value, ca
 			continue;
 		}
 		$p = isset( $item['part'] ) ? sanitize_key( (string) $item['part'] ) : '';
-		if ( ecbb_list2_skip_middle_part( $p ) ) {
+		if ( self::ecbb_list2_skip_middle_part( $p ) ) {
 			continue;
 		}
 		$next   = $parts[ $i + 1 ] ?? null;
@@ -488,4 +506,79 @@ function ecbb_list2_item_inner_markup( $post, array $parts, $gap_style_value, ca
 
 	echo '</div>';
 	return ob_get_clean();
+}
+
+	}
+
+}
+
+if ( ! function_exists( 'ecbb_list2_part_class' ) ) {
+	function ecbb_list2_part_class( ...$args ) {
+		return ECBB_List_2::ecbb_list2_part_class( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_sanitize_style2_show_month_headings' ) ) {
+	function ecbb_sanitize_style2_show_month_headings( ...$args ) {
+		return ECBB_List_2::ecbb_sanitize_style2_show_month_headings( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_list2_month_headings_enabled' ) ) {
+	function ecbb_list2_month_headings_enabled( ...$args ) {
+		return ECBB_List_2::ecbb_list2_month_headings_enabled( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_list2_is_legacy_stack' ) ) {
+	function ecbb_list2_is_legacy_stack( ...$args ) {
+		return ECBB_List_2::ecbb_list2_is_legacy_stack( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_list2_default_parts_rows' ) ) {
+	function ecbb_list2_default_parts_rows( ...$args ) {
+		return ECBB_List_2::ecbb_list2_default_parts_rows( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_list2_normalize_parts' ) ) {
+	function ecbb_list2_normalize_parts( ...$args ) {
+		return ECBB_List_2::ecbb_list2_normalize_parts( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_list2_date_bounds' ) ) {
+	function ecbb_list2_date_bounds( ...$args ) {
+		return ECBB_List_2::ecbb_list2_date_bounds( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_list2_maybe_month_heading_html' ) ) {
+	function ecbb_list2_maybe_month_heading_html( ...$args ) {
+		return ECBB_List_2::ecbb_list2_maybe_month_heading_html( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_list2_date_rail_stack_html_style2' ) ) {
+	function ecbb_list2_date_rail_stack_html_style2( ...$args ) {
+		return ECBB_List_2::ecbb_list2_date_rail_stack_html_style2( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_list2_date_rail_html' ) ) {
+	function ecbb_list2_date_rail_html( ...$args ) {
+		return ECBB_List_2::ecbb_list2_date_rail_html( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_list2_find_first_image_part_row' ) ) {
+	function ecbb_list2_find_first_image_part_row( ...$args ) {
+		return ECBB_List_2::ecbb_list2_find_first_image_part_row( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_list2_skip_middle_part' ) ) {
+	function ecbb_list2_skip_middle_part( ...$args ) {
+		return ECBB_List_2::ecbb_list2_skip_middle_part( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_list2_body_stack_gap_style' ) ) {
+	function ecbb_list2_body_stack_gap_style( ...$args ) {
+		return ECBB_List_2::ecbb_list2_body_stack_gap_style( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_list2_item_inner_markup' ) ) {
+	function ecbb_list2_item_inner_markup( ...$args ) {
+		return ECBB_List_2::ecbb_list2_item_inner_markup( ...$args );
+	}
 }

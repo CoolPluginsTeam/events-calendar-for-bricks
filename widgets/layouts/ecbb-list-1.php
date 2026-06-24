@@ -3,7 +3,7 @@
  * Events Widget — List template / Style 1 (single-row card: cyan date column + light-cyan body
  * + cyan CTA column on the right).
  *
- * File: `includes/events-widget/template/list/list-style-1.php`.
+ * File: `widgets/layouts/ecbb-list-1.php`.
  *
  * Style 1 mirrors the Style 2 architecture: a static "outside the repeater"
  * middle. Where Style 2 pulls the featured-image row out into its own side
@@ -23,9 +23,14 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @return array<int,array<string,mixed>>
  */
-function ecbb_list1_default_parts_rows() {
-	return function_exists( 'ecbb_events_widget_parts_rows_assign_ids' )
-		? ecbb_events_widget_parts_rows_assign_ids(
+
+if ( ! class_exists( 'ECBB_List_1', false ) ) {
+
+	final class ECBB_List_1 {
+
+	public static function ecbb_list1_default_parts_rows() {
+	return function_exists( 'ecbb_parts_rows_assign_ids' )
+		? ecbb_parts_rows_assign_ids(
 			[
 				[
 					'part' => 'categories',
@@ -80,29 +85,30 @@ function ecbb_list1_default_parts_rows() {
  * @param array $parts Raw Bricks repeater rows.
  * @return array<int,array<string,mixed>>
  */
-function ecbb_list1_normalize_parts( array $parts ) {
-	if ( ! function_exists( 'ecbb_events_widget_parts_rows_clean' ) ) {
+
+	public static function ecbb_list1_normalize_parts( array $parts ) {
+	if ( ! function_exists( 'ecbb_parts_rows_clean' ) ) {
 		return $parts;
 	}
 
-	$clean = ecbb_events_widget_parts_rows_clean( $parts );
+	$clean = ecbb_parts_rows_clean( $parts );
 	if ( $clean === [] ) {
-		return ecbb_list1_default_parts_rows();
+		return self::ecbb_list1_default_parts_rows();
 	}
 	if ( function_exists( 'ecbb_list2_is_legacy_stack' )
 		&& ecbb_list2_is_legacy_stack( $clean ) ) {
-		return ecbb_list1_default_parts_rows();
+		return self::ecbb_list1_default_parts_rows();
 	}
 
 	// Grid or Style 2 stacks sometimes remain on `parts_style1` after switching template in the builder.
-	if ( function_exists( 'ecbb_events_widget_parts_stack_matches_defaults' ) ) {
-		if ( function_exists( 'ecbb_events_widget_grid_default_parts_rows' )
-			&& ecbb_events_widget_parts_stack_matches_defaults( $parts, ecbb_events_widget_grid_default_parts_rows() ) ) {
-			return ecbb_list1_default_parts_rows();
+	if ( function_exists( 'ecbb_parts_stack_matches_defaults' ) ) {
+		if ( function_exists( 'ecbb_grid_default_parts_rows' )
+			&& ecbb_parts_stack_matches_defaults( $parts, ecbb_grid_default_parts_rows() ) ) {
+			return self::ecbb_list1_default_parts_rows();
 		}
 		if ( function_exists( 'ecbb_list2_default_parts_rows' )
-			&& ecbb_events_widget_parts_stack_matches_defaults( $parts, ecbb_list2_default_parts_rows() ) ) {
-			return ecbb_list1_default_parts_rows();
+			&& ecbb_parts_stack_matches_defaults( $parts, ecbb_list2_default_parts_rows() ) ) {
+			return self::ecbb_list1_default_parts_rows();
 		}
 	}
 
@@ -151,7 +157,8 @@ function ecbb_list1_normalize_parts( array $parts ) {
  *
  * @return list<string>
  */
-function ecbb_list1_allowed_date_formats() {
+
+	public static function ecbb_list1_allowed_date_formats() {
 	return [
 		'default',
 		'MD,Y',
@@ -180,12 +187,13 @@ function ecbb_list1_allowed_date_formats() {
  * @param mixed $value Saved control value.
  * @return string One of {@see ecbb_list1_allowed_date_formats()}.
  */
-function ecbb_list1_sanitize_date_format( $value ) {
+
+	public static function ecbb_list1_sanitize_date_format( $value ) {
 	$v = is_string( $value ) ? trim( $value ) : '';
 	if ( $v === '' ) {
 		return 'default';
 	}
-	return in_array( $v, ecbb_list1_allowed_date_formats(), true ) ? $v : 'default';
+	return in_array( $v, self::ecbb_list1_allowed_date_formats(), true ) ? $v : 'default';
 }
 
 /**
@@ -194,7 +202,8 @@ function ecbb_list1_sanitize_date_format( $value ) {
  * @param int $post_id Event post ID.
  * @return string Leading space included when non-empty (for appending to a date string).
  */
-function ecbb_list1_event_time_suffix_for_column( $post_id ) {
+
+	public static function ecbb_list1_event_time_suffix_for_column( $post_id ) {
 	$post_id = (int) $post_id;
 	if ( $post_id < 1 ) {
 		return '';
@@ -217,7 +226,8 @@ function ecbb_list1_event_time_suffix_for_column( $post_id ) {
  * @param int $end_ts   End timestamp.
  * @return string
  */
-function ecbb_list1_sed_range_label( $start_ts, $end_ts ) {
+
+	public static function ecbb_list1_sed_range_label( $start_ts, $end_ts ) {
 	if ( date_i18n( 'Ymd', $start_ts ) === date_i18n( 'Ymd', $end_ts ) ) {
 		return date_i18n( 'd M Y', $start_ts );
 	}
@@ -233,10 +243,11 @@ function ecbb_list1_sed_range_label( $start_ts, $end_ts ) {
  * @param string $format_key Sanitized format key.
  * @return list<string>
  */
-function ecbb_list1_date_format_lines( $post_id, $start_ts, $end_ts, $format_key ) {
+
+	public static function ecbb_list1_date_format_lines( $post_id, $start_ts, $end_ts, $format_key ) {
 	$post_id = (int) $post_id;
 	$site_d  = (string) get_option( 'date_format' );
-	$time_s  = ecbb_list1_event_time_suffix_for_column( $post_id );
+	$time_s  = self::ecbb_list1_event_time_suffix_for_column( $post_id );
 
 	switch ( $format_key ) {
 		case 'MD,Y':
@@ -308,9 +319,9 @@ function ecbb_list1_date_format_lines( $post_id, $start_ts, $end_ts, $format_key
 		case 'dFT':
 			return [ trim( date_i18n( 'd', $start_ts ) . ' ' . date_i18n( 'F', $start_ts ) . $time_s ) ];
 		case 'sed':
-			return [ ecbb_list1_sed_range_label( $start_ts, $end_ts ) ];
+			return [ self::ecbb_list1_sed_range_label( $start_ts, $end_ts ) ];
 		case 'sedt':
-			return [ trim( ecbb_list1_sed_range_label( $start_ts, $end_ts ) . $time_s ) ];
+			return [ trim( self::ecbb_list1_sed_range_label( $start_ts, $end_ts ) . $time_s ) ];
 		case 'D.j.F':
 			return [
 				trim(
@@ -332,15 +343,16 @@ function ecbb_list1_date_format_lines( $post_id, $start_ts, $end_ts, $format_key
  * Event parts repeater.
  *
  * @param \WP_Post $post        Event post.
- * @param string   $format_key  One of {@see ecbb_list1_allowed_date_formats()}.
+ * @param string   $format_key  One of {@see self::ecbb_list1_allowed_date_formats()}.
  * @return string Markup (aside).
  */
-function ecbb_list1_date_block_html( $post, $format_key = 'default' ) {
+
+	public static function ecbb_list1_date_block_html( $post, $format_key = 'default' ) {
 	if ( ! ( $post instanceof \WP_Post ) ) {
 		return '';
 	}
 
-	$format_key = ecbb_list1_sanitize_date_format( $format_key );
+	$format_key = self::ecbb_list1_sanitize_date_format( $format_key );
 
 	$start_ts = false;
 	$end_ts   = false;
@@ -372,7 +384,7 @@ function ecbb_list1_date_block_html( $post, $format_key = 'default' ) {
 			. '</aside>';
 	}
 
-	$lines = ecbb_list1_date_format_lines( $post->ID, $start_ts, $end_ts, $format_key );
+	$lines = self::ecbb_list1_date_format_lines( $post->ID, $start_ts, $end_ts, $format_key );
 	$lines = array_values(
 		array_filter(
 			array_map(
@@ -414,7 +426,8 @@ function ecbb_list1_date_block_html( $post, $format_key = 'default' ) {
  * @param array $parts Repeater rows.
  * @return array{index:int,row:array}
  */
-function ecbb_list1_find_first_read_more_row( array $parts ) {
+
+	public static function ecbb_list1_find_first_read_more_row( array $parts ) {
 	foreach ( $parts as $i => $row ) {
 		if ( ! is_array( $row ) ) {
 			continue;
@@ -433,7 +446,8 @@ function ecbb_list1_find_first_read_more_row( array $parts ) {
  * @param string $part Part slug.
  * @return bool
  */
-function ecbb_list1_skip_middle_part( $part ) {
+
+	public static function ecbb_list1_skip_middle_part( $part ) {
 	return (string) $part === 'read_more';
 }
 
@@ -454,7 +468,8 @@ function ecbb_list1_skip_middle_part( $part ) {
  * @param string   $date_format     Style 1 left-column format key (see Events Query control).
  * @return string
  */
-function ecbb_list1_item_inner_markup( $post, array $parts, $gap_style_value, callable $emit_part, $date_format = 'default' ) {
+
+	public static function ecbb_list1_item_inner_markup( $post, array $parts, $gap_style_value, callable $emit_part, $date_format = 'default' ) {
 	if ( ! ( $post instanceof \WP_Post ) ) {
 		return '';
 	}
@@ -465,7 +480,7 @@ function ecbb_list1_item_inner_markup( $post, array $parts, $gap_style_value, ca
 	$inner_class .= ' ecbb-ev__item-inner--style1-has-cta';
 
 	echo '<div class="' . esc_attr( $inner_class ) . '">';
-	echo ecbb_list1_date_block_html( $post, $date_format ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- builder-internal HTML, fields escaped at source.
+	echo self::ecbb_list1_date_block_html( $post, $date_format ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- builder-internal HTML, fields escaped at source.
 
 	$gap_esc = esc_attr( $gap_style_value );
 	echo '<div class="ecbb-ev__style1-body" style="' . $gap_esc . '">';
@@ -477,7 +492,7 @@ function ecbb_list1_item_inner_markup( $post, array $parts, $gap_style_value, ca
 			continue;
 		}
 		$p = isset( $item['part'] ) ? (string) $item['part'] : '';
-		if ( ecbb_list1_skip_middle_part( $p ) ) {
+		if ( self::ecbb_list1_skip_middle_part( $p ) ) {
 			continue;
 		}
 		$emit_part( $post, $item, $i );
@@ -489,8 +504,8 @@ function ecbb_list1_item_inner_markup( $post, array $parts, $gap_style_value, ca
 	echo '<aside class="ecbb-ev__style1-cta">';
 	// Reuse the same markup classes the CSS expects (read_more part wrapper).
 	$cta_row = [ 'part' => 'read_more' ];
-	if ( function_exists( 'ecbb_events_widget_part_wrap_classes' ) ) {
-		$cta_wrap = ecbb_events_widget_part_wrap_classes( 'read_more', 999, 'style1' );
+	if ( function_exists( 'ecbb_part_wrap_classes' ) ) {
+		$cta_wrap = ecbb_part_wrap_classes( 'read_more', 999, 'style1' );
 	} else {
 		$cta_wrap = 'ecbb-event-part ecbb-event-part--read-more ecbb-p999';
 	}
@@ -502,4 +517,64 @@ function ecbb_list1_item_inner_markup( $post, array $parts, $gap_style_value, ca
 	echo '</div>';
 
 	return ob_get_clean();
+}
+
+	}
+
+}
+
+if ( ! function_exists( 'ecbb_list1_default_parts_rows' ) ) {
+	function ecbb_list1_default_parts_rows( ...$args ) {
+		return ECBB_List_1::ecbb_list1_default_parts_rows( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_list1_normalize_parts' ) ) {
+	function ecbb_list1_normalize_parts( ...$args ) {
+		return ECBB_List_1::ecbb_list1_normalize_parts( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_list1_allowed_date_formats' ) ) {
+	function ecbb_list1_allowed_date_formats( ...$args ) {
+		return ECBB_List_1::ecbb_list1_allowed_date_formats( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_list1_sanitize_date_format' ) ) {
+	function ecbb_list1_sanitize_date_format( ...$args ) {
+		return ECBB_List_1::ecbb_list1_sanitize_date_format( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_list1_event_time_suffix_for_column' ) ) {
+	function ecbb_list1_event_time_suffix_for_column( ...$args ) {
+		return ECBB_List_1::ecbb_list1_event_time_suffix_for_column( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_list1_sed_range_label' ) ) {
+	function ecbb_list1_sed_range_label( ...$args ) {
+		return ECBB_List_1::ecbb_list1_sed_range_label( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_list1_date_format_lines' ) ) {
+	function ecbb_list1_date_format_lines( ...$args ) {
+		return ECBB_List_1::ecbb_list1_date_format_lines( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_list1_date_block_html' ) ) {
+	function ecbb_list1_date_block_html( ...$args ) {
+		return ECBB_List_1::ecbb_list1_date_block_html( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_list1_find_first_read_more_row' ) ) {
+	function ecbb_list1_find_first_read_more_row( ...$args ) {
+		return ECBB_List_1::ecbb_list1_find_first_read_more_row( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_list1_skip_middle_part' ) ) {
+	function ecbb_list1_skip_middle_part( ...$args ) {
+		return ECBB_List_1::ecbb_list1_skip_middle_part( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_list1_item_inner_markup' ) ) {
+	function ecbb_list1_item_inner_markup( ...$args ) {
+		return ECBB_List_1::ecbb_list1_item_inner_markup( ...$args );
+	}
 }

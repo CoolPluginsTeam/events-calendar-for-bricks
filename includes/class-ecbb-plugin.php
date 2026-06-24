@@ -6,10 +6,13 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class ECBB_Plugin {
+if ( ! class_exists( 'ECBB_WidgetClass', false ) ) {
+
+final class ECBB_WidgetClass {
 
     public function __construct() {
-        add_action('init', [$this, 'ecbb_register_elements'], 11);
+        add_action( 'init', [ $this, 'ecbb_register_elements' ], 11 );
+        add_action( 'init', [ $this, 'ecbb_register_elements' ], 99 );
         add_action('wp_enqueue_scripts', [$this, 'ecbb_enqueue_scripts']);
         add_action('wp_enqueue_scripts', [$this, 'ecbb_enqueue_builder_assets'], 25);
         add_action('wp_enqueue_scripts', [$this, 'ecbb_enqueue_builder_preview_styles'], 99);
@@ -103,7 +106,7 @@ class ECBB_Plugin {
      * @return array<int,array<string,mixed>>
      */
     private function ecbb_apply_inactive_part_repeater_preservation( array $new_elements, array $old_elements_indexed ) {
-        if ( ! function_exists( 'ecbb_sanitize_list_item_style' ) || ! function_exists( 'ecbb_events_widget_parts_array_is_effectively_empty' ) ) {
+        if ( ! function_exists( 'ecbb_sanitize_list_item_style' ) || ! function_exists( 'ecbb_parts_array_is_effectively_empty' ) ) {
             return $new_elements;
         }
 
@@ -127,8 +130,8 @@ class ECBB_Plugin {
             }
             $new_settings = &$new_elements[ $i ]['settings'];
 
-            if ( function_exists( 'ecbb_events_widget_normalize_element_parts_hover_toggles' ) ) {
-                $new_settings = ecbb_events_widget_normalize_element_parts_hover_toggles( $new_settings );
+            if ( function_exists( 'ecbb_normalize_element_parts_hover_toggles' ) ) {
+                $new_settings = ecbb_normalize_element_parts_hover_toggles( $new_settings );
             }
 
             $template = isset( $new_settings['layout_template'] ) ? (string) $new_settings['layout_template'] : 'list';
@@ -152,14 +155,14 @@ class ECBB_Plugin {
                 }
 
                 $incoming = $new_settings[ $key ] ?? null;
-                $incoming_empty = ! is_array( $incoming ) || ecbb_events_widget_parts_array_is_effectively_empty( $incoming );
+                $incoming_empty = ! is_array( $incoming ) || ecbb_parts_array_is_effectively_empty( $incoming );
                 if ( ! $incoming_empty ) {
                     continue;
                 }
                 if ( ! isset( $old_settings[ $key ] ) || ! is_array( $old_settings[ $key ] ) ) {
                     continue;
                 }
-                if ( ecbb_events_widget_parts_array_is_effectively_empty( $old_settings[ $key ] ) ) {
+                if ( ecbb_parts_array_is_effectively_empty( $old_settings[ $key ] ) ) {
                     continue;
                 }
                 $new_settings[ $key ] = $old_settings[ $key ];
@@ -173,7 +176,7 @@ class ECBB_Plugin {
     /**
      * Coerce layout-specific repeaters when another layout's row stack was left on disk
      * (e.g. Grid defaults still stored on `parts_style1` after switching to List Style 1).
-     * Empty repeaters are left unchanged so {@see ecbb_events_widget_resolve_event_parts_for_context()}
+     * Empty repeaters are left unchanged so {@see ecbb_resolve_event_parts_for_context()}
      * can still fall back to legacy `parts`.
      *
      * @param array<string,mixed> $settings Element settings.
@@ -191,8 +194,8 @@ class ECBB_Plugin {
             return $settings;
         }
 
-        if ( function_exists( 'ecbb_events_widget_normalize_element_parts_hover_toggles' ) ) {
-            $settings = ecbb_events_widget_normalize_element_parts_hover_toggles( $settings );
+        if ( function_exists( 'ecbb_normalize_element_parts_hover_toggles' ) ) {
+            $settings = ecbb_normalize_element_parts_hover_toggles( $settings );
         }
 
         $template = isset( $settings['layout_template'] ) ? (string) $settings['layout_template'] : 'list';
@@ -204,28 +207,28 @@ class ECBB_Plugin {
 
         if ( $template === 'list' && $item_chrome === 'style-1' ) {
             $p = isset( $settings['parts_style1'] ) && is_array( $settings['parts_style1'] ) ? $settings['parts_style1'] : [];
-            if ( function_exists( 'ecbb_events_widget_parts_array_is_effectively_empty' )
-                && ! ecbb_events_widget_parts_array_is_effectively_empty( $p )
+            if ( function_exists( 'ecbb_parts_array_is_effectively_empty' )
+                && ! ecbb_parts_array_is_effectively_empty( $p )
                 && function_exists( 'ecbb_list1_normalize_parts' ) ) {
                 $settings['parts_style1'] = ecbb_list1_normalize_parts( $p );
             }
         } elseif ( $template === 'list' && $item_chrome === 'style-2' ) {
             $p = isset( $settings['parts_style2'] ) && is_array( $settings['parts_style2'] ) ? $settings['parts_style2'] : [];
-            if ( function_exists( 'ecbb_events_widget_parts_array_is_effectively_empty' )
-                && ! ecbb_events_widget_parts_array_is_effectively_empty( $p ) ) {
+            if ( function_exists( 'ecbb_parts_array_is_effectively_empty' )
+                && ! ecbb_parts_array_is_effectively_empty( $p ) ) {
                 $settings['parts_style2'] = ecbb_list2_normalize_parts( $p );
             }
         } elseif ( $template === 'grid' ) {
             $p = isset( $settings['parts_grid'] ) && is_array( $settings['parts_grid'] ) ? $settings['parts_grid'] : [];
-            if ( function_exists( 'ecbb_events_widget_parts_array_is_effectively_empty' )
-                && ! ecbb_events_widget_parts_array_is_effectively_empty( $p )
-                && function_exists( 'ecbb_events_widget_grid_normalize_parts' ) ) {
-                $settings['parts_grid'] = ecbb_events_widget_grid_normalize_parts( $p );
+            if ( function_exists( 'ecbb_parts_array_is_effectively_empty' )
+                && ! ecbb_parts_array_is_effectively_empty( $p )
+                && function_exists( 'ecbb_grid_normalize_parts' ) ) {
+                $settings['parts_grid'] = ecbb_grid_normalize_parts( $p );
             }
         }
 
-        if ( function_exists( 'ecbb_events_widget_migrate_event_cost_currency_into_repeaters' ) ) {
-            $settings = ecbb_events_widget_migrate_event_cost_currency_into_repeaters( $settings );
+        if ( function_exists( 'ecbb_migrate_event_cost_currency_into_repeaters' ) ) {
+            $settings = ecbb_migrate_event_cost_currency_into_repeaters( $settings );
         }
 
         return $settings;
@@ -235,23 +238,22 @@ class ECBB_Plugin {
      * Register custom elements
      */
     public function ecbb_register_elements() {
-        if ( ! class_exists( '\Bricks\Elements' ) ) {
+        if ( ! class_exists( '\Bricks\Elements' ) || ! class_exists( '\Bricks\Element' ) ) {
             return;
         }
 
-        $elements = [
-            [
-                'file'  => ECBB_DIR . 'includes/elements/class-element-ecbb-events-widget.php',
-                'name'  => 'ecbb-events-loop',
-                'class' => 'ECBB\\Element_ECBB_Events_Widget',
-            ],
-        ];
-
-        foreach ( $elements as $element ) {
-            if ( file_exists( $element['file'] ) ) {
-                \Bricks\Elements::register_element( $element['file'], $element['name'], $element['class'] );
-            }
+        if ( isset( \Bricks\Elements::$elements['ecbb-events-loop'] ) ) {
+            return;
         }
+
+        $file  = ECBB_DIR . 'widgets/ecbb-widget.php';
+        $class = 'ECBB\\Element_ECBB_Events_Widget';
+
+        if ( ! is_readable( $file ) ) {
+            return;
+        }
+
+        \Bricks\Elements::register_element( $file, 'ecbb-events-loop', $class );
     }
 
     /**
@@ -339,11 +341,11 @@ class ECBB_Plugin {
         wp_localize_script( 'ecbb-builder', 'ECBBBuilder', [
             'tabContent'  => esc_html__( 'CONTENT', 'ecbb' ),
             'tabStyle'    => esc_html__( 'STYLE', 'ecbb' ),
-            'hoverParts'  => function_exists( 'ecbb_events_widget_repeater_hover_part_slugs' )
-                ? ecbb_events_widget_repeater_hover_part_slugs()
+            'hoverParts'  => function_exists( 'ecbb_repeater_hover_part_slugs' )
+                ? ecbb_repeater_hover_part_slugs()
                 : [ 'title', 'categories', 'tags', 'read_more', 'event_tickets', 'event_rsvp', 'image' ],
-            'interactiveHoverParts' => function_exists( 'ecbb_events_widget_repeater_interactive_hover_part_slugs' )
-                ? ecbb_events_widget_repeater_interactive_hover_part_slugs()
+            'interactiveHoverParts' => function_exists( 'ecbb_repeater_interactive_hover_part_slugs' )
+                ? ecbb_repeater_interactive_hover_part_slugs()
                 : [ 'title', 'categories', 'tags', 'read_more', 'event_tickets', 'event_rsvp' ],
             'interactiveHoverKeys' => [
                 'ecbb_sep_hover',
@@ -352,8 +354,8 @@ class ECBB_Plugin {
                 'ecbb_hover_text_decoration',
                 'ecbb_hover_animation',
             ],
-            'hoverKeys'   => function_exists( 'ecbb_events_widget_repeater_hover_control_keys' )
-                ? ecbb_events_widget_repeater_hover_control_keys()
+            'hoverKeys'   => function_exists( 'ecbb_repeater_hover_control_keys' )
+                ? ecbb_repeater_hover_control_keys()
                 : [
                     'ecbb_sep_hover',
                     'ecbb_use_hover',
@@ -364,8 +366,8 @@ class ECBB_Plugin {
                     'image_size_hover',
                     'ecbb_image_object_align_hover',
                 ],
-            'btnBorderKeys' => function_exists( 'ecbb_events_widget_repeater_btn_border_control_keys' )
-                ? ecbb_events_widget_repeater_btn_border_control_keys()
+            'btnBorderKeys' => function_exists( 'ecbb_repeater_btn_border_control_keys' )
+                ? ecbb_repeater_btn_border_control_keys()
                 : [
                     'btn_sep_border',
                     'btn_border_type',
@@ -400,26 +402,26 @@ class ECBB_Plugin {
     }
 
     private function ecbb_build_inline_style_attr( array $item, $allow_radius = false ) {
-        if ( function_exists( 'ecbb_events_widget_build_inline_style_attr' ) ) {
-            return ecbb_events_widget_build_inline_style_attr( $item, $allow_radius );
+        if ( function_exists( 'ecbb_build_inline_style_attr' ) ) {
+            return ecbb_build_inline_style_attr( $item, $allow_radius );
         }
         return '';
     }
 
     private function ecbb_part_wrapper_attrs( array $item, int $idx, string $style = '' ): string {
-        return function_exists( 'ecbb_events_widget_part_wrapper_attrs' )
-            ? ecbb_events_widget_part_wrapper_attrs( $item, $idx, $style )
+        return function_exists( 'ecbb_part_wrapper_attrs' )
+            ? ecbb_part_wrapper_attrs( $item, $idx, $style )
             : ( $style !== '' ? ' style="' . esc_attr( $style ) . '"' : '' );
     }
 
     private function ecbb_render_part_html( \WP_Post $post, array $item, int $idx, string $skin = '' ): string {
-        if ( function_exists( 'ecbb_events_widget_normalize_part_item' ) ) {
-            $item = ecbb_events_widget_normalize_part_item( $item );
+        if ( function_exists( 'ecbb_normalize_part_item' ) ) {
+            $item = ecbb_normalize_part_item( $item );
         }
         $part = isset( $item['part'] ) ? (string) $item['part'] : 'title';
         $skin = (string) $skin;
-        $wrap = function_exists( 'ecbb_events_widget_part_wrap_classes' )
-            ? ecbb_events_widget_part_wrap_classes( $part, $idx, $skin, $item )
+        $wrap = function_exists( 'ecbb_part_wrap_classes' )
+            ? ecbb_part_wrap_classes( $part, $idx, $skin, $item )
             : ( 'ecbb-event-part ecbb-event-part--' . str_replace( '_', '-', $part ) . ' ecbb-p' . absint( $idx ) );
 
         if ( function_exists( 'ecbb_event_part_extended_markup' ) ) {
@@ -486,8 +488,8 @@ class ECBB_Plugin {
             }
 
             $style = $this->ecbb_build_inline_style_attr( $item );
-            $inner = function_exists( 'ecbb_events_widget_terms_list_html' )
-                ? ecbb_events_widget_terms_list_html( $terms, $item, $style, $skin, 'categories' )
+            $inner = function_exists( 'ecbb_terms_list_html' )
+                ? ecbb_terms_list_html( $terms, $item, $style, $skin, 'categories' )
                 : '';
             if ( $inner === '' ) {
                 return '';
@@ -503,8 +505,8 @@ class ECBB_Plugin {
             }
 
             $style = $this->ecbb_build_inline_style_attr( $item );
-            $inner = function_exists( 'ecbb_events_widget_terms_list_html' )
-                ? ecbb_events_widget_terms_list_html( $terms, $item, $style, $skin, 'tags' )
+            $inner = function_exists( 'ecbb_terms_list_html' )
+                ? ecbb_terms_list_html( $terms, $item, $style, $skin, 'tags' )
                 : '';
             if ( $inner === '' ) {
                 return '';
@@ -611,8 +613,8 @@ class ECBB_Plugin {
             );
         }
 
-        if ( function_exists( 'ecbb_events_widget_sanitize_load_more_settings' ) ) {
-            $settings = ecbb_events_widget_sanitize_load_more_settings( $settings );
+        if ( function_exists( 'ecbb_sanitize_load_more_settings' ) ) {
+            $settings = ecbb_sanitize_load_more_settings( $settings );
         }
 
         $item_chrome = function_exists( 'ecbb_sanitize_list_item_style' )
@@ -633,21 +635,21 @@ class ECBB_Plugin {
             ? 'ecbb-ev__item ecbb-ev__item--grid repeater-item'
             : 'ecbb-ev__item ecbb-ev__item--' . $item_chrome . ' repeater-item';
 
-        $parts_to_use = function_exists( 'ecbb_events_widget_resolve_event_parts_for_context' )
-            ? ecbb_events_widget_resolve_event_parts_for_context( $settings, $template, $item_chrome )
+        $parts_to_use = function_exists( 'ecbb_resolve_event_parts_for_context' )
+            ? ecbb_resolve_event_parts_for_context( $settings, $template, $item_chrome )
             : [];
         if ( ! is_array( $parts_to_use ) ) {
             $parts_to_use = [];
         }
-        if ( $use_grid && function_exists( 'ecbb_events_widget_grid_normalize_parts' ) ) {
-            $parts_to_use = ecbb_events_widget_grid_normalize_parts( $parts_to_use );
+        if ( $use_grid && function_exists( 'ecbb_grid_normalize_parts' ) ) {
+            $parts_to_use = ecbb_grid_normalize_parts( $parts_to_use );
         } elseif ( $use_style1 && function_exists( 'ecbb_list1_normalize_parts' ) ) {
             $parts_to_use = ecbb_list1_normalize_parts( $parts_to_use );
         } elseif ( $use_style2 ) {
             $parts_to_use = ecbb_list2_normalize_parts( $parts_to_use );
         } elseif (
             $parts_to_use === []
-            || ( function_exists( 'ecbb_events_widget_parts_array_is_effectively_empty' ) && ecbb_events_widget_parts_array_is_effectively_empty( $parts_to_use ) )
+            || ( function_exists( 'ecbb_parts_array_is_effectively_empty' ) && ecbb_parts_array_is_effectively_empty( $parts_to_use ) )
         ) {
             $parts_to_use = [
                 [ 'part' => 'title', 'link' => true ],
@@ -661,7 +663,7 @@ class ECBB_Plugin {
         }
         $limit = min( $limit, 50 );
 
-        $base = function_exists( 'ecbb_events_widget_query_tribe_args' ) ? ecbb_events_widget_query_tribe_args( $settings ) : [];
+        $base = function_exists( 'ecbb_query_tribe_args' ) ? ecbb_query_tribe_args( $settings ) : [];
         if ( ! is_array( $base ) ) {
             $base = [];
         }
@@ -689,8 +691,8 @@ class ECBB_Plugin {
         }
 
         $html_items = '';
-        if ( function_exists( 'ecbb_events_widget_render_settings' ) ) {
-            ecbb_events_widget_render_settings( $settings );
+        if ( function_exists( 'ecbb_render_settings' ) ) {
+            ecbb_render_settings( $settings );
         }
         foreach ( $posts as $p ) {
             if ( ! $p instanceof \WP_Post ) {
@@ -726,10 +728,10 @@ class ECBB_Plugin {
                         echo $self->ecbb_render_part_html( $ev, $item, $idx, 'style2' );
                     }
                 );
-            } elseif ( $use_grid && function_exists( 'ecbb_events_widget_grid_item_inner_markup' ) ) {
+            } elseif ( $use_grid && function_exists( 'ecbb_grid_item_inner_markup' ) ) {
                 $gap_inner = 'display:flex;flex-direction:column;gap:3px;';
                 $self      = $this;
-                $html_items .= ecbb_events_widget_grid_item_inner_markup(
+                $html_items .= ecbb_grid_item_inner_markup(
                     $p,
                     $parts_to_use,
                     $gap_inner,
@@ -753,8 +755,8 @@ class ECBB_Plugin {
             $html_items .= '</div>';
         }
 
-        if ( function_exists( 'ecbb_events_widget_render_settings' ) ) {
-            ecbb_events_widget_render_settings( [] );
+        if ( function_exists( 'ecbb_render_settings' ) ) {
+            ecbb_render_settings( [] );
         }
 
         wp_send_json_success([
@@ -763,4 +765,10 @@ class ECBB_Plugin {
             'hasMore'   => $has_more,
         ]);
     }
+}
+
+}
+
+if ( ! class_exists( 'ECBB_Plugin', false ) ) {
+	class_alias( 'ECBB_WidgetClass', 'ECBB_Plugin' );
 }
