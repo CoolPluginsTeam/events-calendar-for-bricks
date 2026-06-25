@@ -397,10 +397,6 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 			return '& .ecbb-event__date-day, & .ecbb-event__date-time, & .ecbb-event__date-sep';
 		}
 
-		public static function ecbb_date_type_parts() {
-			return [ 'date', 'event_date', 'event_time', 'event_day' ];
-		}
-
 		public static function ecbb_repeater_type_selector() {
 			return '&, & .ecbb-event__term-chip, & .ecbb-event__link, & > .ecbb-event__link, & .ecbb-event__term, & > .ecbb-event__term, '
 			. self::ecbb_date_inner_type_selector();
@@ -480,16 +476,6 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 
 		public static function ecbb_button_parts() {
 			return [ 'read_more', 'event_tickets', 'event_rsvp' ];
-		}
-
-		/**
-		* Relative selector for button-style controls (border, padding, etc.).
-		*
-		* @return string
-		*/
-
-		public static function ecbb_repeater_button_selector() {
-			return '& .ecbb-event__link, & > a, & .ecbb-event__plain';
 		}
 
 		/**
@@ -757,20 +743,6 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 		}
 
 		return $item;
-		}
-
-		/**
-		* @param array<string,mixed> $item
-		* @return string
-		*/
-
-		public static function ecbb_type_color( array $item ) {
-			if ( ! empty( $item['ecbb_typography'] ) && is_array( $item['ecbb_typography'] ) && ! empty( $item['ecbb_typography']['color'] ) ) {
-				return class_exists( 'ECBB_Markup', false )
-				? \ECBB_Markup::ecbb_norm_color( $item['ecbb_typography']['color'] )
-				: '';
-			}
-		return '';
 		}
 
 		/**
@@ -1525,21 +1497,6 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 		}
 
 		return 'px';
-		}
-
-		/**
-		* Gap between events with optional responsive values.
-		*
-		* @param array<string,mixed> $settings Element settings.
-		* @return string CSS value e.g. 24px
-		*/
-
-		public static function ecbb_gap_css( array $settings ) {
-			$gaps = self::ecbb_gap_vars( $settings );
-			$gap  = $gaps['desktop'] ?? 24;
-			$unit = self::ecbb_gap_unit( $settings );
-
-			return ( is_numeric( $gap ) ? (float) $gap : 24 ) . $unit;
 		}
 
 		/**
