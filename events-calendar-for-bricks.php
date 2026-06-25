@@ -28,25 +28,15 @@ define( 'ECBB_URL', plugin_dir_url( ECBB_FILE ) );
 define( 'ECBB_BASENAME', plugin_basename( ECBB_FILE ) );
 define( 'ECBB_TEC_PLUGIN_FILE', 'the-events-calendar/the-events-calendar.php' );
 
-/**
- * Main Class start here
- */
 if ( ! class_exists( 'EventsCalendarForBricks' ) ) {
 
 	class EventsCalendarForBricks {
 
-		/**
-		 * Construct the plugin objects.
-		 */
 		public function __construct() {
 			register_activation_hook( ECBB_FILE, array( $this, 'ecbb_activate' ) );
-			register_deactivation_hook( ECBB_FILE, array( $this, 'ecbb_deactivate' ) );
 			add_action( 'init', array( $this, 'ecbb_load_textdomain' ) );
-			add_action( 'plugins_loaded', array( $this, 'ecbb_enforce_dependencies' ) );
 			add_action( 'admin_notices', array( $this, 'ecbb_render_dependency_notice' ) );
-			add_action( 'admin_init', array( $this, 'ecbb_deactivate_if_unmet' ), 1 );
 			add_action( 'after_setup_theme', array( $this, 'ecbb_register_bricks_widget' ), 11 );
-			add_filter( 'plugin_action_links_' . plugin_basename( ECBB_FILE ), array( $this, 'ecbb_plugin_action_links' ) );
 		}
 
 		/**
@@ -67,7 +57,8 @@ if ( ! class_exists( 'EventsCalendarForBricks' ) ) {
 		 * Load plugin text domain and track install metadata.
 		 */
 		public function ecbb_load_textdomain() {
-			
+			load_plugin_textdomain( 'ecbb', false, basename( dirname( ECBB_FILE ) ) . '/languages/' );
+
 			if ( ! get_option( 'ecbb_initial_save_version' ) ) {
 				add_option( 'ecbb_initial_save_version', ECBB_VERSION );
 			}
@@ -77,27 +68,12 @@ if ( ! class_exists( 'EventsCalendarForBricks' ) ) {
 			}
 		}
 
-		/*
-		|--------------------------------------------------------------------------
-		| Code you want to run when all other plugins loaded.
-		|--------------------------------------------------------------------------
-		 */
-		public function ecbb_enforce_dependencies() {
-			include_once ABSPATH . 'wp-admin/includes/plugin.php';
-
-			if ( ! self::ecbb_is_tec_active() ) {
-				deactivate_plugins( ECBB_BASENAME );
-				$this->ecbb_remove_action_links();
-				return;
-			}
-		}
-
 		/**
 		 * Load integration files and register the Bricks events widget element
-		 * once the Bricks theme is active (hooked on after_setup_theme).
+		 * once dependencies are met (hooked on after_setup_theme).
 		 */
 		public function ecbb_register_bricks_widget() {
-			if ( ! self::ecbb_is_bricks_active() ) {
+			if ( ! self::ecbb_dependencies_met() ) {
 				return;
 			}
 
@@ -174,7 +150,7 @@ if ( ! class_exists( 'EventsCalendarForBricks' ) ) {
 				return '';
 			}
 
-			$html  = '<strong>' . esc_html__( 'Events Calendar for Bricks Builder could not run.', 'ecbb' ) . '</strong> ';
+			$html  = '<strong>' . esc_html__( 'Events Calendar for Bricks Builder is missing required dependencies.', 'ecbb' ) . '</strong> ';
 			$html .= esc_html__( 'This plugin requires:', 'ecbb' );
 			$html .= '<ul style="list-style:disc;margin:0.5em 0 0 1.5em;">';
 			foreach ( $lines as $line ) {
@@ -208,61 +184,13 @@ if ( ! class_exists( 'EventsCalendarForBricks' ) ) {
 			echo '<div class="notice notice-error"><p>' . wp_kses_post( self::ecbb_dependency_notice_html( $missing ) ) . '</p></div>';
 		}
 
-		public function ecbb_deactivate_if_unmet() {
-			if ( ! is_admin() || ! current_user_can( 'activate_plugins' ) ) {
-				return;
-			}
-			if ( ! function_exists( 'is_plugin_active' ) ) {
-				require_once ABSPATH . 'wp-admin/includes/plugin.php';
-			}
-			if ( ! is_plugin_active( ECBB_BASENAME ) ) {
-				return;
-			}
-			if ( self::ecbb_dependencies_met() ) {
-				return;
-			}
-			deactivate_plugins( ECBB_BASENAME );
-			$message = self::ecbb_dependency_notice_html( self::ecbb_get_missing_dependencies() );
-			if ( $message !== '' ) {
-				set_transient( 'ecbb_activation_error', $message, 60 );
-			}
-		}
-
-		/**
-		 * Filter the plugin's action links on the Plugins screen.
-		 *
-		 * @param array<string,string> $links Existing action links.
-		 * @return array<string,string>
-		 */
-		public function ecbb_plugin_action_links( $links ) {
-			return $links;
-		}
-
-		/**
-		 * Drop the plugin action-links filter (used when dependencies are missing).
-		 */
-		private function ecbb_remove_action_links() {
-			remove_filter( 'plugin_action_links_' . plugin_basename( ECBB_FILE ), array( $this, 'ecbb_plugin_action_links' ) );
-		}
-
-		/*
-		|--------------------------------------------------------------------------
-		|   on plugin activation hook
-		|--------------------------------------------------------------------------
-		 */
 		public function ecbb_activate() {
-			include_once ABSPATH . 'wp-admin/includes/plugin.php';
-
 			update_option( 'ecbb-installDate', gmdate( 'Y-m-d h:i:s' ) );
 
 			if ( ! self::ecbb_dependencies_met() ) {
-				deactivate_plugins( ECBB_BASENAME );
 				$message = self::ecbb_dependency_notice_html( self::ecbb_get_missing_dependencies() );
 				if ( $message !== '' ) {
 					set_transient( 'ecbb_activation_error', $message, 60 );
-				}
-				if ( isset( $_GET['activate'] ) ) {
-					unset( $_GET['activate'] );
 				}
 			}
 
@@ -274,17 +202,8 @@ if ( ! class_exists( 'EventsCalendarForBricks' ) ) {
 				add_option( 'ecbb-initial-installDate', gmdate( 'Y-m-d h:i:s' ) );
 			}
 		}
-
-		/*
-		|--------------------------------------------------------------------------
-		|   on plugin deactivation hook
-		|--------------------------------------------------------------------------
-		 */
-		public function ecbb_deactivate() {
-			// Reserved for clearing scheduled hooks when added.
-		}
 	}
 
-} // Main Class End here.
+}
 
 new EventsCalendarForBricks();

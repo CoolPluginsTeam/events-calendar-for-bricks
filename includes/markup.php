@@ -1370,10 +1370,7 @@ if (! class_exists('ECBB_Markup', false)) {
 				$classes = 'ecbb-event-part ' . $bem . ' ' . $idx_c;
 			}
 			if ($item !== []) {
-				$row = $item;
-				if ( class_exists( 'ECBB_Styles', false ) ) {
-					$row = \ECBB_Styles::ecbb_clean_part( $row );
-				}
+				$row = class_exists( 'ECBB_Styles', false ) ? \ECBB_Styles::ecbb_clean_part( $item ) : $item;
 				$ui_part = isset($item['part']) ? (string) $item['part'] : (string) $part;
 				if (
 					$ui_part === 'title'

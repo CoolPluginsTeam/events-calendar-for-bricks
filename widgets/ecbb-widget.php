@@ -67,12 +67,10 @@ class ECBB_Widget extends \Bricks\Element {
 	 * @return void
 	 */
 	private function ecbb_render_no_events_message() {
-		$tag = isset( $this->settings['no_events_tag'] ) ? trim( (string) $this->settings['no_events_tag'] ) : '';
-		if ( $tag === '' ) {
-			$tag = 'h3';
-		}
-		$tag = class_exists( '\Bricks\Helpers' ) ? \Bricks\Helpers::sanitize_html_tag( $tag, 'h3' ) : $tag;
-		if ( $tag === '' ) {
+		$allowed_tags = [ 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'div', 'span' ];
+
+		$tag = isset( $this->settings['no_events_tag'] ) ? strtolower( trim( (string) $this->settings['no_events_tag'] ) ) : '';
+		if ( ! in_array( $tag, $allowed_tags, true ) ) {
 			$tag = 'h3';
 		}
 
@@ -156,26 +154,6 @@ class ECBB_Widget extends \Bricks\Element {
 	 */
 	private function ecbb_normalize_color_value( $value ) {
 		return class_exists( 'ECBB_Markup', false ) ? \ECBB_Markup::ecbb_norm_color( $value ) : '';
-	}
-
-	private function ecbb_css_size( $value, $default_unit = 'px' ) {
-		$value = is_string( $value ) ? trim( $value ) : ( is_numeric( $value ) ? (string) $value : '' );
-		if ( $value === '' ) {
-			return '';
-		}
-
-		// If user provided unit, keep it.
-		if ( preg_match( '/^-?\\d*\\.?\\d+(px|rem|em|%)$/', $value ) ) {
-			return $value;
-		}
-
-		// If only number, default to px.
-		if ( preg_match( '/^-?\\d*\\.?\\d+$/', $value ) ) {
-			$unit = in_array( $default_unit, [ 'px', 'rem', 'em', '%' ], true ) ? $default_unit : 'px';
-			return $value . $unit;
-		}
-
-		return '';
 	}
 
 	private function ecbb_get_instance_scope_class() {
@@ -407,17 +385,6 @@ class ECBB_Widget extends \Bricks\Element {
 	}
 
 	/**
-	 * Build TEC query args based on element settings.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function ecbb_get_tec_query_args() {
-		return class_exists( 'ECBB_Query', false )
-			? \ECBB_Query::ecbb_tribe_args( is_array( $this->settings ) ? $this->settings : [] )
-			: [];
-	}
-
-	/**
 	 * Active Event parts for the current layout + list style.
 	 *
 	 * Layout-specific repeaters (`parts_style1`, `parts_style2`, `parts_grid`)
@@ -536,11 +503,9 @@ class ECBB_Widget extends \Bricks\Element {
 			return;
 		}
 
-		if ( class_exists( 'ECBB_Query', false ) ) {
-			$events = \ECBB_Query::ecbb_fetch_events( $settings );
-		} else {
-		$events = \tribe_get_events( $this->ecbb_get_tec_query_args() );
-		}
+		$events = class_exists( 'ECBB_Query', false )
+			? \ECBB_Query::ecbb_fetch_events( $settings )
+			: [];
 
 		if ( empty( $events ) ) {
 			$this->ecbb_render_no_events_message();
@@ -571,8 +536,6 @@ class ECBB_Widget extends \Bricks\Element {
 			$post = $event_post;
 			setup_postdata( $post );
 
-			$parts = $parts_effective;
-
 			if ( $use_style2_shell && class_exists( 'ECBB_List_2', false ) ) {
 				echo \ECBB_List_2::ecbb_month_heading( $post->ID, $style2_last_month, $style2_show_month );
 			}
@@ -584,22 +547,22 @@ class ECBB_Widget extends \Bricks\Element {
 				$emit = function ( $ev, $item, $idx ) use ( $self ) {
 					$self->ecbb_render_part( $ev, $item, $idx, 'style1' );
 				};
-				echo \ECBB_List_1::ecbb_item_inner( $post, $parts, $emit, $style1_date_format );
+				echo \ECBB_List_1::ecbb_item_inner( $post, $parts_effective, $emit, $style1_date_format );
 			} elseif ( $use_style2_shell && class_exists( 'ECBB_List_2', false ) ) {
 				$self = $this;
 				$emit = function ( $ev, $item, $idx ) use ( $self ) {
 					$self->ecbb_render_part( $ev, $item, $idx, 'style2' );
 				};
-				echo \ECBB_List_2::ecbb_item_inner( $post, $parts, $emit );
+				echo \ECBB_List_2::ecbb_item_inner( $post, $parts_effective, $emit );
 			} elseif ( $use_grid_shell && class_exists( 'ECBB_Grid', false ) ) {
 				$self = $this;
 				$emit = function ( $ev, $item, $idx ) use ( $self ) {
 					$self->ecbb_render_part( $ev, $item, $idx );
 				};
-				echo \ECBB_Grid::ecbb_item_inner( $post, $parts, $emit );
+				echo \ECBB_Grid::ecbb_item_inner( $post, $parts_effective, $emit );
 			} else {
 				$part_idx = 0;
-				foreach ( $parts as $item ) {
+				foreach ( $parts_effective as $item ) {
 					if ( ! is_array( $item ) ) {
 						continue;
 					}

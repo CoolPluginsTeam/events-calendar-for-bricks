@@ -418,28 +418,6 @@ if ( ! class_exists( 'ECBB_List_1', false ) ) {
 }
 
 /**
- * First repeater row whose part is `read_more` (used for the static right CTA
- * column). Falls back to a synthetic row if the user removed every read_more
- * row but the Style 1 shell still wants to show a CTA — in that case the
- * caller is expected to check `index < 0` and skip the column.
- *
- * @param array $parts Repeater rows.
- * @return array{index:int,row:array}
- */
-
-	public static function ecbb_find_read_more( array $parts ) {
-	foreach ( $parts as $i => $row ) {
-		if ( ! is_array( $row ) ) {
-			continue;
-		}
-		if ( ( isset( $row['part'] ) ? (string) $row['part'] : '' ) === 'read_more' ) {
-			return [ 'index' => (int) $i, 'row' => $row ];
-		}
-	}
-	return [ 'index' => -1, 'row' => [] ];
-}
-
-/**
  * Whether a repeater part is handled by a static Style 1 column (and must
  * therefore be skipped in the middle body to avoid double-rendering).
  *

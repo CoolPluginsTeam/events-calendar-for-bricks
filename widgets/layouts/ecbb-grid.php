@@ -58,31 +58,6 @@ if ( ! class_exists( 'ECBB_Grid', false ) ) {
 }
 
 /**
- * Ordered part slugs from cleaned repeater rows.
- *
- * @param array $parts Raw repeater.
- * @return string[]
- */
-
-	public static function ecbb_part_slugs( array $parts ) {
-	if ( class_exists( 'ECBB_Markup', false ) ) {
-		return \ECBB_Markup::ecbb_parts_slugs( $parts );
-	}
-	if ( ! class_exists( 'ECBB_Markup', false ) ) {
-		return [];
-	}
-	$clean = \ECBB_Markup::ecbb_parts_clean( $parts );
-	$out   = [];
-	foreach ( $clean as $row ) {
-		if ( ! is_array( $row ) ) {
-			continue;
-		}
-		$out[] = isset( $row['part'] ) ? (string) $row['part'] : '';
-	}
-	return $out;
-}
-
-/**
  * Whether to replace repeater rows with the grid default stack.
  *
  * @param array $parts Raw repeater rows.

@@ -39,17 +39,16 @@ final class ECBB_WidgetClass {
             return;
         }
 
-        foreach ( [ 'content', 'header', 'footer' ] as $area ) {
-            $post_key = $area;
-            if ( empty( $_POST[ $post_key ] ) || ! is_string( $_POST[ $post_key ] ) ) {
-                continue;
-            }
-            $posted_json = wp_unslash( $_POST[ $post_key ] );
-            $merged      = $this->ecbb_merge_events_loop_repeaters_into_posted_area( $posted_json, $post_id, $area );
-            if ( is_string( $merged ) ) {
-                $_POST[ $post_key ] = $merged;
-            }
-        }
+		foreach ( [ 'content', 'header', 'footer' ] as $area ) {
+			if ( empty( $_POST[ $area ] ) || ! is_string( $_POST[ $area ] ) ) {
+				continue;
+			}
+			$posted_json = wp_unslash( $_POST[ $area ] );
+			$merged      = $this->ecbb_merge_events_loop_repeaters_into_posted_area( $posted_json, $post_id, $area );
+			if ( is_string( $merged ) ) {
+				$_POST[ $area ] = $merged;
+			}
+		}
     }
 
     /**
@@ -101,7 +100,7 @@ final class ECBB_WidgetClass {
      * @return array<int,array<string,mixed>>
      */
     private function ecbb_apply_inactive_part_repeater_preservation( array $new_elements, array $old_elements_indexed ) {
-        if ( ! class_exists( 'ECBB_Markup', false ) || ! class_exists( 'ECBB_Markup', false ) ) {
+        if ( ! class_exists( 'ECBB_Markup', false ) ) {
             return $new_elements;
         }
 
