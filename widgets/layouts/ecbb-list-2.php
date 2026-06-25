@@ -24,7 +24,7 @@ if ( ! class_exists( 'ECBB_List_2', false ) ) {
 
 	final class ECBB_List_2 {
 
-	public static function ecbb_list2_part_class( $part ) {
+	public static function ecbb_part_class( $part ) {
 	$part = sanitize_key( (string) $part );
 	static $map = [
 		'title'              => 'ecbb-style2-title',
@@ -70,7 +70,7 @@ if ( ! class_exists( 'ECBB_List_2', false ) ) {
  * @return bool
  */
 
-	public static function ecbb_sanitize_style2_show_month_headings( $value ) {
+	public static function ecbb_sanitize_month_on( $value ) {
 	if ( $value === false || $value === 0 || $value === '0' || $value === 'no' || $value === 'off' ) {
 		return false;
 	}
@@ -104,24 +104,24 @@ if ( ! class_exists( 'ECBB_List_2', false ) ) {
  * @return bool
  */
 
-	public static function ecbb_list2_month_headings_enabled( $settings ) {
+	public static function ecbb_month_headings_on( $settings ) {
 	if ( ! is_array( $settings ) ) {
 		return false;
 	}
 	if ( ! array_key_exists( 'style2_show_month_headings', $settings ) ) {
 		return false;
 	}
-	return self::ecbb_sanitize_style2_show_month_headings( $settings['style2_show_month_headings'] );
+	return self::ecbb_sanitize_month_on( $settings['style2_show_month_headings'] );
 }
 
 /**
  * Detect the old 3-row default (title + description + date) so Style 2 can upgrade to the full stack.
  *
- * @param array $clean Rows from ecbb_parts_rows_clean().
+ * @param array $clean Rows from \ECBB_Markup::ecbb_parts_clean().
  * @return bool
  */
 
-	public static function ecbb_list2_is_legacy_stack( array $clean ) {
+	public static function ecbb_is_legacy_stack( array $clean ) {
 	if ( count( $clean ) !== 3 ) {
 		return false;
 	}
@@ -135,13 +135,13 @@ if ( ! class_exists( 'ECBB_List_2', false ) ) {
 
 /**
  * Default Event parts for Style 2 list (body column). Featured image is not listed here;
- * {@see self::ecbb_list2_normalize_parts()} appends an `image` row when missing so the static
+ * {@see self::ecbb_norm_parts()} appends an `image` row when missing so the static
  * trail column can render. Read more is included by default at the end of the body stack.
  *
  * @return array<int,array<string,mixed>>
  */
 
-	public static function ecbb_list2_default_parts_rows() {
+	public static function ecbb_default_parts() {
 	$rows = [
 		[
 			'part'                  => 'date',
@@ -171,8 +171,8 @@ if ( ! class_exists( 'ECBB_List_2', false ) ) {
 		],
 	];
 
-	return function_exists( 'ecbb_parts_rows_assign_ids' )
-		? ecbb_parts_rows_assign_ids( $rows )
+	return class_exists( 'ECBB_Markup', false )
+		? \ECBB_Markup::ecbb_parts_assign_ids( $rows )
 		: $rows;
 }
 
@@ -183,29 +183,29 @@ if ( ! class_exists( 'ECBB_List_2', false ) ) {
  * @return array<int,array<string,mixed>>
  */
 
-	public static function ecbb_list2_normalize_parts( array $parts ) {
-	if ( ! function_exists( 'ecbb_parts_rows_clean' ) ) {
+	public static function ecbb_norm_parts( array $parts ) {
+	if ( ! class_exists( 'ECBB_Markup', false ) ) {
 		return $parts;
 	}
 
-	$clean = ecbb_parts_rows_clean( $parts );
-	$reset = ( $clean === [] ) || self::ecbb_list2_is_legacy_stack( $clean );
+	$clean = \ECBB_Markup::ecbb_parts_clean( $parts );
+	$reset = ( $clean === [] ) || self::ecbb_is_legacy_stack( $clean );
 
-	if ( ! $reset && function_exists( 'ecbb_parts_stack_matches_defaults' ) ) {
-		if ( function_exists( 'ecbb_grid_default_parts_rows' )
-			&& ecbb_parts_stack_matches_defaults( $parts, ecbb_grid_default_parts_rows() ) ) {
+	if ( ! $reset && class_exists( 'ECBB_Markup', false ) ) {
+		if ( class_exists( 'ECBB_Grid', false )
+			&& \ECBB_Markup::ecbb_parts_match_defaults( $parts, \ECBB_Grid::ecbb_default_parts() ) ) {
 			$reset = true;
-		} elseif ( function_exists( 'ecbb_list1_default_parts_rows' )
-			&& ecbb_parts_stack_matches_defaults( $parts, ecbb_list1_default_parts_rows() ) ) {
+		} elseif ( class_exists( 'ECBB_List_1', false )
+			&& \ECBB_Markup::ecbb_parts_match_defaults( $parts, \ECBB_List_1::ecbb_default_parts() ) ) {
 			$reset = true;
 		}
 	}
 
 	if ( $reset ) {
-		$clean = self::ecbb_list2_default_parts_rows();
+		$clean = self::ecbb_default_parts();
 	}
 
-	if ( ! ecbb_parts_has_part( $clean, 'image' ) ) {
+	if ( ! \ECBB_Markup::ecbb_parts_has( $clean, 'image' ) ) {
 		$clean[] = [
 			'part'       => 'image',
 			'image_link' => true,
@@ -243,7 +243,7 @@ if ( ! class_exists( 'ECBB_List_2', false ) ) {
  * @return array{0:int|false,1:int|false}
  */
 
-	public static function ecbb_list2_date_bounds( $post_id ) {
+	public static function ecbb_date_bounds( $post_id ) {
 	$post_id = absint( $post_id );
 	if ( $post_id < 1 ) {
 		return [ false, false ];
@@ -270,7 +270,7 @@ if ( ! class_exists( 'ECBB_List_2', false ) ) {
  * @return string                      Markup or empty.
  */
 
-	public static function ecbb_list2_maybe_month_heading_html( $post_id, &$last_month_key, $show = false ) {
+	public static function ecbb_month_heading( $post_id, &$last_month_key, $show = false ) {
 	$show = (bool) $show;
 	if ( ! $show ) {
 		return '';
@@ -279,7 +279,7 @@ if ( ! class_exists( 'ECBB_List_2', false ) ) {
 	if ( $post_id < 1 ) {
 		return '';
 	}
-	list( $start_ts ) = self::ecbb_list2_date_bounds( $post_id );
+	list( $start_ts ) = self::ecbb_date_bounds( $post_id );
 	if ( ! $start_ts ) {
 		return '';
 	}
@@ -302,7 +302,7 @@ if ( ! class_exists( 'ECBB_List_2', false ) ) {
  * @return string HTML fragment (no wrapper).
  */
 
-	public static function ecbb_list2_date_rail_stack_html_style2( $start_ts, $end_ts ) {
+	public static function ecbb_rail_date_stack( $start_ts, $end_ts ) {
 	if ( ! $start_ts ) {
 		return '';
 	}
@@ -356,17 +356,17 @@ if ( ! class_exists( 'ECBB_List_2', false ) ) {
  * @return string Markup (aside).
  */
 
-	public static function ecbb_list2_date_rail_html( $post ) {
+	public static function ecbb_date_rail( $post ) {
 	if ( ! ( $post instanceof \WP_Post ) ) {
 		return '';
 	}
 
-	list( $start_ts, $end_ts ) = self::ecbb_list2_date_bounds( $post->ID );
+	list( $start_ts, $end_ts ) = self::ecbb_date_bounds( $post->ID );
 	if ( ! $start_ts ) {
 		return '<aside class="ecbb-style2-rail" aria-hidden="true"><div class="ecbb-style2-rail-in"></div></aside>';
 	}
 
-	$stack = self::ecbb_list2_date_rail_stack_html_style2( $start_ts, $end_ts );
+	$stack = self::ecbb_rail_date_stack( $start_ts, $end_ts );
 
 	return '<aside class="ecbb-style2-rail" aria-hidden="true">'
 		. '<div class="ecbb-style2-rail-in">'
@@ -381,7 +381,7 @@ if ( ! class_exists( 'ECBB_List_2', false ) ) {
  * @return array{index:int, row:array}
  */
 
-	public static function ecbb_list2_find_first_image_part_row( array $parts ) {
+	public static function ecbb_find_image_row( array $parts ) {
 	foreach ( $parts as $i => $row ) {
 		if ( ! is_array( $row ) ) {
 			continue;
@@ -408,7 +408,7 @@ if ( ! class_exists( 'ECBB_List_2', false ) ) {
  * @return bool True = skip middle (handled elsewhere or omitted).
  */
 
-	public static function ecbb_list2_skip_middle_part( $part ) {
+	public static function ecbb_skip_body_part( $part ) {
 	$part = sanitize_key( (string) $part );
 	return in_array( $part, [ 'image', 'event_date' ], true );
 }
@@ -423,13 +423,13 @@ if ( ! class_exists( 'ECBB_List_2', false ) ) {
  * @return string
  */
 
-	public static function ecbb_list2_item_inner_markup( $post, array $parts, callable $emit_part ) {
+	public static function ecbb_item_inner( $post, array $parts, callable $emit_part ) {
 	if ( ! ( $post instanceof \WP_Post ) ) {
 		return '';
 	}
 
 	ob_start();
-	$img_info   = self::ecbb_list2_find_first_image_part_row( $parts );
+	$img_info   = self::ecbb_find_image_row( $parts );
 	$has_media  = ( $img_info['index'] >= 0 );
 
 	$inner_class = 'ecbb-style2';
@@ -437,7 +437,7 @@ if ( ! class_exists( 'ECBB_List_2', false ) ) {
 		$inner_class .= ' ecbb-style2--has-media';
 	}
 	echo '<div class="' . esc_attr( $inner_class ) . '">';
-	echo self::ecbb_list2_date_rail_html( $post ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- builder-internal HTML, fields escaped at source.
+	echo self::ecbb_date_rail( $post ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- builder-internal HTML, fields escaped at source.
 
 	echo '<div class="ecbb-style2-body">';
 
@@ -448,7 +448,7 @@ if ( ! class_exists( 'ECBB_List_2', false ) ) {
 			continue;
 		}
 		$p = isset( $item['part'] ) ? sanitize_key( (string) $item['part'] ) : '';
-		if ( self::ecbb_list2_skip_middle_part( $p ) ) {
+		if ( self::ecbb_skip_body_part( $p ) ) {
 			continue;
 		}
 		$next   = $parts[ $i + 1 ] ?? null;
@@ -486,70 +486,4 @@ if ( ! class_exists( 'ECBB_List_2', false ) ) {
 
 	}
 
-}
-
-if ( ! function_exists( 'ecbb_list2_part_class' ) ) {
-	function ecbb_list2_part_class( ...$args ) {
-		return ECBB_List_2::ecbb_list2_part_class( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_sanitize_style2_show_month_headings' ) ) {
-	function ecbb_sanitize_style2_show_month_headings( ...$args ) {
-		return ECBB_List_2::ecbb_sanitize_style2_show_month_headings( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_list2_month_headings_enabled' ) ) {
-	function ecbb_list2_month_headings_enabled( ...$args ) {
-		return ECBB_List_2::ecbb_list2_month_headings_enabled( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_list2_is_legacy_stack' ) ) {
-	function ecbb_list2_is_legacy_stack( ...$args ) {
-		return ECBB_List_2::ecbb_list2_is_legacy_stack( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_list2_default_parts_rows' ) ) {
-	function ecbb_list2_default_parts_rows( ...$args ) {
-		return ECBB_List_2::ecbb_list2_default_parts_rows( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_list2_normalize_parts' ) ) {
-	function ecbb_list2_normalize_parts( ...$args ) {
-		return ECBB_List_2::ecbb_list2_normalize_parts( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_list2_date_bounds' ) ) {
-	function ecbb_list2_date_bounds( ...$args ) {
-		return ECBB_List_2::ecbb_list2_date_bounds( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_list2_maybe_month_heading_html' ) ) {
-	function ecbb_list2_maybe_month_heading_html( ...$args ) {
-		return ECBB_List_2::ecbb_list2_maybe_month_heading_html( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_list2_date_rail_stack_html_style2' ) ) {
-	function ecbb_list2_date_rail_stack_html_style2( ...$args ) {
-		return ECBB_List_2::ecbb_list2_date_rail_stack_html_style2( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_list2_date_rail_html' ) ) {
-	function ecbb_list2_date_rail_html( ...$args ) {
-		return ECBB_List_2::ecbb_list2_date_rail_html( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_list2_find_first_image_part_row' ) ) {
-	function ecbb_list2_find_first_image_part_row( ...$args ) {
-		return ECBB_List_2::ecbb_list2_find_first_image_part_row( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_list2_skip_middle_part' ) ) {
-	function ecbb_list2_skip_middle_part( ...$args ) {
-		return ECBB_List_2::ecbb_list2_skip_middle_part( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_list2_item_inner_markup' ) ) {
-	function ecbb_list2_item_inner_markup( ...$args ) {
-		return ECBB_List_2::ecbb_list2_item_inner_markup( ...$args );
-	}
 }

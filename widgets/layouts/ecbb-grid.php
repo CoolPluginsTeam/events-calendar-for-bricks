@@ -21,7 +21,7 @@ if ( ! class_exists( 'ECBB_Grid', false ) ) {
 
 	final class ECBB_Grid {
 
-	public static function ecbb_grid_default_parts_rows() {
+	public static function ecbb_default_parts() {
 	$rows = [
 		[
 			'part'                => 'date',
@@ -41,8 +41,8 @@ if ( ! class_exists( 'ECBB_Grid', false ) ) {
 		],
 	];
 
-	return function_exists( 'ecbb_parts_rows_assign_ids' )
-		? ecbb_parts_rows_assign_ids( $rows )
+	return class_exists( 'ECBB_Markup', false )
+		? \ECBB_Markup::ecbb_parts_assign_ids( $rows )
 		: $rows;
 }
 
@@ -53,7 +53,7 @@ if ( ! class_exists( 'ECBB_Grid', false ) ) {
  * @return bool
  */
 
-	public static function ecbb_grid_part_skipped_in_body( $slug ) {
+	public static function ecbb_skip_body_part( $slug ) {
 	return in_array( (string) $slug, [ 'image', 'event_date', 'event_day' ], true );
 }
 
@@ -64,14 +64,14 @@ if ( ! class_exists( 'ECBB_Grid', false ) ) {
  * @return string[]
  */
 
-	public static function ecbb_grid_part_slug_stack( array $parts ) {
-	if ( function_exists( 'ecbb_parts_slug_stack' ) ) {
-		return ecbb_parts_slug_stack( $parts );
+	public static function ecbb_part_slugs( array $parts ) {
+	if ( class_exists( 'ECBB_Markup', false ) ) {
+		return \ECBB_Markup::ecbb_parts_slugs( $parts );
 	}
-	if ( ! function_exists( 'ecbb_parts_rows_clean' ) ) {
+	if ( ! class_exists( 'ECBB_Markup', false ) ) {
 		return [];
 	}
-	$clean = ecbb_parts_rows_clean( $parts );
+	$clean = \ECBB_Markup::ecbb_parts_clean( $parts );
 	$out   = [];
 	foreach ( $clean as $row ) {
 		if ( ! is_array( $row ) ) {
@@ -89,25 +89,25 @@ if ( ! class_exists( 'ECBB_Grid', false ) ) {
  * @return bool
  */
 
-	public static function ecbb_grid_should_reset_parts( array $parts ) {
-	if ( ! function_exists( 'ecbb_parts_rows_clean' ) ) {
+	public static function ecbb_should_reset( array $parts ) {
+	if ( ! class_exists( 'ECBB_Markup', false ) ) {
 		return false;
 	}
-	$clean = ecbb_parts_rows_clean( $parts );
+	$clean = \ECBB_Markup::ecbb_parts_clean( $parts );
 	if ( $clean === [] ) {
 		return true;
 	}
-	if ( function_exists( 'ecbb_list2_is_legacy_stack' )
-		&& ecbb_list2_is_legacy_stack( $clean ) ) {
+	if ( class_exists( 'ECBB_List_2', false )
+		&& \ECBB_List_2::ecbb_is_legacy_stack( $clean ) ) {
 		return true;
 	}
-	if ( function_exists( 'ecbb_parts_stack_matches_defaults' ) ) {
-		if ( function_exists( 'ecbb_list1_default_parts_rows' )
-			&& ecbb_parts_stack_matches_defaults( $parts, ecbb_list1_default_parts_rows() ) ) {
+	if ( class_exists( 'ECBB_Markup', false ) ) {
+		if ( class_exists( 'ECBB_List_1', false )
+			&& \ECBB_Markup::ecbb_parts_match_defaults( $parts, \ECBB_List_1::ecbb_default_parts() ) ) {
 			return true;
 		}
-		if ( function_exists( 'ecbb_list2_default_parts_rows' )
-			&& ecbb_parts_stack_matches_defaults( $parts, ecbb_list2_default_parts_rows() ) ) {
+		if ( class_exists( 'ECBB_List_2', false )
+			&& \ECBB_Markup::ecbb_parts_match_defaults( $parts, \ECBB_List_2::ecbb_default_parts() ) ) {
 			return true;
 		}
 		// Do not reset when the stack already matches grid defaults — that is the
@@ -115,8 +115,8 @@ if ( ! class_exists( 'ECBB_Grid', false ) ) {
 	}
 	// Fresh element: Bricks factory default from the control definition.
 	$factory = [ 'categories', 'title', 'date', 'venue', 'description', 'read_more' ];
-	if ( function_exists( 'ecbb_parts_slug_stack' )
-		&& ecbb_parts_slug_stack( $parts ) === $factory ) {
+	if ( class_exists( 'ECBB_Markup', false )
+		&& \ECBB_Markup::ecbb_parts_slugs( $parts ) === $factory ) {
 		return true;
 	}
 	return false;
@@ -129,11 +129,11 @@ if ( ! class_exists( 'ECBB_Grid', false ) ) {
  * @return array<int,array<string,mixed>>
  */
 
-	public static function ecbb_grid_normalize_parts( array $parts ) {
-	if ( self::ecbb_grid_should_reset_parts( $parts ) ) {
-		return self::ecbb_grid_default_parts_rows();
+	public static function ecbb_norm_parts( array $parts ) {
+	if ( self::ecbb_should_reset( $parts ) ) {
+		return self::ecbb_default_parts();
 	}
-	$clean = ecbb_parts_rows_clean( $parts );
+	$clean = \ECBB_Markup::ecbb_parts_clean( $parts );
 	$clean = array_map(
 		static function ( $row ) {
 			if ( ! is_array( $row ) ) {
@@ -153,8 +153,8 @@ if ( ! class_exists( 'ECBB_Grid', false ) ) {
 		},
 		$clean
 	);
-	if ( function_exists( 'ecbb_parts_rows_assign_ids' ) ) {
-		$clean = ecbb_parts_rows_assign_ids( $clean );
+	if ( class_exists( 'ECBB_Markup', false ) ) {
+		$clean = \ECBB_Markup::ecbb_parts_assign_ids( $clean );
 	}
 	return $clean;
 }
@@ -166,14 +166,14 @@ if ( ! class_exists( 'ECBB_Grid', false ) ) {
  * @return string
  */
 
-	public static function ecbb_grid_date_block_html( $post ) {
+	public static function ecbb_date_block( $post ) {
 	if ( ! ( $post instanceof \WP_Post ) ) {
 		return '<div class="ecbb-ev__grid-date-col" aria-hidden="true"></div>';
 	}
 
 	$start_ts = false;
-	if ( function_exists( 'ecbb_list2_date_bounds' ) ) {
-		list( $start_ts ) = ecbb_list2_date_bounds( $post->ID );
+	if ( class_exists( 'ECBB_List_2', false ) ) {
+		list( $start_ts ) = \ECBB_List_2::ecbb_date_bounds( $post->ID );
 	} else {
 		$raw      = (string) get_post_meta( $post->ID, '_EventStartDate', true );
 		$start_ts = $raw ? strtotime( $raw ) : false;
@@ -205,7 +205,7 @@ if ( ! class_exists( 'ECBB_Grid', false ) ) {
  * @return string
  */
 
-	public static function ecbb_grid_static_image_html( $post ) {
+	public static function ecbb_static_image( $post ) {
 	if ( ! ( $post instanceof \WP_Post ) ) {
 		return '';
 	}
@@ -218,8 +218,8 @@ if ( ! class_exists( 'ECBB_Grid', false ) ) {
 	}
 
 	$size = 'large';
-	if ( function_exists( 'ecbb_sanitize_attachment_image_size' ) ) {
-		$size = ecbb_sanitize_attachment_image_size( '', 'large' );
+	if ( class_exists( 'ECBB_Markup', false ) ) {
+		$size = \ECBB_Markup::ecbb_sanitize_image_size( '', 'large' );
 	}
 
 	$img = wp_get_attachment_image(
@@ -253,16 +253,16 @@ if ( ! class_exists( 'ECBB_Grid', false ) ) {
  * @return string
  */
 
-	public static function ecbb_grid_item_inner_markup( $post, array $parts, callable $emit_part ) {
+	public static function ecbb_item_inner( $post, array $parts, callable $emit_part ) {
 	ob_start();
 
 	echo '<div class="ecbb-ev__item-inner ecbb-ev__item-inner--grid">';
 	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in helpers.
-	echo self::ecbb_grid_static_image_html( $post );
+	echo self::ecbb_static_image( $post );
 
 	echo '<div class="ecbb-ev__grid-meta">';
 	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-	echo self::ecbb_grid_date_block_html( $post );
+	echo self::ecbb_date_block( $post );
 
 	echo '<div class="ecbb-ev__grid-body">';
 
@@ -273,7 +273,7 @@ if ( ! class_exists( 'ECBB_Grid', false ) ) {
 			continue;
 		}
 		$p = isset( $item['part'] ) ? (string) $item['part'] : '';
-		if ( self::ecbb_grid_part_skipped_in_body( $p ) ) {
+		if ( self::ecbb_skip_body_part( $p ) ) {
 			continue;
 		}
 		$emit_part( $post, $item, $i );
@@ -286,45 +286,4 @@ if ( ! class_exists( 'ECBB_Grid', false ) ) {
 
 	}
 
-}
-
-if ( ! function_exists( 'ecbb_grid_default_parts_rows' ) ) {
-	function ecbb_grid_default_parts_rows( ...$args ) {
-		return ECBB_Grid::ecbb_grid_default_parts_rows( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_grid_part_skipped_in_body' ) ) {
-	function ecbb_grid_part_skipped_in_body( ...$args ) {
-		return ECBB_Grid::ecbb_grid_part_skipped_in_body( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_grid_part_slug_stack' ) ) {
-	function ecbb_grid_part_slug_stack( ...$args ) {
-		return ECBB_Grid::ecbb_grid_part_slug_stack( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_grid_should_reset_parts' ) ) {
-	function ecbb_grid_should_reset_parts( ...$args ) {
-		return ECBB_Grid::ecbb_grid_should_reset_parts( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_grid_normalize_parts' ) ) {
-	function ecbb_grid_normalize_parts( ...$args ) {
-		return ECBB_Grid::ecbb_grid_normalize_parts( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_grid_date_block_html' ) ) {
-	function ecbb_grid_date_block_html( ...$args ) {
-		return ECBB_Grid::ecbb_grid_date_block_html( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_grid_static_image_html' ) ) {
-	function ecbb_grid_static_image_html( ...$args ) {
-		return ECBB_Grid::ecbb_grid_static_image_html( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_grid_item_inner_markup' ) ) {
-	function ecbb_grid_item_inner_markup( ...$args ) {
-		return ECBB_Grid::ecbb_grid_item_inner_markup( ...$args );
-	}
 }

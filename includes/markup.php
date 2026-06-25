@@ -26,7 +26,7 @@ if (! class_exists('ECBB_Markup', false)) {
 	final class ECBB_Markup
 	{
 
-		public static function ecbb_normalize_bricks_color($value)
+		public static function ecbb_norm_color($value)
 		{
 			if ($value === null || $value === false) {
 				return '';
@@ -72,7 +72,7 @@ if (! class_exists('ECBB_Markup', false)) {
 			if (isset($color[0]) && ($color[0] === '{' || $color[0] === '[')) {
 				$decoded = json_decode($color, true);
 				if (is_array($decoded)) {
-					return ecbb_normalize_bricks_color($decoded);
+					return self::ecbb_norm_color($decoded);
 				}
 			}
 
@@ -103,7 +103,7 @@ if (! class_exists('ECBB_Markup', false)) {
 			return '';
 		}
 
-		public static function ecbb_event_part_resolve_php_format($part, array $item)
+		public static function ecbb_part_date_php_fmt($part, array $item)
 		{
 			$preset = isset($item['date_format_preset']) ? (string) $item['date_format_preset'] : '';
 			$custom = isset($item['date_format_custom']) ? trim((string) $item['date_format_custom']) : '';
@@ -112,8 +112,8 @@ if (! class_exists('ECBB_Markup', false)) {
 				return $custom;
 			}
 
-			if (function_exists('ecbb_date_preset_php_format')) {
-				$mapped = ecbb_date_preset_php_format($preset, (string) $part);
+			if (class_exists('ECBB_Styles', false)) {
+				$mapped = \ECBB_Styles::ecbb_date_php_format($preset, (string) $part);
 				if ($mapped !== null && $mapped !== '') {
 					return $mapped;
 				}
@@ -150,7 +150,7 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return string Unescaped plain text; caller must escape for HTML.
 		 */
 
-		public static function ecbb_venue_name_plain($event_id)
+		public static function ecbb_venue_name($event_id)
 		{
 			$event_id = (int) $event_id;
 			if ($event_id < 1) {
@@ -178,7 +178,7 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return int Venue post ID or 0.
 		 */
 
-		public static function ecbb_venue_id_for_event($event_id)
+		public static function ecbb_venue_id($event_id)
 		{
 			$event_id = (int) $event_id;
 			if ($event_id < 1) {
@@ -200,7 +200,7 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return string Unescaped plain text; caller must escape for HTML.
 		 */
 
-		public static function ecbb_venue_full_address_plain($event_id)
+		public static function ecbb_venue_address($event_id)
 		{
 			$event_id = (int) $event_id;
 			if ($event_id < 1) {
@@ -208,7 +208,7 @@ if (! class_exists('ECBB_Markup', false)) {
 			}
 
 			$address_ids = [$event_id];
-			$venue_id    = self::ecbb_venue_id_for_event($event_id);
+			$venue_id    = self::ecbb_venue_id($event_id);
 			if ($venue_id > 0) {
 				array_unshift($address_ids, $venue_id);
 			}
@@ -220,7 +220,7 @@ if (! class_exists('ECBB_Markup', false)) {
 					$raw = preg_replace('/<br\s*\/?>/i', ', ', $raw);
 					$t   = trim(wp_strip_all_tags(html_entity_decode($raw, ENT_QUOTES, 'UTF-8')));
 					if ($t !== '') {
-						$name = self::ecbb_venue_name_plain($event_id);
+						$name = self::ecbb_venue_name($event_id);
 						if ($name !== '' && strcasecmp($t, $name) === 0) {
 							continue;
 						}
@@ -255,7 +255,7 @@ if (! class_exists('ECBB_Markup', false)) {
 				}
 			}
 
-			return self::ecbb_event_part_detail_plain($event_id, 'venue_full_address');
+			return self::ecbb_part_detail_text($event_id, 'venue_full_address');
 		}
 
 		/**
@@ -265,10 +265,10 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return string Unescaped plain text; caller must escape for HTML.
 		 */
 
-		public static function ecbb_venue_name_and_address_plain($event_id)
+		public static function ecbb_venue_name_addr($event_id)
 		{
-			$name    = self::ecbb_venue_name_plain($event_id);
-			$address = self::ecbb_venue_full_address_plain($event_id);
+			$name    = self::ecbb_venue_name($event_id);
+			$address = self::ecbb_venue_address($event_id);
 
 			if ($name === '' && $address === '') {
 				return '';
@@ -290,10 +290,10 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return string Unescaped plain text; caller must escape for HTML.
 		 */
 
-		public static function ecbb_venue_name_and_state_plain($event_id)
+		public static function ecbb_venue_name_state($event_id)
 		{
-			$name  = self::ecbb_venue_name_plain($event_id);
-			$state = self::ecbb_event_part_detail_plain($event_id, 'venue_state');
+			$name  = self::ecbb_venue_name($event_id);
+			$state = self::ecbb_part_detail_text($event_id, 'venue_state');
 			$name  = trim((string) $name);
 			$state = trim((string) $state);
 
@@ -318,7 +318,7 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return string
 		 */
 
-		public static function ecbb_venue_resolved_display(array $item, $skin = '')
+		public static function ecbb_venue_display_key(array $item, $skin = '')
 		{
 			$display = isset($item['venue_display']) ? (string) $item['venue_display'] : '';
 			if ($display === '' || $display === 'name_and_address') {
@@ -336,11 +336,9 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return bool
 		 */
 
-		public static function ecbb_venue_part_uses_full_details(array $item, $skin = '')
+		public static function ecbb_venue_uses_full(array $item, $skin = '')
 		{
-			$display = function_exists('ecbb_venue_resolved_display')
-				? self::ecbb_venue_resolved_display($item, $skin)
-				: (isset($item['venue_display']) ? (string) $item['venue_display'] : 'full_details');
+			$display = self::ecbb_venue_display_key($item, $skin);
 
 			return in_array($display, ['full_details', 'name_and_address'], true);
 		}
@@ -354,25 +352,23 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return string Unescaped plain text; caller must escape for HTML.
 		 */
 
-		public static function ecbb_venue_part_plain_text($event_id, array $item, $skin = '')
+		public static function ecbb_venue_text($event_id, array $item, $skin = '')
 		{
 			$event_id = (int) $event_id;
 			if ($event_id < 1) {
 				return '';
 			}
 
-			if (self::ecbb_venue_part_uses_full_details($item, $skin)) {
-				return self::ecbb_venue_name_and_address_plain($event_id);
+			if (self::ecbb_venue_uses_full($item, $skin)) {
+				return self::ecbb_venue_name_addr($event_id);
 			}
 
-			$display = function_exists('ecbb_venue_resolved_display')
-				? self::ecbb_venue_resolved_display($item, $skin)
-				: (isset($item['venue_display']) ? (string) $item['venue_display'] : 'full_details');
+			$display = self::ecbb_venue_display_key($item, $skin);
 			if ($display === 'name_and_state') {
-				return self::ecbb_venue_name_and_state_plain($event_id);
+				return self::ecbb_venue_name_state($event_id);
 			}
 
-			return self::ecbb_venue_name_plain($event_id);
+			return self::ecbb_venue_name($event_id);
 		}
 
 		/**
@@ -386,24 +382,22 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return string Empty when nothing to show.
 		 */
 
-		public static function ecbb_event_part_venue_markup($post, array $item, $idx, $style, $skin = '')
+		public static function ecbb_render_venue($post, array $item, $idx, $style, $skin = '')
 		{
 			if (! $post instanceof \WP_Post) {
 				return '';
 			}
 
-			$text = self::ecbb_venue_part_plain_text($post->ID, $item, $skin);
+			$text = self::ecbb_venue_text($post->ID, $item, $skin);
 			if ($text === '') {
 				return '';
 			}
 
 			$idx  = absint($idx);
 			$skin = (string) $skin;
-			$attr = function_exists('ecbb_part_wrapper_attrs')
-				? self::ecbb_part_wrapper_attrs($item, $idx, $style)
-				: ($style !== '' ? ' style="' . esc_attr($style) . '"' : '');
+			$attr = self::ecbb_part_wrap_attrs($item, $idx, $style);
 			$classes = esc_attr(
-				self::ecbb_part_wrap_classes('venue', $idx, $skin, $item) . ' ecbb-has-row-icon'
+				self::ecbb_part_classes('venue', $idx, $skin, $item) . ' ecbb-has-row-icon'
 			);
 
 			return '<div class="' . $classes . '"' . $attr . '>' . esc_html($text) . '</div>';
@@ -416,7 +410,7 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return string Unescaped plain text; caller must escape for HTML.
 		 */
 
-		public static function ecbb_organizer_name_plain($event_id)
+		public static function ecbb_organizer_name($event_id)
 		{
 			$event_id = (int) $event_id;
 			if ($event_id < 1) {
@@ -444,14 +438,14 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return string Unescaped plain text; caller must escape for HTML.
 		 */
 
-		public static function ecbb_organizer_full_details_plain($event_id)
+		public static function ecbb_organizer_full($event_id)
 		{
 			$bits = array_filter(
 				[
-					self::ecbb_organizer_name_plain($event_id),
-					self::ecbb_event_part_detail_plain($event_id, 'organizer_email'),
-					self::ecbb_event_part_detail_plain($event_id, 'organizer_phone'),
-					self::ecbb_event_part_detail_plain($event_id, 'organizer_website'),
+					self::ecbb_organizer_name($event_id),
+					self::ecbb_part_detail_text($event_id, 'organizer_email'),
+					self::ecbb_part_detail_text($event_id, 'organizer_phone'),
+					self::ecbb_part_detail_text($event_id, 'organizer_website'),
 				]
 			);
 			$bits = array_map('trim', $bits);
@@ -468,7 +462,7 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return bool
 		 */
 
-		public static function ecbb_organizer_part_uses_full_details(array $item, $skin = '')
+		public static function ecbb_organizer_uses_full(array $item, $skin = '')
 		{
 			$display = isset($item['organizer_display']) ? (string) $item['organizer_display'] : 'full_details';
 			if ($display === '') {
@@ -487,18 +481,18 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return string Unescaped plain text; caller must escape for HTML.
 		 */
 
-		public static function ecbb_organizer_part_plain_text($event_id, array $item, $skin = '')
+		public static function ecbb_organizer_text($event_id, array $item, $skin = '')
 		{
 			$event_id = (int) $event_id;
 			if ($event_id < 1) {
 				return '';
 			}
 
-			if (self::ecbb_organizer_part_uses_full_details($item, $skin)) {
-				return self::ecbb_organizer_full_details_plain($event_id);
+			if (self::ecbb_organizer_uses_full($item, $skin)) {
+				return self::ecbb_organizer_full($event_id);
 			}
 
-			return self::ecbb_organizer_name_plain($event_id);
+			return self::ecbb_organizer_name($event_id);
 		}
 
 		/**
@@ -512,23 +506,21 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return string Empty when nothing to show.
 		 */
 
-		public static function ecbb_event_part_organizer_markup($post, array $item, $idx, $style, $skin = '')
+		public static function ecbb_render_organizer($post, array $item, $idx, $style, $skin = '')
 		{
 			if (! $post instanceof \WP_Post) {
 				return '';
 			}
 
-			$text = self::ecbb_organizer_part_plain_text($post->ID, $item, $skin);
+			$text = self::ecbb_organizer_text($post->ID, $item, $skin);
 			if ($text === '') {
 				return '';
 			}
 
 			$idx  = absint($idx);
 			$skin = (string) $skin;
-			$attr = function_exists('ecbb_part_wrapper_attrs')
-				? self::ecbb_part_wrapper_attrs($item, $idx, $style)
-				: ($style !== '' ? ' style="' . esc_attr($style) . '"' : '');
-			$classes = esc_attr(self::ecbb_part_wrap_classes('organizer', $idx, $skin, $item));
+			$attr = self::ecbb_part_wrap_attrs($item, $idx, $style);
+			$classes = esc_attr(self::ecbb_part_classes('organizer', $idx, $skin, $item));
 
 			return '<div class="' . $classes . '"' . $attr . '>' . esc_html($text) . '</div>';
 		}
@@ -543,7 +535,7 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return string          Unescaped plain text; caller must escape for HTML.
 		 */
 
-		public static function ecbb_event_part_detail_plain($event_id, $part)
+		public static function ecbb_part_detail_text($event_id, $part)
 		{
 			$event_id = (int) $event_id;
 			$part     = (string) $part;
@@ -575,14 +567,14 @@ if (! class_exists('ECBB_Markup', false)) {
 					}
 					$bits = array_filter(
 						[
-							ecbb_event_part_detail_plain($event_id, 'venue_street'),
-							ecbb_event_part_detail_plain($event_id, 'venue_city'),
+							self::ecbb_part_detail_text($event_id, 'venue_street'),
+							self::ecbb_part_detail_text($event_id, 'venue_city'),
 							trim(
-								ecbb_event_part_detail_plain($event_id, 'venue_state')
+								self::ecbb_part_detail_text($event_id, 'venue_state')
 									. ' '
-									. ecbb_event_part_detail_plain($event_id, 'venue_zip')
+									. self::ecbb_part_detail_text($event_id, 'venue_zip')
 							),
-							ecbb_event_part_detail_plain($event_id, 'venue_country'),
+							self::ecbb_part_detail_text($event_id, 'venue_country'),
 						]
 					);
 					$bits = array_map('trim', $bits);
@@ -775,7 +767,7 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @param string $format PHP date format string.
 		 * @return string
 		 */
-		public static function ecbb_time_format_lowercase_meridiem($format)
+		public static function ecbb_time_fmt_lower($format)
 		{
 			$format = (string) $format;
 			if ($format === '') {
@@ -791,7 +783,7 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @param string $time_str Formatted time or time range.
 		 * @return string
 		 */
-		public static function ecbb_format_time_meridiem_lowercase($time_str)
+		public static function ecbb_time_lower_am($time_str)
 		{
 			$time_str = trim((string) $time_str);
 			if ($time_str === '') {
@@ -815,7 +807,7 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return array{day:string,time:string} Both may be empty strings.
 		 */
 
-		public static function ecbb_event_part_build_day_time_range_parts($post_id, array $item)
+		public static function ecbb_build_day_time_parts($post_id, array $item)
 		{
 			$post_id = (int) $post_id;
 			$start_raw = (string) get_post_meta($post_id, '_EventStartDate', true);
@@ -832,7 +824,7 @@ if (! class_exists('ECBB_Markup', false)) {
 			$all_day = function_exists('tribe_event_is_all_day') && \tribe_event_is_all_day($post_id);
 
 			$day_fmt  = 'l';
-			$time_fmt = self::ecbb_time_format_lowercase_meridiem((string) get_option('time_format'));
+			$time_fmt = self::ecbb_time_fmt_lower((string) get_option('time_format'));
 
 			$day_str = date_i18n($day_fmt, $start_ts);
 			$day_str = trim(wp_strip_all_tags($day_str));
@@ -867,8 +859,8 @@ if (! class_exists('ECBB_Markup', false)) {
 				$t_end = date_i18n($time_fmt, $end_ts);
 			}
 
-			$t_start = self::ecbb_format_time_meridiem_lowercase(trim(wp_strip_all_tags($t_start)));
-			$t_end   = self::ecbb_format_time_meridiem_lowercase(trim(wp_strip_all_tags($t_end)));
+			$t_start = self::ecbb_time_lower_am(trim(wp_strip_all_tags($t_start)));
+			$t_end   = self::ecbb_time_lower_am(trim(wp_strip_all_tags($t_end)));
 
 			if ($t_start === '') {
 				return ['day' => $day_str, 'time' => ''];
@@ -881,25 +873,13 @@ if (! class_exists('ECBB_Markup', false)) {
 		}
 
 		/**
-		 * Part slugs that support the action-link row (read more, tickets, RSVP).
-		 *
-		 * @param string $part Part slug.
-		 * @return bool
-		 */
-
-		public static function ecbb_event_part_is_action_link_part($part)
-		{
-			return in_array((string) $part, ['read_more', 'event_tickets', 'event_rsvp'], true);
-		}
-
-		/**
 		 * Whether button chrome applies (btn_style toggle).
 		 *
 		 * @param array<string,mixed> $item Repeater row.
 		 * @return bool
 		 */
 
-		public static function ecbb_event_part_button_style_active(array $item)
+		public static function ecbb_btn_style_active(array $item)
 		{
 			return ! empty($item['btn_style']);
 		}
@@ -918,12 +898,12 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return string HTML (not escaped as a whole).
 		 */
 
-		public static function ecbb_event_part_action_link_inner_html(array $item, $href, $label, $btn_attr = '', $link_attr = '', $extra_attrs = '')
+		public static function ecbb_action_link_html(array $item, $href, $label, $btn_attr = '', $link_attr = '', $extra_attrs = '')
 		{
-			$hover_on = ! function_exists('ecbb_event_part_hover_style_active') || self::ecbb_event_part_hover_style_active($item);
+			$hover_on = self::ecbb_hover_style_active($item);
 
 			if (! $hover_on) {
-				if (self::ecbb_event_part_button_style_active($item)) {
+				if (self::ecbb_btn_style_active($item)) {
 					$attr = $btn_attr !== '' ? $btn_attr : $link_attr;
 					return '<a class="ecbb-event__link" href="' . esc_url($href) . '"' . $extra_attrs . $attr . '>' . esc_html($label) . '</a>';
 				}
@@ -940,7 +920,7 @@ if (! class_exists('ECBB_Markup', false)) {
 			return '<a class="ecbb-event__link" href="' . esc_url($href) . '"' . $attr . '>' . esc_html($label) . '</a>';
 		}
 
-	public static function ecbb_event_part_button_style_attr(array $item, $skin = '')
+	public static function ecbb_btn_style_attr(array $item, $skin = '')
 	{
 		unset( $item, $skin );
 		return '';
@@ -953,7 +933,7 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return bool
 		 */
 
-		public static function ecbb_cost_token_is_free($token)
+		public static function ecbb_cost_is_free($token)
 		{
 			$t = trim(wp_strip_all_tags(html_entity_decode((string) $token, ENT_QUOTES, 'UTF-8')));
 			if ($t === '') {
@@ -981,7 +961,7 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return array<string,string>
 		 */
 
-		public static function ecbb_event_cost_currency_options()
+		public static function ecbb_cost_currency_opts()
 		{
 			return [
 				'default' => esc_html__('Site default', 'ecbb'),
@@ -1011,10 +991,10 @@ if (! class_exists('ECBB_Markup', false)) {
 
 		/**
 		 * @param mixed $value Saved control value.
-		 * @return string One of {@see ecbb_event_cost_currency_options()}.
+		 * @return string One of {@see self::ecbb_cost_currency_opts()}.
 		 */
 
-		public static function ecbb_sanitize_event_cost_currency($value)
+		public static function ecbb_sanitize_cost_currency($value)
 		{
 			$code = is_string($value) ? strtoupper(trim($value)) : '';
 			if ($code === '') {
@@ -1029,7 +1009,7 @@ if (! class_exists('ECBB_Markup', false)) {
 			if ('SYMBOL' === $code) {
 				return 'default';
 			}
-			return array_key_exists($code, self::ecbb_event_cost_currency_options()) ? $code : 'default';
+			return array_key_exists($code, self::ecbb_cost_currency_opts()) ? $code : 'default';
 		}
 
 		/**
@@ -1039,7 +1019,7 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return string Empty when none / default should not force a symbol.
 		 */
 
-		public static function ecbb_event_cost_currency_symbol($currency_code)
+		public static function ecbb_cost_currency_symbol($currency_code)
 		{
 			$map = [
 				'USD' => '$',
@@ -1063,7 +1043,7 @@ if (! class_exists('ECBB_Markup', false)) {
 				'AED' => 'د.إ',
 				'SAR' => '﷼',
 			];
-			$currency_code = self::ecbb_sanitize_event_cost_currency($currency_code);
+			$currency_code = self::ecbb_sanitize_cost_currency($currency_code);
 			return isset($map[$currency_code]) ? $map[$currency_code] : '';
 		}
 
@@ -1074,7 +1054,7 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return string
 		 */
 
-		public static function ecbb_strip_cost_currency_symbols($token)
+		public static function ecbb_strip_cost_symbols($token)
 		{
 			$t = trim(wp_strip_all_tags(html_entity_decode((string) $token, ENT_QUOTES, 'UTF-8')));
 			if ($t === '') {
@@ -1093,27 +1073,27 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return string
 		 */
 
-		public static function ecbb_format_cost_token_with_currency($token, $currency_code)
+		public static function ecbb_format_cost_token($token, $currency_code)
 		{
 			$token = trim(wp_strip_all_tags(html_entity_decode((string) $token, ENT_QUOTES, 'UTF-8')));
 			if ($token === '') {
 				return '';
 			}
-			if (self::ecbb_cost_token_is_free($token)) {
+			if (self::ecbb_cost_is_free($token)) {
 				return __('Free', 'ecbb');
 			}
 
-			$currency_code = self::ecbb_sanitize_event_cost_currency($currency_code);
+			$currency_code = self::ecbb_sanitize_cost_currency($currency_code);
 			if ($currency_code === 'default') {
 				return $token;
 			}
 			if ($currency_code === 'none') {
-				$plain = self::ecbb_strip_cost_currency_symbols($token);
+				$plain = self::ecbb_strip_cost_symbols($token);
 				return $plain !== '' ? $plain : $token;
 			}
 
-			$symbol = self::ecbb_event_cost_currency_symbol($currency_code);
-			$amount = self::ecbb_strip_cost_currency_symbols($token);
+			$symbol = self::ecbb_cost_currency_symbol($currency_code);
+			$amount = self::ecbb_strip_cost_symbols($token);
 			if ($amount === '') {
 				return $token;
 			}
@@ -1132,25 +1112,25 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return string
 		 */
 
-		public static function ecbb_apply_event_cost_currency($cost_text, $currency_code)
+		public static function ecbb_apply_cost_currency($cost_text, $currency_code)
 		{
 			$cost_text = trim(wp_strip_all_tags(html_entity_decode((string) $cost_text, ENT_QUOTES, 'UTF-8')));
 			if ($cost_text === '') {
 				return '';
 			}
 
-			$currency_code = self::ecbb_sanitize_event_cost_currency($currency_code);
+			$currency_code = self::ecbb_sanitize_cost_currency($currency_code);
 			if ($currency_code === 'default') {
 				return $cost_text;
 			}
 
-			if (self::ecbb_cost_token_is_free($cost_text)) {
+			if (self::ecbb_cost_is_free($cost_text)) {
 				return __('Free', 'ecbb');
 			}
 
 			if (preg_match('/^(.+?)([-–—])(.+)$/u', $cost_text, $m)) {
-				$left  = self::ecbb_format_cost_token_with_currency(trim($m[1]), $currency_code);
-				$right = self::ecbb_format_cost_token_with_currency(trim($m[3]), $currency_code);
+				$left  = self::ecbb_format_cost_token(trim($m[1]), $currency_code);
+				$right = self::ecbb_format_cost_token(trim($m[3]), $currency_code);
 				if ($left !== '' && $right !== '') {
 					if (strcasecmp($left, $right) === 0) {
 						return $left;
@@ -1159,7 +1139,7 @@ if (! class_exists('ECBB_Markup', false)) {
 				}
 			}
 
-			return self::ecbb_format_cost_token_with_currency($cost_text, $currency_code);
+			return self::ecbb_format_cost_token($cost_text, $currency_code);
 		}
 
 		/**
@@ -1169,7 +1149,7 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return array<string,mixed>
 		 */
 
-		public static function ecbb_render_settings($settings = null)
+		public static function ecbb_print_scope_attrs($settings = null)
 		{
 			static $active = [];
 
@@ -1187,15 +1167,15 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return string
 		 */
 
-		public static function ecbb_resolve_event_cost_currency(array $item = [])
+		public static function ecbb_resolve_cost_currency(array $item = [])
 		{
 			if (isset($item['cost_currency']) && (string) $item['cost_currency'] !== '') {
-				return self::ecbb_sanitize_event_cost_currency($item['cost_currency']);
+				return self::ecbb_sanitize_cost_currency($item['cost_currency']);
 			}
 
-			$settings = self::ecbb_render_settings();
+			$settings = self::ecbb_print_scope_attrs();
 			if (isset($settings['event_cost_currency'])) {
-				return self::ecbb_sanitize_event_cost_currency($settings['event_cost_currency']);
+				return self::ecbb_sanitize_cost_currency($settings['event_cost_currency']);
 			}
 
 			return 'default';
@@ -1208,13 +1188,13 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return array<string,mixed>
 		 */
 
-		public static function ecbb_migrate_event_cost_currency_into_repeaters(array $settings)
+		public static function ecbb_migrate_cost_currency(array $settings)
 		{
 			if (! isset($settings['event_cost_currency'])) {
 				return $settings;
 			}
 
-			$currency = self::ecbb_sanitize_event_cost_currency($settings['event_cost_currency']);
+			$currency = self::ecbb_sanitize_cost_currency($settings['event_cost_currency']);
 
 			foreach (['parts_style1', 'parts_style2', 'parts_grid', 'parts'] as $key) {
 				if (empty($settings[$key]) || ! is_array($settings[$key])) {
@@ -1241,14 +1221,14 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return string Plain text (escaped by caller).
 		 */
 
-		public static function ecbb_format_event_cost_display($post_id, array $item = [])
+		public static function ecbb_format_cost_display($post_id, array $item = [])
 		{
 			$post_id = (int) $post_id;
 			if ($post_id < 1) {
 				return '';
 			}
 
-			$currency_code = self::ecbb_resolve_event_cost_currency($item);
+			$currency_code = self::ecbb_resolve_cost_currency($item);
 			$with_currency = $currency_code === 'default';
 
 			$formatted = '';
@@ -1264,7 +1244,7 @@ if (! class_exists('ECBB_Markup', false)) {
 				return __('Free', 'ecbb');
 			}
 
-			if (self::ecbb_cost_token_is_free($cost)) {
+			if (self::ecbb_cost_is_free($cost)) {
 				return __('Free', 'ecbb');
 			}
 
@@ -1273,10 +1253,10 @@ if (! class_exists('ECBB_Markup', false)) {
 				$right = trim($m[3]);
 				if ($left !== '' && $right !== '') {
 					if (strcasecmp($left, $right) === 0) {
-						$cost = self::ecbb_cost_token_is_free($left)
+						$cost = self::ecbb_cost_is_free($left)
 							? __('Free', 'ecbb')
 							: $left;
-					} elseif (self::ecbb_cost_token_is_free($left) && self::ecbb_cost_token_is_free($right)) {
+					} elseif (self::ecbb_cost_is_free($left) && self::ecbb_cost_is_free($right)) {
 						$cost = __('Free', 'ecbb');
 					} else {
 						$cost = $left . ' – ' . $right;
@@ -1284,7 +1264,7 @@ if (! class_exists('ECBB_Markup', false)) {
 				}
 			}
 
-			return self::ecbb_apply_event_cost_currency($cost, $currency_code);
+			return self::ecbb_apply_cost_currency($cost, $currency_code);
 		}
 
 		/**
@@ -1298,14 +1278,14 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return string HTML or empty when no terms.
 		 */
 
-		public static function ecbb_terms_list_html(array $terms, array $item, $style_attr = '', $skin = '', $part = 'categories')
+		public static function ecbb_terms_html(array $terms, array $item, $style_attr = '', $skin = '', $part = 'categories')
 		{
 			$style_attr = (string) $style_attr;
 			$skin       = (string) $skin;
 			$part       = sanitize_key((string) $part);
 			$link_style = $style_attr !== '' ? ' style="' . esc_attr($style_attr) . '"' : '';
 			$chip_each  = ('style1' === $skin && 'categories' === $part);
-			$link_terms = ! function_exists('ecbb_event_part_hover_style_active') || self::ecbb_event_part_hover_style_active($item);
+			$link_terms = self::ecbb_hover_style_active($item);
 
 			$sep = isset($item['terms_separator']) ? (string) $item['terms_separator'] : ', ';
 			$sep = $sep !== '' ? $sep : ', ';
@@ -1350,7 +1330,7 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return string
 		 */
 
-		public static function ecbb_part_idx_class($idx)
+		public static function ecbb_part_index_class($idx)
 		{
 			return 'ecbb-p' . absint($idx);
 		}
@@ -1362,9 +1342,9 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return bool
 		 */
 
-		public static function ecbb_event_part_title_link_active(array $item)
+		public static function ecbb_title_link_active(array $item)
 		{
-			return self::ecbb_is_truthy_setting($item['link'] ?? false, false);
+			return self::ecbb_is_truthy($item['link'] ?? false, false);
 		}
 
 		/**
@@ -1377,40 +1357,39 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return string        Space-separated classes (not escaped).
 		 */
 
-		public static function ecbb_part_wrap_classes($part, $idx, $skin = '', array $item = [])
+		public static function ecbb_part_classes($part, $idx, $skin = '', array $item = [])
 		{
-			$idx_c = self::ecbb_part_idx_class($idx);
+			$idx_c = self::ecbb_part_index_class($idx);
 			if ((string) $skin === 'style2') {
-				$classes = 'ecbb-event-part ' . ecbb_list2_part_class($part) . ' ' . $idx_c;
+				$part_cls = class_exists('ECBB_List_2', false)
+					? \ECBB_List_2::ecbb_part_class($part)
+					: 'ecbb-style2-' . str_replace('_', '-', (string) $part);
+				$classes = 'ecbb-event-part ' . $part_cls . ' ' . $idx_c;
 			} else {
 				$bem     = 'ecbb-event-part--' . str_replace('_', '-', (string) $part);
 				$classes = 'ecbb-event-part ' . $bem . ' ' . $idx_c;
 			}
 			if ($item !== []) {
 				$row = $item;
-				if (function_exists('ecbb_normalize_part_item')) {
-					$row = ecbb_normalize_part_item($row);
+				if ( class_exists( 'ECBB_Styles', false ) ) {
+					$row = \ECBB_Styles::ecbb_clean_part( $row );
 				}
 				$ui_part = isset($item['part']) ? (string) $item['part'] : (string) $part;
 				if (
 					$ui_part === 'title'
-					&& function_exists('ecbb_event_part_title_link_active')
-					&& ! self::ecbb_event_part_title_link_active($row)
+					&& ! self::ecbb_title_link_active($row)
 				) {
 					$classes .= ' ecbb-no-hover';
 				} elseif (
-					function_exists('ecbb_event_part_hover_style_active')
-					&& function_exists('ecbb_event_part_supports_hover_style_controls')
-					&& self::ecbb_event_part_supports_hover_style_controls($ui_part)
-					&& ! self::ecbb_event_part_hover_style_active($row)
+					self::ecbb_part_has_hover($ui_part)
+					&& ! self::ecbb_hover_style_active($row)
 				) {
 					$classes .= ' ecbb-no-hover';
 				}
 				if (
-					function_exists('ecbb_event_part_button_style_active')
-					&& self::ecbb_event_part_button_style_active($row)
-					&& function_exists('ecbb_button_part_slugs')
-					&& in_array($ui_part, ecbb_button_part_slugs(), true)
+					self::ecbb_btn_style_active($row)
+					&& class_exists( 'ECBB_Styles', false )
+					&& in_array($ui_part, \ECBB_Styles::ecbb_button_parts(), true)
 				) {
 					$classes .= ' ecbb-has-btn';
 				}
@@ -1426,7 +1405,7 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return string
 		 */
 
-		public static function ecbb_part_field_id(array $item, $idx)
+		public static function ecbb_part_dom_id(array $item, $idx)
 		{
 			if (! empty($item['id'])) {
 				return (string) $item['id'];
@@ -1442,9 +1421,9 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return string HTML attribute fragment (leading space + data-field-id), or empty.
 		 */
 
-		public static function ecbb_part_field_id_attr(array $item, $idx)
+		public static function ecbb_part_dom_id_attr(array $item, $idx)
 		{
-			$id = self::ecbb_part_field_id($item, $idx);
+			$id = self::ecbb_part_dom_id($item, $idx);
 			if ($id === '') {
 				return '';
 			}
@@ -1460,9 +1439,9 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return string HTML attribute fragment.
 		 */
 
-		public static function ecbb_part_wrapper_attrs(array $item, $idx, $style = '')
+		public static function ecbb_part_wrap_attrs(array $item, $idx, $style = '')
 		{
-			$attrs = self::ecbb_part_field_id_attr($item, $idx);
+			$attrs = self::ecbb_part_dom_id_attr($item, $idx);
 			if ($style !== '') {
 				$attrs .= ' style="' . esc_attr($style) . '"';
 			}
@@ -1476,7 +1455,7 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return array<int,array<string,mixed>>
 		 */
 
-		public static function ecbb_parts_rows_assign_ids(array $rows)
+		public static function ecbb_parts_assign_ids(array $rows)
 		{
 			foreach ($rows as $index => $row) {
 				if (! is_array($row) || ! empty($row['id'])) {
@@ -1500,17 +1479,15 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return string|false      Markup, empty string when nothing to show, false if not an extended part.
 		 */
 
-		public static function ecbb_event_part_extended_markup($post, array $item, $idx, $style, $skin = '')
+		public static function ecbb_render_part_ext($post, array $item, $idx, $style, $skin = '')
 		{
-			if (function_exists('ecbb_normalize_part_item')) {
-				$item = ecbb_normalize_part_item($item);
+			if ( class_exists( 'ECBB_Styles', false ) ) {
+				$item = \ECBB_Styles::ecbb_clean_part( $item );
 			}
 			$part = isset($item['part']) ? (string) $item['part'] : '';
 			$idx  = absint($idx);
 			$skin = (string) $skin;
-			$attr = function_exists('ecbb_part_wrapper_attrs')
-				? self::ecbb_part_wrapper_attrs($item, $idx, $style)
-				: ($style !== '' ? ' style="' . esc_attr($style) . '"' : '');
+			$attr = self::ecbb_part_wrap_attrs($item, $idx, $style);
 			$link_attr = '';
 			$detail_parts = [
 				'venue_full_address',
@@ -1534,19 +1511,19 @@ if (! class_exists('ECBB_Markup', false)) {
 			}
 
 			$wrap = function ($slug) use ($skin, $idx, $item) {
-				return esc_attr(self::ecbb_part_wrap_classes($slug, $idx, $skin, $item));
+				return esc_attr(self::ecbb_part_classes($slug, $idx, $skin, $item));
 			};
 
 			if ($part === 'venue') {
-				return self::ecbb_event_part_venue_markup($post, $item, $idx, $style, $skin);
+				return self::ecbb_render_venue($post, $item, $idx, $style, $skin);
 			}
 
 			if ($part === 'organizer') {
-				return self::ecbb_event_part_organizer_markup($post, $item, $idx, $style, $skin);
+				return self::ecbb_render_organizer($post, $item, $idx, $style, $skin);
 			}
 
 			$format = ($part === 'event_date' || $part === 'event_time')
-				? self::ecbb_event_part_resolve_php_format($part, $item)
+				? self::ecbb_part_date_php_fmt($part, $item)
 				: '';
 
 			if ($part === 'event_date') {
@@ -1570,7 +1547,7 @@ if (! class_exists('ECBB_Markup', false)) {
 			if ($part === 'event_time') {
 				$html = '';
 				$php  = $format !== '' ? $format : get_option('time_format');
-				$php  = self::ecbb_time_format_lowercase_meridiem($php);
+				$php  = self::ecbb_time_fmt_lower($php);
 				if (function_exists('tribe_get_start_time')) {
 					$html = (string) \tribe_get_start_time($post->ID, $php);
 				} elseif (function_exists('tribe_get_start_date')) {
@@ -1580,7 +1557,7 @@ if (! class_exists('ECBB_Markup', false)) {
 					$ts  = $raw ? strtotime($raw) : false;
 					$html = $ts ? date_i18n($php, $ts) : '';
 				}
-				$html = self::ecbb_format_time_meridiem_lowercase(trim(wp_strip_all_tags($html)));
+				$html = self::ecbb_time_lower_am(trim(wp_strip_all_tags($html)));
 				if ($html === '') {
 					return '';
 				}
@@ -1589,10 +1566,8 @@ if (! class_exists('ECBB_Markup', false)) {
 
 			if ($part === 'event_day') {
 				$html = '';
-				if (function_exists('ecbb_event_part_build_day_time_range_parts')) {
-					$pr = self::ecbb_event_part_build_day_time_range_parts($post->ID, []);
-					$html = isset($pr['day']) ? trim((string) $pr['day']) : '';
-				}
+				$pr = self::ecbb_build_day_time_parts($post->ID, []);
+				$html = isset($pr['day']) ? trim((string) $pr['day']) : '';
 				if ($html === '') {
 					$raw = (string) get_post_meta($post->ID, '_EventStartDate', true);
 					$ts  = $raw ? strtotime($raw) : false;
@@ -1605,7 +1580,7 @@ if (! class_exists('ECBB_Markup', false)) {
 			}
 
 			if (in_array($part, $detail_parts, true)) {
-				$html = self::ecbb_event_part_detail_plain($post->ID, $part);
+				$html = self::ecbb_part_detail_text($post->ID, $part);
 				if ($html === '') {
 					return '';
 				}
@@ -1641,9 +1616,7 @@ if (! class_exists('ECBB_Markup', false)) {
 			}
 
 			if ($part === 'event_cost') {
-				$cost = function_exists('ecbb_format_event_cost_display')
-					? self::ecbb_format_event_cost_display($post->ID, $item)
-					: '';
+				$cost = self::ecbb_format_cost_display($post->ID, $item);
 				if ($cost === '') {
 					return '';
 				}
@@ -1671,8 +1644,8 @@ if (! class_exists('ECBB_Markup', false)) {
 				} else {
 					$label = sanitize_text_field($label);
 				}
-				$btn_attr = self::ecbb_event_part_button_style_attr($item, $skin);
-				$inner_el = self::ecbb_event_part_action_link_inner_html(
+				$btn_attr = self::ecbb_btn_style_attr($item, $skin);
+				$inner_el = self::ecbb_action_link_html(
 					$item,
 					$url,
 					$label,
@@ -1695,8 +1668,8 @@ if (! class_exists('ECBB_Markup', false)) {
 				if (function_exists('tribe_events_has_tickets') && tribe_events_has_tickets($post->ID)) {
 					$url = $url . $frag;
 				}
-				$btn_attr = self::ecbb_event_part_button_style_attr($item, $skin);
-				$inner_el = self::ecbb_event_part_action_link_inner_html($item, $url, $label, $btn_attr, $link_attr);
+				$btn_attr = self::ecbb_btn_style_attr($item, $skin);
+				$inner_el = self::ecbb_action_link_html($item, $url, $label, $btn_attr, $link_attr);
 				return '<div class="' . $wrap('event_rsvp') . '"' . $attr . '>' . $inner_el . '</div>';
 			}
 
@@ -1711,8 +1684,8 @@ if (! class_exists('ECBB_Markup', false)) {
 				} else {
 					$label = sanitize_text_field($label);
 				}
-				$btn_attr = self::ecbb_event_part_button_style_attr($item, $skin);
-				$inner_el = self::ecbb_event_part_action_link_inner_html(
+				$btn_attr = self::ecbb_btn_style_attr($item, $skin);
+				$inner_el = self::ecbb_action_link_html(
 					$item,
 					get_permalink($post->ID),
 					$label,
@@ -1731,7 +1704,7 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return array<string, string> Slug => label.
 		 */
 
-		public static function ecbb_get_image_size_control_options()
+		public static function ecbb_image_size_opts()
 		{
 			$opts = [
 				'' => esc_html__('Default', 'ecbb'),
@@ -1762,7 +1735,7 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return string
 		 */
 
-		public static function ecbb_sanitize_attachment_image_size($slug, $fallback = 'large')
+		public static function ecbb_sanitize_image_size($slug, $fallback = 'large')
 		{
 			$slug = is_string($slug) ? trim($slug) : '';
 			if ($slug === '') {
@@ -1791,7 +1764,7 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return array<string, string>
 		 */
 
-		public static function ecbb_get_image_object_align_control_options()
+		public static function ecbb_image_align_opts()
 		{
 			return [
 				''   => esc_html__('Default', 'ecbb'),
@@ -1812,7 +1785,7 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return string CSS object-position value or empty when default.
 		 */
 
-		public static function ecbb_object_position_from_image_align($key)
+		public static function ecbb_align_to_position($key)
 		{
 			$key = is_string($key) ? strtolower(trim($key)) : '';
 			$map = [
@@ -1835,7 +1808,7 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return string[]
 		 */
 
-		public static function ecbb_event_part_interactive_hover_part_slugs()
+		public static function ecbb_hover_interactive_types()
 		{
 			return ['title', 'categories', 'tags', 'read_more', 'event_tickets', 'event_rsvp'];
 		}
@@ -1848,10 +1821,10 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return string[]
 		 */
 
-		public static function ecbb_event_part_types_with_hover_style_controls()
+		public static function ecbb_hover_part_types()
 		{
 			return array_merge(
-				self::ecbb_event_part_interactive_hover_part_slugs(),
+				self::ecbb_hover_interactive_types(),
 				['image']
 			);
 		}
@@ -1861,9 +1834,9 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return bool
 		 */
 
-		public static function ecbb_event_part_supports_hover_style_controls($part)
+		public static function ecbb_part_has_hover($part)
 		{
-			return in_array((string) $part, self::ecbb_event_part_types_with_hover_style_controls(), true);
+			return in_array((string) $part, self::ecbb_hover_part_types(), true);
 		}
 
 		/**
@@ -1872,7 +1845,7 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return array<int|string|bool>
 		 */
 
-		public static function ecbb_hover_toggle_on_values()
+		public static function ecbb_hover_on_values()
 		{
 			return ['yes', true, 1, '1'];
 		}
@@ -1884,9 +1857,9 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return bool
 		 */
 
-		public static function ecbb_hover_toggle_value_is_on($value)
+		public static function ecbb_hover_is_on($value)
 		{
-			if (in_array($value, self::ecbb_hover_toggle_on_values(), true)) {
+			if (in_array($value, self::ecbb_hover_on_values(), true)) {
 				return true;
 			}
 			if ($value === false || $value === 0 || $value === '0' || $value === 'no') {
@@ -1895,7 +1868,7 @@ if (! class_exists('ECBB_Markup', false)) {
 			if ($value === null || $value === '') {
 				return false;
 			}
-			return self::ecbb_is_truthy_setting($value, true);
+			return self::ecbb_is_truthy($value, true);
 		}
 
 		/**
@@ -1905,12 +1878,12 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return array<string,mixed>
 		 */
 
-		public static function ecbb_normalize_part_hover_toggle_row(array $row)
+		public static function ecbb_norm_hover_row(array $row)
 		{
 			if (! array_key_exists('ecbb_use_hover', $row)) {
 				return $row;
 			}
-			$row['ecbb_use_hover'] = self::ecbb_hover_toggle_value_is_on($row['ecbb_use_hover']) ? 'yes' : 'no';
+			$row['ecbb_use_hover'] = self::ecbb_hover_is_on($row['ecbb_use_hover']) ? 'yes' : 'no';
 			return $row;
 		}
 
@@ -1919,7 +1892,7 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return array<int,array<string,mixed>>
 		 */
 
-		public static function ecbb_normalize_parts_repeater_rows_hover(array $rows)
+		public static function ecbb_norm_parts_hover(array $rows)
 		{
 			foreach ($rows as $index => $row) {
 				if (! is_array($row)) {
@@ -1928,12 +1901,11 @@ if (! class_exists('ECBB_Markup', false)) {
 				$part = isset($row['part']) ? (string) $row['part'] : '';
 				if (
 					$part === ''
-					|| ! function_exists('ecbb_event_part_supports_hover_style_controls')
-					|| ! self::ecbb_event_part_supports_hover_style_controls($part)
+					|| ! self::ecbb_part_has_hover($part)
 				) {
 					continue;
 				}
-				$rows[$index] = self::ecbb_normalize_part_hover_toggle_row($row);
+				$rows[$index] = self::ecbb_norm_hover_row($row);
 			}
 			return $rows;
 		}
@@ -1943,13 +1915,13 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return array<string,mixed>
 		 */
 
-		public static function ecbb_normalize_element_parts_hover_toggles(array $settings)
+		public static function ecbb_norm_settings_hover(array $settings)
 		{
 			foreach (['parts_style1', 'parts_style2', 'parts_grid', 'parts'] as $key) {
 				if (empty($settings[$key]) || ! is_array($settings[$key])) {
 					continue;
 				}
-				$settings[$key] = self::ecbb_normalize_parts_repeater_rows_hover($settings[$key]);
+				$settings[$key] = self::ecbb_norm_parts_hover($settings[$key]);
 			}
 			return $settings;
 		}
@@ -1961,23 +1933,22 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return bool
 		 */
 
-		public static function ecbb_event_part_hover_style_active(array $item)
+		public static function ecbb_hover_style_active(array $item)
 		{
 			$ui_part = isset($item['part']) ? (string) $item['part'] : '';
-			if (! self::ecbb_event_part_supports_hover_style_controls($ui_part)) {
+			if (! self::ecbb_part_has_hover($ui_part)) {
 				return false;
 			}
 			if (
 				$ui_part === 'title'
-				&& function_exists('ecbb_event_part_title_link_active')
-				&& ! self::ecbb_event_part_title_link_active($item)
+				&& ! self::ecbb_title_link_active($item)
 			) {
 				return false;
 			}
 			if (! array_key_exists('ecbb_use_hover', $item)) {
 				return true;
 			}
-			return self::ecbb_hover_toggle_value_is_on($item['ecbb_use_hover']);
+			return self::ecbb_hover_is_on($item['ecbb_use_hover']);
 		}
 
 		/**
@@ -1988,7 +1959,7 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return bool
 		 */
 
-		public static function ecbb_is_truthy_setting($value, $default = false)
+		public static function ecbb_is_truthy($value, $default = false)
 		{
 			if ($value === null) {
 				return $default;
@@ -2021,17 +1992,17 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return bool
 		 */
 
-		public static function ecbb_loop_image_uses_dual_layer(array $item)
+		public static function ecbb_image_dual_layer(array $item)
 		{
-			if (function_exists('ecbb_event_part_hover_style_active') && ! self::ecbb_event_part_hover_style_active($item)) {
+			if (! self::ecbb_hover_style_active($item)) {
 				return false;
 			}
-			$base = self::ecbb_sanitize_attachment_image_size($item['image_size'] ?? '', 'large');
+			$base = self::ecbb_sanitize_image_size($item['image_size'] ?? '', 'large');
 			$raw  = isset($item['image_size_hover']) ? trim((string) $item['image_size_hover']) : '';
 			if ($raw === '') {
 				return false;
 			}
-			$hover = self::ecbb_sanitize_attachment_image_size($raw, $base);
+			$hover = self::ecbb_sanitize_image_size($raw, $base);
 			return $hover !== $base;
 		}
 
@@ -2044,21 +2015,21 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return string HTML or empty.
 		 */
 
-		public static function ecbb_render_loop_featured_images($thumb_id, array $item)
+		public static function ecbb_render_featured_img($thumb_id, array $item)
 		{
 			$thumb_id = (int) $thumb_id;
 			if (! $thumb_id) {
 				return '';
 			}
 
-			if (function_exists('ecbb_event_part_hover_style_active') && ! self::ecbb_event_part_hover_style_active($item)) {
+			if (! self::ecbb_hover_style_active($item)) {
 				$item['image_size_hover']              = '';
 				$item['ecbb_image_object_align_hover'] = '';
 			}
 
-			$size_base = self::ecbb_sanitize_attachment_image_size($item['image_size'] ?? '', 'large');
+			$size_base = self::ecbb_sanitize_image_size($item['image_size'] ?? '', 'large');
 			$raw_hover = isset($item['image_size_hover']) ? trim((string) $item['image_size_hover']) : '';
-			$size_hover = $raw_hover !== '' ? self::ecbb_sanitize_attachment_image_size($raw_hover, $size_base) : '';
+			$size_hover = $raw_hover !== '' ? self::ecbb_sanitize_image_size($raw_hover, $size_base) : '';
 			$dual       = ($raw_hover !== '' && $size_hover !== $size_base);
 
 			if (! $dual) {
@@ -2103,7 +2074,7 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return string
 		 */
 
-		public static function ecbb_event_part_hover_state_selectors($scope_sel)
+		public static function ecbb_hover_state_selectors($scope_sel)
 		{
 			$scope_sel = trim((string) $scope_sel);
 			if ($scope_sel === '') {
@@ -2135,7 +2106,7 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return array{base:string, hover:string}
 		 */
 
-		public static function ecbb_event_part_hover_animation_css($scope_sel, $anim)
+		public static function ecbb_hover_anim_css($scope_sel, $anim)
 		{
 			$anim = is_string($anim) ? $anim : '';
 			$dur  = '0.38s';
@@ -2146,7 +2117,7 @@ if (! class_exists('ECBB_Markup', false)) {
 			}
 
 			$base  = "{$scope_sel}{transition:transform {$dur} {$ease};transform:none;transform-origin:center center;}";
-			$hover = self::ecbb_event_part_hover_state_selectors($scope_sel);
+			$hover = self::ecbb_hover_state_selectors($scope_sel);
 
 			switch ($anim) {
 				case 'fade_in_up':
@@ -2189,7 +2160,7 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return string style-1 or style-2
 		 */
 
-		public static function ecbb_sanitize_list_item_style($value)
+		public static function ecbb_sanitize_list_style($value)
 		{
 			$v = is_string($value) ? trim($value) : '';
 			return in_array($v, ['style-1', 'style-2'], true) ? $v : 'style-1';
@@ -2203,7 +2174,7 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return array<int,array>
 		 */
 
-		public static function ecbb_parts_rows_clean(array $parts)
+		public static function ecbb_parts_clean(array $parts)
 		{
 			$out = [];
 			foreach ($parts as $row) {
@@ -2223,9 +2194,9 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return string[]
 		 */
 
-		public static function ecbb_parts_slug_stack(array $parts)
+		public static function ecbb_parts_slugs(array $parts)
 		{
-			$clean = self::ecbb_parts_rows_clean($parts);
+			$clean = self::ecbb_parts_clean($parts);
 			$out   = [];
 			foreach ($clean as $row) {
 				if (! is_array($row)) {
@@ -2244,9 +2215,9 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return bool
 		 */
 
-		public static function ecbb_parts_stack_matches_defaults(array $parts, array $default_rows)
+		public static function ecbb_parts_match_defaults(array $parts, array $default_rows)
 		{
-			return self::ecbb_parts_slug_stack($parts) === self::ecbb_parts_slug_stack($default_rows);
+			return self::ecbb_parts_slugs($parts) === self::ecbb_parts_slugs($default_rows);
 		}
 
 		/**
@@ -2256,9 +2227,9 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return bool
 		 */
 
-		public static function ecbb_parts_array_is_effectively_empty(array $parts)
+		public static function ecbb_parts_is_empty(array $parts)
 		{
-			return self::ecbb_parts_rows_clean($parts) === [];
+			return self::ecbb_parts_clean($parts) === [];
 		}
 
 		/**
@@ -2273,18 +2244,14 @@ if (! class_exists('ECBB_Markup', false)) {
 		 * @return array<int,array<string,mixed>>
 		 */
 
-		public static function ecbb_resolve_event_parts_for_context(array $settings, $template, $item_chrome)
+		public static function ecbb_resolve_parts(array $settings, $template, $item_chrome)
 		{
 			$prepare = static function ($parts) {
 				if (! is_array($parts)) {
 					return [];
 				}
-				if (function_exists('ecbb_parts_rows_assign_ids')) {
-					$parts = self::ecbb_parts_rows_assign_ids($parts);
-				}
-				if (function_exists('ecbb_normalize_parts_repeater_rows_hover')) {
-					$parts = self::ecbb_normalize_parts_repeater_rows_hover($parts);
-				}
+				$parts = self::ecbb_parts_assign_ids($parts);
+				$parts = self::ecbb_norm_parts_hover($parts);
 				return $parts;
 			};
 
@@ -2296,19 +2263,14 @@ if (! class_exists('ECBB_Markup', false)) {
 				$template = 'list';
 			}
 
-			$item_chrome = function_exists('ecbb_sanitize_list_item_style')
-				? self::ecbb_sanitize_list_item_style($item_chrome)
-				: (in_array((string) $item_chrome, ['style-1', 'style-2'], true) ? (string) $item_chrome : 'style-1');
+			$item_chrome = self::ecbb_sanitize_list_style($item_chrome);
 
 			$non_empty = static function ($key) use ($settings) {
 				$v = $settings[$key] ?? null;
 				if (! is_array($v) || [] === $v) {
 					return null;
 				}
-				if (
-					function_exists('ecbb_parts_array_is_effectively_empty')
-					&& self::ecbb_parts_array_is_effectively_empty($v)
-				) {
+				if ( self::ecbb_parts_is_empty($v) ) {
 					return null;
 				}
 				return $v;
@@ -2350,12 +2312,12 @@ if (! class_exists('ECBB_Markup', false)) {
 		}
 
 		/**
-		 * @param array  $parts Clean rows (see ecbb_parts_rows_clean).
+		 * @param array  $parts Clean rows (see ecbb_parts_clean).
 		 * @param string $slug  Part slug.
 		 * @return bool
 		 */
 
-		public static function ecbb_parts_has_part(array $parts, $slug)
+		public static function ecbb_parts_has(array $parts, $slug)
 		{
 			$slug = (string) $slug;
 			foreach ($parts as $row) {
@@ -2368,408 +2330,5 @@ if (! class_exists('ECBB_Markup', false)) {
 			}
 			return false;
 		}
-	}
-}
-
-if (! function_exists('ecbb_normalize_bricks_color')) {
-	function ecbb_normalize_bricks_color(...$args)
-	{
-		return ECBB_Markup::ecbb_normalize_bricks_color(...$args);
-	}
-}
-if (! function_exists('ecbb_event_part_resolve_php_format')) {
-	function ecbb_event_part_resolve_php_format(...$args)
-	{
-		return ECBB_Markup::ecbb_event_part_resolve_php_format(...$args);
-	}
-}
-if (! function_exists('ecbb_venue_name_plain')) {
-	function ecbb_venue_name_plain(...$args)
-	{
-		return ECBB_Markup::ecbb_venue_name_plain(...$args);
-	}
-}
-if (! function_exists('ecbb_venue_id_for_event')) {
-	function ecbb_venue_id_for_event(...$args)
-	{
-		return ECBB_Markup::ecbb_venue_id_for_event(...$args);
-	}
-}
-if (! function_exists('ecbb_venue_full_address_plain')) {
-	function ecbb_venue_full_address_plain(...$args)
-	{
-		return ECBB_Markup::ecbb_venue_full_address_plain(...$args);
-	}
-}
-if (! function_exists('ecbb_venue_name_and_address_plain')) {
-	function ecbb_venue_name_and_address_plain(...$args)
-	{
-		return ECBB_Markup::ecbb_venue_name_and_address_plain(...$args);
-	}
-}
-if (! function_exists('ecbb_venue_name_and_state_plain')) {
-	function ecbb_venue_name_and_state_plain(...$args)
-	{
-		return ECBB_Markup::ecbb_venue_name_and_state_plain(...$args);
-	}
-}
-if (! function_exists('ecbb_venue_resolved_display')) {
-	function ecbb_venue_resolved_display(...$args)
-	{
-		return ECBB_Markup::ecbb_venue_resolved_display(...$args);
-	}
-}
-if (! function_exists('ecbb_venue_part_uses_full_details')) {
-	function ecbb_venue_part_uses_full_details(...$args)
-	{
-		return ECBB_Markup::ecbb_venue_part_uses_full_details(...$args);
-	}
-}
-if (! function_exists('ecbb_venue_part_plain_text')) {
-	function ecbb_venue_part_plain_text(...$args)
-	{
-		return ECBB_Markup::ecbb_venue_part_plain_text(...$args);
-	}
-}
-if (! function_exists('ecbb_event_part_venue_markup')) {
-	function ecbb_event_part_venue_markup(...$args)
-	{
-		return ECBB_Markup::ecbb_event_part_venue_markup(...$args);
-	}
-}
-if (! function_exists('ecbb_organizer_name_plain')) {
-	function ecbb_organizer_name_plain(...$args)
-	{
-		return ECBB_Markup::ecbb_organizer_name_plain(...$args);
-	}
-}
-if (! function_exists('ecbb_organizer_full_details_plain')) {
-	function ecbb_organizer_full_details_plain(...$args)
-	{
-		return ECBB_Markup::ecbb_organizer_full_details_plain(...$args);
-	}
-}
-if (! function_exists('ecbb_organizer_part_uses_full_details')) {
-	function ecbb_organizer_part_uses_full_details(...$args)
-	{
-		return ECBB_Markup::ecbb_organizer_part_uses_full_details(...$args);
-	}
-}
-if (! function_exists('ecbb_organizer_part_plain_text')) {
-	function ecbb_organizer_part_plain_text(...$args)
-	{
-		return ECBB_Markup::ecbb_organizer_part_plain_text(...$args);
-	}
-}
-if (! function_exists('ecbb_event_part_organizer_markup')) {
-	function ecbb_event_part_organizer_markup(...$args)
-	{
-		return ECBB_Markup::ecbb_event_part_organizer_markup(...$args);
-	}
-}
-if (! function_exists('ecbb_event_part_detail_plain')) {
-	function ecbb_event_part_detail_plain(...$args)
-	{
-		return ECBB_Markup::ecbb_event_part_detail_plain(...$args);
-	}
-}
-if (! function_exists('ecbb_event_part_build_day_time_range_parts')) {
-	function ecbb_event_part_build_day_time_range_parts(...$args)
-	{
-		return ECBB_Markup::ecbb_event_part_build_day_time_range_parts(...$args);
-	}
-}
-if (! function_exists('ecbb_event_part_is_action_link_part')) {
-	function ecbb_event_part_is_action_link_part(...$args)
-	{
-		return ECBB_Markup::ecbb_event_part_is_action_link_part(...$args);
-	}
-}
-if (! function_exists('ecbb_event_part_button_style_active')) {
-	function ecbb_event_part_button_style_active(...$args)
-	{
-		return ECBB_Markup::ecbb_event_part_button_style_active(...$args);
-	}
-}
-if (! function_exists('ecbb_event_part_action_link_inner_html')) {
-	function ecbb_event_part_action_link_inner_html(...$args)
-	{
-		return ECBB_Markup::ecbb_event_part_action_link_inner_html(...$args);
-	}
-}
-if (! function_exists('ecbb_event_part_button_style_attr')) {
-	function ecbb_event_part_button_style_attr(...$args)
-	{
-		return ECBB_Markup::ecbb_event_part_button_style_attr(...$args);
-	}
-}
-if (! function_exists('ecbb_cost_token_is_free')) {
-	function ecbb_cost_token_is_free(...$args)
-	{
-		return ECBB_Markup::ecbb_cost_token_is_free(...$args);
-	}
-}
-if (! function_exists('ecbb_event_cost_currency_options')) {
-	function ecbb_event_cost_currency_options(...$args)
-	{
-		return ECBB_Markup::ecbb_event_cost_currency_options(...$args);
-	}
-}
-if (! function_exists('ecbb_sanitize_event_cost_currency')) {
-	function ecbb_sanitize_event_cost_currency(...$args)
-	{
-		return ECBB_Markup::ecbb_sanitize_event_cost_currency(...$args);
-	}
-}
-if (! function_exists('ecbb_event_cost_currency_symbol')) {
-	function ecbb_event_cost_currency_symbol(...$args)
-	{
-		return ECBB_Markup::ecbb_event_cost_currency_symbol(...$args);
-	}
-}
-if (! function_exists('ecbb_strip_cost_currency_symbols')) {
-	function ecbb_strip_cost_currency_symbols(...$args)
-	{
-		return ECBB_Markup::ecbb_strip_cost_currency_symbols(...$args);
-	}
-}
-if (! function_exists('ecbb_format_cost_token_with_currency')) {
-	function ecbb_format_cost_token_with_currency(...$args)
-	{
-		return ECBB_Markup::ecbb_format_cost_token_with_currency(...$args);
-	}
-}
-if (! function_exists('ecbb_apply_event_cost_currency')) {
-	function ecbb_apply_event_cost_currency(...$args)
-	{
-		return ECBB_Markup::ecbb_apply_event_cost_currency(...$args);
-	}
-}
-if (! function_exists('ecbb_render_settings')) {
-	function ecbb_render_settings(...$args)
-	{
-		return ECBB_Markup::ecbb_render_settings(...$args);
-	}
-}
-if (! function_exists('ecbb_resolve_event_cost_currency')) {
-	function ecbb_resolve_event_cost_currency(...$args)
-	{
-		return ECBB_Markup::ecbb_resolve_event_cost_currency(...$args);
-	}
-}
-if (! function_exists('ecbb_migrate_event_cost_currency_into_repeaters')) {
-	function ecbb_migrate_event_cost_currency_into_repeaters(...$args)
-	{
-		return ECBB_Markup::ecbb_migrate_event_cost_currency_into_repeaters(...$args);
-	}
-}
-if (! function_exists('ecbb_format_event_cost_display')) {
-	function ecbb_format_event_cost_display(...$args)
-	{
-		return ECBB_Markup::ecbb_format_event_cost_display(...$args);
-	}
-}
-if (! function_exists('ecbb_terms_list_html')) {
-	function ecbb_terms_list_html(...$args)
-	{
-		return ECBB_Markup::ecbb_terms_list_html(...$args);
-	}
-}
-if (! function_exists('ecbb_part_idx_class')) {
-	function ecbb_part_idx_class(...$args)
-	{
-		return ECBB_Markup::ecbb_part_idx_class(...$args);
-	}
-}
-if (! function_exists('ecbb_event_part_title_link_active')) {
-	function ecbb_event_part_title_link_active(...$args)
-	{
-		return ECBB_Markup::ecbb_event_part_title_link_active(...$args);
-	}
-}
-if (! function_exists('ecbb_part_wrap_classes')) {
-	function ecbb_part_wrap_classes(...$args)
-	{
-		return ECBB_Markup::ecbb_part_wrap_classes(...$args);
-	}
-}
-if (! function_exists('ecbb_part_field_id')) {
-	function ecbb_part_field_id(...$args)
-	{
-		return ECBB_Markup::ecbb_part_field_id(...$args);
-	}
-}
-if (! function_exists('ecbb_part_field_id_attr')) {
-	function ecbb_part_field_id_attr(...$args)
-	{
-		return ECBB_Markup::ecbb_part_field_id_attr(...$args);
-	}
-}
-if (! function_exists('ecbb_part_wrapper_attrs')) {
-	function ecbb_part_wrapper_attrs(...$args)
-	{
-		return ECBB_Markup::ecbb_part_wrapper_attrs(...$args);
-	}
-}
-if (! function_exists('ecbb_parts_rows_assign_ids')) {
-	function ecbb_parts_rows_assign_ids(...$args)
-	{
-		return ECBB_Markup::ecbb_parts_rows_assign_ids(...$args);
-	}
-}
-if (! function_exists('ecbb_event_part_extended_markup')) {
-	function ecbb_event_part_extended_markup(...$args)
-	{
-		return ECBB_Markup::ecbb_event_part_extended_markup(...$args);
-	}
-}
-if (! function_exists('ecbb_get_image_size_control_options')) {
-	function ecbb_get_image_size_control_options(...$args)
-	{
-		return ECBB_Markup::ecbb_get_image_size_control_options(...$args);
-	}
-}
-if (! function_exists('ecbb_sanitize_attachment_image_size')) {
-	function ecbb_sanitize_attachment_image_size(...$args)
-	{
-		return ECBB_Markup::ecbb_sanitize_attachment_image_size(...$args);
-	}
-}
-if (! function_exists('ecbb_get_image_object_align_control_options')) {
-	function ecbb_get_image_object_align_control_options(...$args)
-	{
-		return ECBB_Markup::ecbb_get_image_object_align_control_options(...$args);
-	}
-}
-if (! function_exists('ecbb_object_position_from_image_align')) {
-	function ecbb_object_position_from_image_align(...$args)
-	{
-		return ECBB_Markup::ecbb_object_position_from_image_align(...$args);
-	}
-}
-if (! function_exists('ecbb_event_part_interactive_hover_part_slugs')) {
-	function ecbb_event_part_interactive_hover_part_slugs(...$args)
-	{
-		return ECBB_Markup::ecbb_event_part_interactive_hover_part_slugs(...$args);
-	}
-}
-if (! function_exists('ecbb_event_part_types_with_hover_style_controls')) {
-	function ecbb_event_part_types_with_hover_style_controls(...$args)
-	{
-		return ECBB_Markup::ecbb_event_part_types_with_hover_style_controls(...$args);
-	}
-}
-if (! function_exists('ecbb_event_part_supports_hover_style_controls')) {
-	function ecbb_event_part_supports_hover_style_controls(...$args)
-	{
-		return ECBB_Markup::ecbb_event_part_supports_hover_style_controls(...$args);
-	}
-}
-if (! function_exists('ecbb_hover_toggle_on_values')) {
-	function ecbb_hover_toggle_on_values(...$args)
-	{
-		return ECBB_Markup::ecbb_hover_toggle_on_values(...$args);
-	}
-}
-if (! function_exists('ecbb_hover_toggle_value_is_on')) {
-	function ecbb_hover_toggle_value_is_on(...$args)
-	{
-		return ECBB_Markup::ecbb_hover_toggle_value_is_on(...$args);
-	}
-}
-if (! function_exists('ecbb_normalize_part_hover_toggle_row')) {
-	function ecbb_normalize_part_hover_toggle_row(...$args)
-	{
-		return ECBB_Markup::ecbb_normalize_part_hover_toggle_row(...$args);
-	}
-}
-if (! function_exists('ecbb_normalize_parts_repeater_rows_hover')) {
-	function ecbb_normalize_parts_repeater_rows_hover(...$args)
-	{
-		return ECBB_Markup::ecbb_normalize_parts_repeater_rows_hover(...$args);
-	}
-}
-if (! function_exists('ecbb_normalize_element_parts_hover_toggles')) {
-	function ecbb_normalize_element_parts_hover_toggles(...$args)
-	{
-		return ECBB_Markup::ecbb_normalize_element_parts_hover_toggles(...$args);
-	}
-}
-if (! function_exists('ecbb_event_part_hover_style_active')) {
-	function ecbb_event_part_hover_style_active(...$args)
-	{
-		return ECBB_Markup::ecbb_event_part_hover_style_active(...$args);
-	}
-}
-if (! function_exists('ecbb_is_truthy_setting')) {
-	function ecbb_is_truthy_setting(...$args)
-	{
-		return ECBB_Markup::ecbb_is_truthy_setting(...$args);
-	}
-}
-if (! function_exists('ecbb_loop_image_uses_dual_layer')) {
-	function ecbb_loop_image_uses_dual_layer(...$args)
-	{
-		return ECBB_Markup::ecbb_loop_image_uses_dual_layer(...$args);
-	}
-}
-if (! function_exists('ecbb_render_loop_featured_images')) {
-	function ecbb_render_loop_featured_images(...$args)
-	{
-		return ECBB_Markup::ecbb_render_loop_featured_images(...$args);
-	}
-}
-if (! function_exists('ecbb_event_part_hover_state_selectors')) {
-	function ecbb_event_part_hover_state_selectors(...$args)
-	{
-		return ECBB_Markup::ecbb_event_part_hover_state_selectors(...$args);
-	}
-}
-if (! function_exists('ecbb_event_part_hover_animation_css')) {
-	function ecbb_event_part_hover_animation_css(...$args)
-	{
-		return ECBB_Markup::ecbb_event_part_hover_animation_css(...$args);
-	}
-}
-if (! function_exists('ecbb_sanitize_list_item_style')) {
-	function ecbb_sanitize_list_item_style(...$args)
-	{
-		return ECBB_Markup::ecbb_sanitize_list_item_style(...$args);
-	}
-}
-if (! function_exists('ecbb_parts_rows_clean')) {
-	function ecbb_parts_rows_clean(...$args)
-	{
-		return ECBB_Markup::ecbb_parts_rows_clean(...$args);
-	}
-}
-if (! function_exists('ecbb_parts_slug_stack')) {
-	function ecbb_parts_slug_stack(...$args)
-	{
-		return ECBB_Markup::ecbb_parts_slug_stack(...$args);
-	}
-}
-if (! function_exists('ecbb_parts_stack_matches_defaults')) {
-	function ecbb_parts_stack_matches_defaults(...$args)
-	{
-		return ECBB_Markup::ecbb_parts_stack_matches_defaults(...$args);
-	}
-}
-if (! function_exists('ecbb_parts_array_is_effectively_empty')) {
-	function ecbb_parts_array_is_effectively_empty(...$args)
-	{
-		return ECBB_Markup::ecbb_parts_array_is_effectively_empty(...$args);
-	}
-}
-if (! function_exists('ecbb_resolve_event_parts_for_context')) {
-	function ecbb_resolve_event_parts_for_context(...$args)
-	{
-		return ECBB_Markup::ecbb_resolve_event_parts_for_context(...$args);
-	}
-}
-if (! function_exists('ecbb_parts_has_part')) {
-	function ecbb_parts_has_part(...$args)
-	{
-		return ECBB_Markup::ecbb_parts_has_part(...$args);
 	}
 }

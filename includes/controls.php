@@ -9,249 +9,170 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-/**
- * @return string[]
- */
-
 if ( ! class_exists( 'ECBB_Controls', false ) ) {
 
 	final class ECBB_Controls {
 
-	public static function ecbb_repeater_hover_part_slugs() {
-	return function_exists( 'ecbb_event_part_types_with_hover_style_controls' )
-		? ecbb_event_part_types_with_hover_style_controls()
-		: [ 'title', 'categories', 'tags', 'read_more', 'event_tickets', 'event_rsvp', 'image' ];
-}
-
-/**
- * Interactive parts that support hover (title, chips, buttons). Excludes image.
- *
- * @return string[]
- */
-
-	public static function ecbb_repeater_interactive_hover_part_slugs() {
-	return [ 'title', 'categories', 'tags', 'read_more', 'event_tickets', 'event_rsvp' ];
-}
-
-/**
- * @return array<int,array{0:string,1:string,2:mixed}>|array{0:string,1:string,2:mixed}
- */
-
-	public static function ecbb_repeater_required_interactive_hover() {
-	return [ 'part', '=', self::ecbb_repeater_interactive_hover_part_slugs() ];
-}
-
-/**
- * @return array{0:string,1:string,2:mixed}
- */
-
-	public static function ecbb_repeater_required_hover_toggle_visible() {
-	return [ 'part', '=', self::ecbb_repeater_hover_part_slugs() ];
-}
-
-/**
- * Bricks `required` rule: hover toggle is on.
- *
- * @return array{0:string,1:string,2:array<int|string|bool>}
- */
-
-	public static function ecbb_repeater_required_hover_on() {
-	return [
-		'ecbb_use_hover',
-		'=',
-		function_exists( 'ecbb_hover_toggle_on_values' )
-			? ecbb_hover_toggle_on_values()
-			: [ 'yes', true, 1, '1' ],
-	];
-}
-
-/**
- * @return array<int,array{0:string,1:string,2:mixed>>
- */
-
-	public static function ecbb_repeater_required_hover_style_group() {
-	return [
-		[ 'part', '=', self::ecbb_repeater_hover_part_slugs() ],
-		self::ecbb_repeater_required_hover_on(),
-	];
-}
-
-/**
- * @return array<int,array{0:string,1:string,2:mixed>>
- */
-
-	public static function ecbb_repeater_required_hover_details() {
-	return self::ecbb_repeater_required_hover_style_group();
-}
-
-/**
- * @return array<int,array{0:string,1:string,2:mixed>>
- */
-
-	public static function ecbb_repeater_required_hover_background() {
-	return [
-		[ 'part', '=', self::ecbb_repeater_hover_background_part_slugs() ],
-		self::ecbb_repeater_required_hover_on(),
-	];
-}
-
-/**
- * @return array<int,array{0:string,1:string,2:mixed>>
- */
-
-	public static function ecbb_repeater_required_hover_text_decoration() {
-	return [
-		[ 'part', '=', self::ecbb_repeater_hover_text_decoration_part_slugs() ],
-		self::ecbb_repeater_required_hover_on(),
-	];
-}
-
-/**
- * Repeater field keys gated by hover eligibility (builder tab CSS + JS).
- *
- * @return string[]
- */
-
-	public static function ecbb_repeater_hover_control_keys() {
-	return [
-		'ecbb_use_hover',
-		'ecbb_sep_hover',
-		'ecbb_hover_color',
-		'ecbb_hover_background',
-		'ecbb_hover_text_decoration',
-		'ecbb_hover_animation',
-		'image_size_hover',
-		'ecbb_image_object_align_hover',
-	];
-}
-
-/**
- * Button parts that support optional button chrome.
- *
- * @return string[]
- */
-
-	public static function ecbb_repeater_button_part_slugs() {
-	return [ 'read_more', 'event_tickets', 'event_rsvp' ];
-}
-
-/**
- * @return array<int,array{0:string,1:string,2:mixed>>
- */
-
-	public static function ecbb_repeater_required_btn_style_on() {
-	return [
-		[ 'part', '=', self::ecbb_repeater_button_part_slugs() ],
-		[ 'btn_style', '=', true ],
-	];
-}
-
-/**
- * @return array<int,array{0:string,1:string,2:mixed>>
- */
-
-	public static function ecbb_repeater_required_btn_style_group() {
-	return self::ecbb_repeater_required_btn_style_on();
-}
-
-/**
- * @return array<int,array{0:string,1:string,2:mixed>>
- */
-
-	public static function ecbb_repeater_required_btn_border_group() {
-	return self::ecbb_repeater_required_btn_style_on();
-}
-
-/**
- * Repeater field keys in the border & padding accordion (builder tab CSS + JS).
- *
- * @return string[]
- */
-
-	public static function ecbb_repeater_btn_border_control_keys() {
-	return [
-		'btn_sep_border',
-		'btn_border_type',
-		'btn_border_width',
-		'btn_border_color',
-		'btn_padding',
-		'btn_border_radius',
-	];
-}
-
-/**
- * Repeater field keys in the button fill / text accordion.
- *
- * @return string[]
- */
-
-	public static function ecbb_repeater_btn_style_control_keys() {
-	return [
-		'btn_sep_style',
-		'btn_bg',
-		'btn_text_color',
-	];
-}
-
-/**
- * @return string[]
- */
-
-	public static function ecbb_repeater_hover_text_decoration_part_slugs() {
-	return self::ecbb_repeater_interactive_hover_part_slugs();
-}
-
-/**
- * Part types that show hover background.
- *
- * @return string[]
- */
-
-	public static function ecbb_repeater_hover_background_part_slugs() {
-	return self::ecbb_repeater_interactive_hover_part_slugs();
-}
-
-/**
- * @return array<int,array{0:string,1:string,2:mixed}>
- */
-
-	public static function ecbb_repeater_required_inner_background() {
-	return [ [ 'part', '=', 'title' ] ];
-}
-
-/**
- * Bricks `css` rule for a repeater sub-field (live builder preview + frontend).
- *
- * @param string $property CSS property or Bricks shorthand (e.g. font, typography).
- * @param string $selector Optional selector relative to the repeater field target.
- * @return array<int,array<string,string>>
- */
-
-	public static function ecbb_repeater_control_css( $property, $selector = '' ) {
-	$rule = [ 'property' => (string) $property ];
-	if ( $selector !== '' ) {
-		$rule['selector'] = $selector;
+	public static function ecbb_hover_part_types() {
+		return class_exists( 'ECBB_Markup', false )
+			? \ECBB_Markup::ecbb_hover_part_types()
+			: [ 'title', 'categories', 'tags', 'read_more', 'event_tickets', 'event_rsvp', 'image' ];
 	}
-	return [ $rule ];
-}
 
-/**
- * Repeater sub-fields for event parts (content + grouped style controls).
- *
- * @return array<string,array<string,mixed>>
- */
+	/**
+	 * Interactive parts that support hover (title, chips, buttons). Excludes image.
+	 *
+	 * @return string[]
+	 */
+	public static function ecbb_hover_interactive_types() {
+		return class_exists( 'ECBB_Markup', false )
+			? \ECBB_Markup::ecbb_hover_interactive_types()
+			: [ 'title', 'categories', 'tags', 'read_more', 'event_tickets', 'event_rsvp' ];
+	}
 
-	public static function ecbb_get_repeater_fields() {
-	$date_formats = function_exists( 'ecbb_date_format_preset_options' )
-		? ecbb_date_format_preset_options()
-		: [];
+	/**
+	 * @return array{0:string,1:string,2:mixed}
+	 */
+	public static function ecbb_req_show_hover_toggle() {
+		return [ 'part', '=', self::ecbb_hover_part_types() ];
+	}
+
+	/**
+	 * Bricks `required` rule: hover toggle is on.
+	 *
+	 * @return array{0:string,1:string,2:array<int|string|bool>}
+	 */
+	public static function ecbb_req_hover_on() {
+		return [
+			'ecbb_use_hover',
+			'=',
+			class_exists( 'ECBB_Markup', false )
+				? \ECBB_Markup::ecbb_hover_on_values()
+				: [ 'yes', true, 1, '1' ],
+		];
+	}
+
+	/**
+	 * @return array<int,array{0:string,1:string,2:mixed>>
+	 */
+	public static function ecbb_req_hover_controls() {
+		return [
+			[ 'part', '=', self::ecbb_hover_part_types() ],
+			self::ecbb_req_hover_on(),
+		];
+	}
+
+	/**
+	 * @return array<int,array{0:string,1:string,2:mixed>>
+	 */
+	public static function ecbb_req_hover_bg() {
+		return [
+			[ 'part', '=', self::ecbb_hover_interactive_types() ],
+			self::ecbb_req_hover_on(),
+		];
+	}
+
+	/**
+	 * @return array<int,array{0:string,1:string,2:mixed>>
+	 */
+	public static function ecbb_req_hover_decoration() {
+		return [
+			[ 'part', '=', self::ecbb_hover_interactive_types() ],
+			self::ecbb_req_hover_on(),
+		];
+	}
+
+	/**
+	 * Repeater field keys gated by hover eligibility (builder tab CSS + JS).
+	 *
+	 * @return string[]
+	 */
+	public static function ecbb_hover_field_keys() {
+		return [
+			'ecbb_use_hover',
+			'ecbb_sep_hover',
+			'ecbb_hover_color',
+			'ecbb_hover_background',
+			'ecbb_hover_text_decoration',
+			'ecbb_hover_animation',
+			'image_size_hover',
+			'ecbb_image_object_align_hover',
+		];
+	}
+
+	/**
+	 * Button parts that support optional button chrome.
+	 *
+	 * @return string[]
+	 */
+	public static function ecbb_btn_part_types() {
+		return [ 'read_more', 'event_tickets', 'event_rsvp' ];
+	}
+
+	/**
+	 * @return array<int,array{0:string,1:string,2:mixed>>
+	 */
+	public static function ecbb_req_btn_styled() {
+		return [
+			[ 'part', '=', self::ecbb_btn_part_types() ],
+			[ 'btn_style', '=', true ],
+		];
+	}
+
+	/**
+	 * Repeater field keys in the border & padding accordion (builder tab CSS + JS).
+	 *
+	 * @return string[]
+	 */
+	public static function ecbb_btn_border_keys() {
+		return [
+			'btn_sep_border',
+			'btn_border_type',
+			'btn_border_width',
+			'btn_border_color',
+			'btn_padding',
+			'btn_border_radius',
+		];
+	}
+
+	/**
+	 * @return array<int,array{0:string,1:string,2:mixed>>
+	 */
+	public static function ecbb_req_title_inner_bg() {
+		return [ [ 'part', '=', 'title' ] ];
+	}
+
+	/**
+	 * Bricks `css` rule for a repeater sub-field (live builder preview + frontend).
+	 *
+	 * @param string $css_property CSS property or Bricks shorthand (e.g. font, typography).
+	 * @param string $css_selector Optional selector relative to the repeater field target.
+	 * @return array<int,array<string,string>>
+	 */
+	public static function ecbb_field_css( $css_property, $css_selector = '' ) {
+		$css_rule = [ 'property' => (string) $css_property ];
+		if ( $css_selector !== '' ) {
+			$css_rule['selector'] = $css_selector;
+		}
+		return [ $css_rule ];
+	}
+
+	/**
+	 * Repeater sub-fields for event parts (content + grouped style controls).
+	 *
+	 * @return array<string,array<string,mixed>>
+	 */
+	public static function ecbb_part_fields() {
+		$date_format_options = class_exists( 'ECBB_Styles', false )
+			? \ECBB_Styles::ecbb_date_options()
+			: [];
 
 	return [
 		'part' => [
 			'label'   => esc_html__( 'Part', 'ecbb' ),
 			'type'    => 'select',
-			'options' => function_exists( 'ecbb_part_select_options' )
-				? ecbb_part_select_options()
+			'options' => class_exists( 'ECBB_Styles', false )
+				? \ECBB_Styles::ecbb_part_options()
 				: [ 'title' => esc_html__( 'Title', 'ecbb' ) ],
 			'default' => 'title',
 		],
@@ -303,8 +224,8 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 		'cost_currency' => [
 			'label'    => esc_html__( 'Cost currency', 'ecbb' ),
 			'type'     => 'select',
-			'options'  => function_exists( 'ecbb_event_cost_currency_options' )
-				? ecbb_event_cost_currency_options()
+			'options'  => class_exists( 'ECBB_Markup', false )
+				? \ECBB_Markup::ecbb_cost_currency_opts()
 				: [
 					'default' => esc_html__( 'Site default', 'ecbb' ),
 					'none'    => esc_html__( 'No currency symbol', 'ecbb' ),
@@ -342,7 +263,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 		'date_format_preset' => [
 			'label'       => esc_html__( 'Date Format', 'ecbb' ),
 			'type'        => 'select',
-			'options'     => $date_formats,
+			'options'     => $date_format_options,
 			'default'     => '',
 			'placeholder' => esc_html__( 'Default', 'ecbb' ),
 			'required'    => [
@@ -396,26 +317,26 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 		'btn_sep_style' => [
 			'label'    => esc_html__( 'Button styling', 'ecbb' ),
 			'type'     => 'separator',
-			'required' => self::ecbb_repeater_required_btn_style_group(),
+			'required' => self::ecbb_req_btn_styled(),
 		],
 		'btn_bg' => [
 			'label'       => esc_html__( 'Button background', 'ecbb' ),
 			'type'        => 'color',
 			'placeholder' => '#2271b1',
 			'responsive'  => true,
-			'required'    => self::ecbb_repeater_required_btn_style_group(),
+			'required'    => self::ecbb_req_btn_styled(),
 		],
 		'btn_text_color' => [
 			'label'       => esc_html__( 'Button text color', 'ecbb' ),
 			'type'        => 'color',
 			'placeholder' => '#ffffff',
 			'responsive'  => true,
-			'required'    => self::ecbb_repeater_required_btn_style_group(),
+			'required'    => self::ecbb_req_btn_styled(),
 		],
 		'btn_sep_border' => [
 			'label'    => esc_html__( 'Border & padding', 'ecbb' ),
 			'type'     => 'separator',
-			'required' => self::ecbb_repeater_required_btn_border_group(),
+			'required' => self::ecbb_req_btn_styled(),
 		],
 		'btn_border_type' => [
 			'label'    => esc_html__( 'Border type', 'ecbb' ),
@@ -428,7 +349,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 				'none'   => esc_html__( 'None', 'ecbb' ),
 			],
 			'default'  => 'solid',
-			'required' => self::ecbb_repeater_required_btn_border_group(),
+			'required' => self::ecbb_req_btn_styled(),
 		],
 		'btn_border_width' => [
 			'label'      => esc_html__( 'Border width', 'ecbb' ),
@@ -437,14 +358,14 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			'unit'       => 'px',
 			'placeholder' => '1',
 			'responsive' => true,
-			'required'   => self::ecbb_repeater_required_btn_border_group(),
+			'required'   => self::ecbb_req_btn_styled(),
 		],
 		'btn_border_color' => [
 			'label'       => esc_html__( 'Border color', 'ecbb' ),
 			'type'        => 'color',
 			'placeholder' => '#cccccc',
 			'responsive'  => true,
-			'required'    => self::ecbb_repeater_required_btn_border_group(),
+			'required'    => self::ecbb_req_btn_styled(),
 		],
 		'btn_padding' => [
 			'label'    => esc_html__( 'Button padding', 'ecbb' ),
@@ -455,18 +376,18 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 				'bottom' => '10px',
 				'left'   => '14px',
 			],
-			'required' => self::ecbb_repeater_required_btn_border_group(),
+			'required' => self::ecbb_req_btn_styled(),
 			// No Bricks `css` rule: child selectors are ignored on repeater fieldId targets.
-			// Frontend: ecbb_button_declarations() + build_parts_scoped_css(). Builder: ecbb-builder.js.
+			// Frontend: ecbb_button_decls() + build_parts_scoped_css(). Builder: ecbb-builder.js.
 		],
 		'btn_border_radius' => [
 			'label'       => esc_html__( 'Border radius', 'ecbb' ),
 			'type'        => 'dimensions',
 			'placeholder' => '0px',
 			'responsive'  => true,
-			'required'    => self::ecbb_repeater_required_btn_border_group(),
+			'required'    => self::ecbb_req_btn_styled(),
 			// No Bricks `css` rule: child selectors are ignored on repeater fieldId targets.
-			// Frontend: ecbb_button_declarations() + build_parts_scoped_css(). Builder: ecbb-builder.js.
+			// Frontend: ecbb_button_decls() + build_parts_scoped_css(). Builder: ecbb-builder.js.
 		],
 		'read_more_text' => [
 			'label'       => esc_html__( 'Read more text', 'ecbb' ),
@@ -493,7 +414,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 		'image_size' => [
 			'label'       => esc_html__( 'Image size', 'ecbb' ),
 			'type'        => 'select',
-			'options'     => function_exists( 'ecbb_get_image_size_control_options' ) ? ecbb_get_image_size_control_options() : [ 'large' => 'large', 'full' => 'full' ],
+			'options'     => class_exists( 'ECBB_Markup', false ) ? \ECBB_Markup::ecbb_image_size_opts() : [ 'large' => 'large', 'full' => 'full' ],
 			'default'     => '',
 			'placeholder' => esc_html__( 'Default (large)', 'ecbb' ),
 			'required'    => [ 'part', '=', 'image' ],
@@ -503,20 +424,20 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			'type'     => 'select',
 			'options'  => array_merge(
 				[ '' => esc_html__( 'Same as default', 'ecbb' ) ],
-				function_exists( 'ecbb_get_image_size_control_options' )
-					? array_diff_key( ecbb_get_image_size_control_options(), [ '' => true ] )
+				class_exists( 'ECBB_Markup', false )
+					? array_diff_key( \ECBB_Markup::ecbb_image_size_opts(), [ '' => true ] )
 					: [ 'large' => 'large', 'full' => 'full' ]
 			),
 			'default'  => '',
 			'required' => [
 				[ 'part', '=', 'image' ],
-				self::ecbb_repeater_required_hover_on(),
+				self::ecbb_req_hover_on(),
 			],
 		],
 		'ecbb_image_object_align' => [
 			'label'      => esc_html__( 'Image alignment', 'ecbb' ),
 			'type'       => 'select',
-			'options'    => function_exists( 'ecbb_get_image_object_align_control_options' ) ? ecbb_get_image_object_align_control_options() : [],
+			'options'    => class_exists( 'ECBB_Markup', false ) ? \ECBB_Markup::ecbb_image_align_opts() : [],
 			'default'    => '',
 			'responsive' => true,
 			'required'   => [ 'part', '=', 'image' ],
@@ -526,14 +447,14 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			'type'     => 'select',
 			'options'  => array_merge(
 				[ '' => esc_html__( 'Same as default', 'ecbb' ) ],
-				function_exists( 'ecbb_get_image_object_align_control_options' )
-					? array_diff_key( ecbb_get_image_object_align_control_options(), [ '' => true ] )
+				class_exists( 'ECBB_Markup', false )
+					? array_diff_key( \ECBB_Markup::ecbb_image_align_opts(), [ '' => true ] )
 					: []
 			),
 			'default'  => '',
 			'required' => [
 				[ 'part', '=', 'image' ],
-				self::ecbb_repeater_required_hover_on(),
+				self::ecbb_req_hover_on(),
 			],
 		],
 		'image_link' => [
@@ -548,7 +469,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			'placeholder' => '100%',
 			'responsive'  => true,
 			'required'    => [ 'part', '=', 'image' ],
-			'css'         => self::ecbb_repeater_control_css(
+			'css'         => self::ecbb_field_css(
 				'width',
 				'.ecbb-event__image, .ecbb-event__img-stack'
 			),
@@ -559,7 +480,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			'placeholder' => 'auto',
 			'responsive'  => true,
 			'required'    => [ 'part', '=', 'image' ],
-			'css'         => self::ecbb_repeater_control_css(
+			'css'         => self::ecbb_field_css(
 				'height',
 				'.ecbb-event__image'
 			),
@@ -578,7 +499,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			'default'    => '',
 			'responsive' => true,
 			'required'   => [ 'part', '=', 'image' ],
-			'css'        => self::ecbb_repeater_control_css(
+			'css'        => self::ecbb_field_css(
 				'object-fit',
 				'.ecbb-event__image'
 			),
@@ -593,9 +514,9 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			'exclude'    => [ 'text-align' ],
 			'responsive' => true,
 			'required'   => [ 'part', '!=', 'image' ],
-			'css'        => function_exists( 'ecbb_repeater_typography_control_css' )
-				? ecbb_repeater_typography_control_css()
-				: self::ecbb_repeater_control_css(
+			'css'        => class_exists( 'ECBB_Styles', false )
+				? \ECBB_Styles::ecbb_repeater_type_css()
+				: self::ecbb_field_css(
 					'typography',
 					'&, & .ecbb-event__term-chip, & .ecbb-event__link, & .ecbb-event__term'
 				),
@@ -605,10 +526,10 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			'type'     => 'text-align',
 			'responsive' => true,
 			'required'   => [ 'part', '!=', 'image' ],
-			'css'        => self::ecbb_repeater_control_css(
+			'css'        => self::ecbb_field_css(
 				'text-align',
-				function_exists( 'ecbb_repeater_typography_css_selector' )
-					? ecbb_repeater_typography_css_selector()
+				class_exists( 'ECBB_Styles', false )
+					? \ECBB_Styles::ecbb_repeater_type_selector()
 					: '&'
 			),
 		],
@@ -617,26 +538,26 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			'type'        => 'color',
 			'placeholder' => '#666666',
 			'responsive'  => true,
-			'css'         => self::ecbb_repeater_control_css( 'background-color', '&' ),
+			'css'         => self::ecbb_field_css( 'background-color', '&' ),
 		],
 		'ecbb_background_inner' => [
 			'label'       => esc_html__( 'Inner background', 'ecbb' ),
 			'type'        => 'color',
 			'placeholder' => '#666666',
 			'responsive'  => true,
-			'required'    => self::ecbb_repeater_required_inner_background(),
+			'required'    => self::ecbb_req_title_inner_bg(),
 			// No Bricks `css` rule: child selectors are ignored on repeater fieldId targets.
-			// Frontend: ecbb_build_parts_scoped_css(). Builder: assets/js/ecbb-builder.js.
+			// Frontend: ecbb_parts_css(). Builder: assets/js/ecbb-builder.js.
 		],
 		'ecbb_margin' => [
 			'label' => esc_html__( 'Margin', 'ecbb' ),
 			'type'  => 'spacing',
-			'css'   => self::ecbb_repeater_control_css( 'margin' ),
+			'css'   => self::ecbb_field_css( 'margin' ),
 		],
 		'ecbb_padding' => [
 			'label' => esc_html__( 'Padding', 'ecbb' ),
 			'type'  => 'spacing',
-			'css'   => self::ecbb_repeater_control_css( 'padding' ),
+			'css'   => self::ecbb_field_css( 'padding' ),
 		],
 		'ecbb_use_hover' => [
 			'label'    => esc_html__( 'Enable hover effects', 'ecbb' ),
@@ -646,24 +567,24 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 				'no'  => esc_html__( 'No', 'ecbb' ),
 			],
 			'default'  => 'yes',
-			'required' => self::ecbb_repeater_required_hover_toggle_visible(),
+			'required' => self::ecbb_req_show_hover_toggle(),
 		],
 		'ecbb_sep_hover' => [
 			'type'     => 'separator',
 			'label'    => esc_html__( 'Hover effects', 'ecbb' ),
-			'required' => self::ecbb_repeater_required_hover_style_group(),
+			'required' => self::ecbb_req_hover_controls(),
 		],
 		'ecbb_hover_color' => [
 			'label'       => esc_html__( 'Hover color', 'ecbb' ),
 			'type'        => 'color',
 			'placeholder' => '#000000',
-			'required'    => self::ecbb_repeater_required_hover_details(),
+			'required'    => self::ecbb_req_hover_controls(),
 		],
 		'ecbb_hover_background' => [
 			'label'       => esc_html__( 'Hover background', 'ecbb' ),
 			'type'        => 'color',
 			'placeholder' => '#666666',
-			'required'    => self::ecbb_repeater_required_hover_background(),
+			'required'    => self::ecbb_req_hover_bg(),
 		],
 		'ecbb_hover_text_decoration' => [
 			'label'    => esc_html__( 'Text decoration (hover)', 'ecbb' ),
@@ -676,7 +597,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 				'line-through' => esc_html__( 'Line through', 'ecbb' ),
 			],
 			'default'  => '',
-			'required' => self::ecbb_repeater_required_hover_text_decoration(),
+			'required' => self::ecbb_req_hover_decoration(),
 		],
 		'ecbb_hover_animation' => [
 			'label'    => esc_html__( 'Hover animation', 'ecbb' ),
@@ -691,14 +612,14 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 				'zoom_out'      => esc_html__( 'Zoom out', 'ecbb' ),
 			],
 			'default'  => '',
-			'required' => self::ecbb_repeater_required_hover_details(),
+			'required' => self::ecbb_req_hover_controls(),
 		],
 		'ecbb_image_border' => [
 			'label'      => esc_html__( 'Image border', 'ecbb' ),
 			'type'       => 'border',
 			'responsive' => true,
 			'required'   => [ 'part', '=', 'image' ],
-			'css'        => self::ecbb_repeater_control_css(
+			'css'        => self::ecbb_field_css(
 				'border',
 				'.ecbb-event__image'
 			),
@@ -709,7 +630,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			'placeholder' => '0px',
 			'responsive'  => true,
 			'required'    => [ 'part', '=', 'image' ],
-			'css'         => self::ecbb_repeater_control_css(
+			'css'         => self::ecbb_field_css(
 				'border-radius',
 				'.ecbb-event__image'
 			),
@@ -724,23 +645,23 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
  * @return void
  */
 
-	public static function ecbb_element_set_controls( $element ) {
-	$event_cat_options = [];
-	if ( function_exists( 'taxonomy_exists' ) && taxonomy_exists( 'tribe_events_cat' ) ) {
-		$terms = get_terms(
-			[
-				'taxonomy'   => 'tribe_events_cat',
-				'hide_empty' => false,
-			]
-		);
-		if ( ! is_wp_error( $terms ) && is_array( $terms ) ) {
-			foreach ( $terms as $term ) {
-				if ( $term instanceof \WP_Term ) {
-					$event_cat_options[ $term->slug ] = $term->name;
+	public static function ecbb_register_controls( $element ) {
+		$event_category_options = [];
+		if ( function_exists( 'taxonomy_exists' ) && taxonomy_exists( 'tribe_events_cat' ) ) {
+			$event_terms = get_terms(
+				[
+					'taxonomy'   => 'tribe_events_cat',
+					'hide_empty' => false,
+				]
+			);
+			if ( ! is_wp_error( $event_terms ) && is_array( $event_terms ) ) {
+				foreach ( $event_terms as $event_term ) {
+					if ( $event_term instanceof \WP_Term ) {
+						$event_category_options[ $event_term->slug ] = $event_term->name;
+					}
 				}
 			}
 		}
-	}
 
 	// ── Layouts (first) ──
 	$element->controls['layout_template'] = [
@@ -839,8 +760,8 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			[ 'layout_template', '=', 'list' ],
 			[ 'list_item_style', '=', 'style-1' ],
 		],
-		'options'  => function_exists( 'ecbb_date_format_preset_options' )
-			? ecbb_date_format_preset_options()
+		'options'  => class_exists( 'ECBB_Styles', false )
+			? \ECBB_Styles::ecbb_date_options()
 			: [ 'default' => esc_html__( 'Default', 'ecbb' ) ],
 	];
 
@@ -864,7 +785,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 		'group'       => 'event_query',
 		'label'       => esc_html__( 'Event categories', 'ecbb' ),
 		'type'        => 'select',
-		'options'     => $event_cat_options,
+		'options'     => $event_category_options,
 		'multiple'    => true,
 		'placeholder' => esc_html__( 'All categories', 'ecbb' ),
 	];
@@ -1297,7 +1218,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 		'default'     => 200,
 	];
 
-	$repeater_fields = self::ecbb_get_repeater_fields();
+		$part_repeater_fields = self::ecbb_part_fields();
 
 	$element->controls['parts_style1'] = [
 		'tab'           => 'content',
@@ -1312,10 +1233,10 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			[ 'layout_template', '=', 'list' ],
 			[ 'list_item_style', '=', 'style-1' ],
 		],
-		'default'       => function_exists( 'ecbb_list1_default_parts_rows' )
-			? ecbb_list1_default_parts_rows()
+		'default'       => class_exists( 'ECBB_List_1', false )
+			? \ECBB_List_1::ecbb_default_parts()
 			: [],
-		'fields'        => $repeater_fields,
+		'fields'        => $part_repeater_fields,
 	];
 
 	$element->controls['parts_style2'] = [
@@ -1331,10 +1252,10 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			[ 'layout_template', '=', 'list' ],
 			[ 'list_item_style', '=', 'style-2' ],
 		],
-		'default'       => function_exists( 'ecbb_list2_default_parts_rows' )
-			? ecbb_list2_default_parts_rows()
+		'default'       => class_exists( 'ECBB_List_2', false )
+			? \ECBB_List_2::ecbb_default_parts()
 			: [],
-		'fields'        => $repeater_fields,
+		'fields'        => $part_repeater_fields,
 	];
 
 	$element->controls['parts_grid'] = [
@@ -1347,124 +1268,13 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 		'titleProperty' => 'part',
 		'placeholder'   => esc_html__( 'Add event part', 'ecbb' ),
 		'required'      => [ 'layout_template', '=', 'grid' ],
-		'default'       => function_exists( 'ecbb_grid_default_parts_rows' )
-			? ecbb_grid_default_parts_rows()
+		'default'       => class_exists( 'ECBB_Grid', false )
+			? \ECBB_Grid::ecbb_default_parts()
 			: [],
-		'fields'        => $repeater_fields,
+		'fields'        => $part_repeater_fields,
 	];
-}
-
 	}
 
 }
 
-if ( ! function_exists( 'ecbb_repeater_hover_part_slugs' ) ) {
-	function ecbb_repeater_hover_part_slugs( ...$args ) {
-		return ECBB_Controls::ecbb_repeater_hover_part_slugs( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_repeater_interactive_hover_part_slugs' ) ) {
-	function ecbb_repeater_interactive_hover_part_slugs( ...$args ) {
-		return ECBB_Controls::ecbb_repeater_interactive_hover_part_slugs( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_repeater_required_interactive_hover' ) ) {
-	function ecbb_repeater_required_interactive_hover( ...$args ) {
-		return ECBB_Controls::ecbb_repeater_required_interactive_hover( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_repeater_required_hover_toggle_visible' ) ) {
-	function ecbb_repeater_required_hover_toggle_visible( ...$args ) {
-		return ECBB_Controls::ecbb_repeater_required_hover_toggle_visible( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_repeater_required_hover_on' ) ) {
-	function ecbb_repeater_required_hover_on( ...$args ) {
-		return ECBB_Controls::ecbb_repeater_required_hover_on( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_repeater_required_hover_style_group' ) ) {
-	function ecbb_repeater_required_hover_style_group( ...$args ) {
-		return ECBB_Controls::ecbb_repeater_required_hover_style_group( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_repeater_required_hover_details' ) ) {
-	function ecbb_repeater_required_hover_details( ...$args ) {
-		return ECBB_Controls::ecbb_repeater_required_hover_details( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_repeater_required_hover_background' ) ) {
-	function ecbb_repeater_required_hover_background( ...$args ) {
-		return ECBB_Controls::ecbb_repeater_required_hover_background( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_repeater_required_hover_text_decoration' ) ) {
-	function ecbb_repeater_required_hover_text_decoration( ...$args ) {
-		return ECBB_Controls::ecbb_repeater_required_hover_text_decoration( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_repeater_hover_control_keys' ) ) {
-	function ecbb_repeater_hover_control_keys( ...$args ) {
-		return ECBB_Controls::ecbb_repeater_hover_control_keys( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_repeater_button_part_slugs' ) ) {
-	function ecbb_repeater_button_part_slugs( ...$args ) {
-		return ECBB_Controls::ecbb_repeater_button_part_slugs( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_repeater_required_btn_style_on' ) ) {
-	function ecbb_repeater_required_btn_style_on( ...$args ) {
-		return ECBB_Controls::ecbb_repeater_required_btn_style_on( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_repeater_required_btn_style_group' ) ) {
-	function ecbb_repeater_required_btn_style_group( ...$args ) {
-		return ECBB_Controls::ecbb_repeater_required_btn_style_group( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_repeater_required_btn_border_group' ) ) {
-	function ecbb_repeater_required_btn_border_group( ...$args ) {
-		return ECBB_Controls::ecbb_repeater_required_btn_border_group( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_repeater_btn_border_control_keys' ) ) {
-	function ecbb_repeater_btn_border_control_keys( ...$args ) {
-		return ECBB_Controls::ecbb_repeater_btn_border_control_keys( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_repeater_btn_style_control_keys' ) ) {
-	function ecbb_repeater_btn_style_control_keys( ...$args ) {
-		return ECBB_Controls::ecbb_repeater_btn_style_control_keys( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_repeater_hover_text_decoration_part_slugs' ) ) {
-	function ecbb_repeater_hover_text_decoration_part_slugs( ...$args ) {
-		return ECBB_Controls::ecbb_repeater_hover_text_decoration_part_slugs( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_repeater_hover_background_part_slugs' ) ) {
-	function ecbb_repeater_hover_background_part_slugs( ...$args ) {
-		return ECBB_Controls::ecbb_repeater_hover_background_part_slugs( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_repeater_required_inner_background' ) ) {
-	function ecbb_repeater_required_inner_background( ...$args ) {
-		return ECBB_Controls::ecbb_repeater_required_inner_background( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_repeater_control_css' ) ) {
-	function ecbb_repeater_control_css( ...$args ) {
-		return ECBB_Controls::ecbb_repeater_control_css( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_get_repeater_fields' ) ) {
-	function ecbb_get_repeater_fields( ...$args ) {
-		return ECBB_Controls::ecbb_get_repeater_fields( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_element_set_controls' ) ) {
-	function ecbb_element_set_controls( ...$args ) {
-		return ECBB_Controls::ecbb_element_set_controls( ...$args );
-	}
 }

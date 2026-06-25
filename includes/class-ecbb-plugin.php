@@ -85,14 +85,14 @@ final class ECBB_WidgetClass {
      * @return array<string,array<string,mixed>>
      */
     private function ecbb_index_bricks_elements_by_id( array $elements ) {
-        $out = [];
+        $elements_by_id = [];
         foreach ( $elements as $element ) {
             if ( ! is_array( $element ) || empty( $element['id'] ) ) {
                 continue;
             }
-            $out[ (string) $element['id'] ] = $element;
+            $elements_by_id[ (string) $element['id'] ] = $element;
         }
-        return $out;
+        return $elements_by_id;
     }
 
     /**
@@ -101,7 +101,7 @@ final class ECBB_WidgetClass {
      * @return array<int,array<string,mixed>>
      */
     private function ecbb_apply_inactive_part_repeater_preservation( array $new_elements, array $old_elements_indexed ) {
-        if ( ! function_exists( 'ecbb_sanitize_list_item_style' ) || ! function_exists( 'ecbb_parts_array_is_effectively_empty' ) ) {
+        if ( ! class_exists( 'ECBB_Markup', false ) || ! class_exists( 'ECBB_Markup', false ) ) {
             return $new_elements;
         }
 
@@ -125,42 +125,42 @@ final class ECBB_WidgetClass {
             }
             $new_settings = &$new_elements[ $i ]['settings'];
 
-            if ( function_exists( 'ecbb_normalize_element_parts_hover_toggles' ) ) {
-                $new_settings = ecbb_normalize_element_parts_hover_toggles( $new_settings );
+            if ( class_exists( 'ECBB_Markup', false ) ) {
+                $new_settings = \ECBB_Markup::ecbb_norm_settings_hover( $new_settings );
             }
 
-            $template = isset( $new_settings['layout_template'] ) ? (string) $new_settings['layout_template'] : 'list';
-            if ( $template === 'carousel' ) {
-                $template = 'list';
+            $layout_template = isset( $new_settings['layout_template'] ) ? (string) $new_settings['layout_template'] : 'list';
+            if ( $layout_template === 'carousel' ) {
+                $layout_template = 'list';
             }
-            $template = in_array( $template, [ 'list', 'grid' ], true ) ? $template : 'list';
-            $style    = ecbb_sanitize_list_item_style( $new_settings['list_item_style'] ?? 'style-1' );
+            $layout_template = in_array( $layout_template, [ 'list', 'grid' ], true ) ? $layout_template : 'list';
+            $list_item_style = \ECBB_Markup::ecbb_sanitize_list_style( $new_settings['list_item_style'] ?? 'style-1' );
 
-            foreach ( [ 'parts_style1', 'parts_style2', 'parts_grid' ] as $key ) {
-                $is_active = false;
-                if ( 'parts_grid' === $key ) {
-                    $is_active = ( 'grid' === $template );
-                } elseif ( 'parts_style1' === $key ) {
-                    $is_active = ( 'list' === $template && 'style-1' === $style );
-                } elseif ( 'parts_style2' === $key ) {
-                    $is_active = ( 'list' === $template && 'style-2' === $style );
+            foreach ( [ 'parts_style1', 'parts_style2', 'parts_grid' ] as $parts_repeater_key ) {
+                $is_active_repeater = false;
+                if ( 'parts_grid' === $parts_repeater_key ) {
+                    $is_active_repeater = ( 'grid' === $layout_template );
+                } elseif ( 'parts_style1' === $parts_repeater_key ) {
+                    $is_active_repeater = ( 'list' === $layout_template && 'style-1' === $list_item_style );
+                } elseif ( 'parts_style2' === $parts_repeater_key ) {
+                    $is_active_repeater = ( 'list' === $layout_template && 'style-2' === $list_item_style );
                 }
-                if ( $is_active ) {
+                if ( $is_active_repeater ) {
                     continue;
                 }
 
-                $incoming = $new_settings[ $key ] ?? null;
-                $incoming_empty = ! is_array( $incoming ) || ecbb_parts_array_is_effectively_empty( $incoming );
-                if ( ! $incoming_empty ) {
+                $posted_parts = $new_settings[ $parts_repeater_key ] ?? null;
+                $posted_parts_empty = ! is_array( $posted_parts ) || \ECBB_Markup::ecbb_parts_is_empty( $posted_parts );
+                if ( ! $posted_parts_empty ) {
                     continue;
                 }
-                if ( ! isset( $old_settings[ $key ] ) || ! is_array( $old_settings[ $key ] ) ) {
+                if ( ! isset( $old_settings[ $parts_repeater_key ] ) || ! is_array( $old_settings[ $parts_repeater_key ] ) ) {
                     continue;
                 }
-                if ( ecbb_parts_array_is_effectively_empty( $old_settings[ $key ] ) ) {
+                if ( \ECBB_Markup::ecbb_parts_is_empty( $old_settings[ $parts_repeater_key ] ) ) {
                     continue;
                 }
-                $new_settings[ $key ] = $old_settings[ $key ];
+                $new_settings[ $parts_repeater_key ] = $old_settings[ $parts_repeater_key ];
             }
             unset( $new_settings );
         }
@@ -171,7 +171,7 @@ final class ECBB_WidgetClass {
     /**
      * Coerce layout-specific repeaters when another layout's row stack was left on disk
      * (e.g. Grid defaults still stored on `parts_style1` after switching to List Style 1).
-     * Empty repeaters are left unchanged so {@see ecbb_resolve_event_parts_for_context()}
+     * Empty repeaters are left unchanged so {@see \ECBB_Markup::ecbb_resolve_parts()}
      * can still fall back to legacy `parts`.
      *
      * @param array<string,mixed> $settings Element settings.
@@ -185,45 +185,46 @@ final class ECBB_WidgetClass {
         if ( ! isset( $element->name ) || $element->name !== 'ecbb-events-loop' ) {
             return $settings;
         }
-        if ( ! function_exists( 'ecbb_sanitize_list_item_style' ) ) {
+        if ( ! class_exists( 'ECBB_Markup', false ) ) {
             return $settings;
         }
 
-        if ( function_exists( 'ecbb_normalize_element_parts_hover_toggles' ) ) {
-            $settings = ecbb_normalize_element_parts_hover_toggles( $settings );
+        if ( class_exists( 'ECBB_Markup', false ) ) {
+            $settings = \ECBB_Markup::ecbb_norm_settings_hover( $settings );
         }
 
-        $template = isset( $settings['layout_template'] ) ? (string) $settings['layout_template'] : 'list';
-        if ( $template === 'carousel' ) {
-            $template = 'list';
+        $layout_template = isset( $settings['layout_template'] ) ? (string) $settings['layout_template'] : 'list';
+        if ( $layout_template === 'carousel' ) {
+            $layout_template = 'list';
         }
-        $template = in_array( $template, [ 'list', 'grid' ], true ) ? $template : 'list';
-        $item_chrome = ecbb_sanitize_list_item_style( $settings['list_item_style'] ?? 'style-1' );
+        $layout_template = in_array( $layout_template, [ 'list', 'grid' ], true ) ? $layout_template : 'list';
+        $list_item_style = \ECBB_Markup::ecbb_sanitize_list_style( $settings['list_item_style'] ?? 'style-1' );
 
-        if ( $template === 'list' && $item_chrome === 'style-1' ) {
-            $p = isset( $settings['parts_style1'] ) && is_array( $settings['parts_style1'] ) ? $settings['parts_style1'] : [];
-            if ( function_exists( 'ecbb_parts_array_is_effectively_empty' )
-                && ! ecbb_parts_array_is_effectively_empty( $p )
-                && function_exists( 'ecbb_list1_normalize_parts' ) ) {
-                $settings['parts_style1'] = ecbb_list1_normalize_parts( $p );
+        if ( $layout_template === 'list' && $list_item_style === 'style-1' ) {
+            $parts_repeater = isset( $settings['parts_style1'] ) && is_array( $settings['parts_style1'] ) ? $settings['parts_style1'] : [];
+            if ( class_exists( 'ECBB_Markup', false )
+                && ! \ECBB_Markup::ecbb_parts_is_empty( $parts_repeater )
+                && class_exists( 'ECBB_List_1', false ) ) {
+                $settings['parts_style1'] = \ECBB_List_1::ecbb_norm_parts( $parts_repeater );
             }
-        } elseif ( $template === 'list' && $item_chrome === 'style-2' ) {
-            $p = isset( $settings['parts_style2'] ) && is_array( $settings['parts_style2'] ) ? $settings['parts_style2'] : [];
-            if ( function_exists( 'ecbb_parts_array_is_effectively_empty' )
-                && ! ecbb_parts_array_is_effectively_empty( $p ) ) {
-                $settings['parts_style2'] = ecbb_list2_normalize_parts( $p );
+        } elseif ( $layout_template === 'list' && $list_item_style === 'style-2' ) {
+            $parts_repeater = isset( $settings['parts_style2'] ) && is_array( $settings['parts_style2'] ) ? $settings['parts_style2'] : [];
+            if ( class_exists( 'ECBB_Markup', false )
+                && ! \ECBB_Markup::ecbb_parts_is_empty( $parts_repeater )
+                && class_exists( 'ECBB_List_2', false ) ) {
+                $settings['parts_style2'] = \ECBB_List_2::ecbb_norm_parts( $parts_repeater );
             }
-        } elseif ( $template === 'grid' ) {
-            $p = isset( $settings['parts_grid'] ) && is_array( $settings['parts_grid'] ) ? $settings['parts_grid'] : [];
-            if ( function_exists( 'ecbb_parts_array_is_effectively_empty' )
-                && ! ecbb_parts_array_is_effectively_empty( $p )
-                && function_exists( 'ecbb_grid_normalize_parts' ) ) {
-                $settings['parts_grid'] = ecbb_grid_normalize_parts( $p );
+        } elseif ( $layout_template === 'grid' ) {
+            $parts_repeater = isset( $settings['parts_grid'] ) && is_array( $settings['parts_grid'] ) ? $settings['parts_grid'] : [];
+            if ( class_exists( 'ECBB_Markup', false )
+                && ! \ECBB_Markup::ecbb_parts_is_empty( $parts_repeater )
+                && class_exists( 'ECBB_Grid', false ) ) {
+                $settings['parts_grid'] = \ECBB_Grid::ecbb_norm_parts( $parts_repeater );
             }
         }
 
-        if ( function_exists( 'ecbb_migrate_event_cost_currency_into_repeaters' ) ) {
-            $settings = ecbb_migrate_event_cost_currency_into_repeaters( $settings );
+        if ( class_exists( 'ECBB_Markup', false ) ) {
+            $settings = \ECBB_Markup::ecbb_migrate_cost_currency( $settings );
         }
 
         return $settings;
@@ -255,16 +256,12 @@ final class ECBB_WidgetClass {
      * Enqueue front-end widget styles, builder panel assets, and iframe preview CSS.
      */
     public function ecbb_enqueue_scripts() {
+        // Front end, builder main, and the builder iframe are all separate requests;
+        // this hook fires in each, so a single unconditional enqueue covers them all.
         $this->ecbb_enqueue_events_widget_styles();
 
         if ( function_exists( 'bricks_is_builder_main' ) && bricks_is_builder_main() ) {
             $this->ecbb_enqueue_builder_panel_assets();
-        }
-
-        if ( function_exists( 'bricks_is_builder_iframe' ) && bricks_is_builder_iframe()
-            && ! wp_style_is( 'ecbb-events-widget-base', 'enqueued' )
-            && ! wp_style_is( 'ecbb-events-widget-base', 'done' ) ) {
-            $this->ecbb_enqueue_events_widget_styles();
         }
     }
 
@@ -324,11 +321,11 @@ final class ECBB_WidgetClass {
         wp_localize_script( 'ecbb-builder', 'ECBBBuilder', [
             'tabContent'  => esc_html__( 'CONTENT', 'ecbb' ),
             'tabStyle'    => esc_html__( 'STYLE', 'ecbb' ),
-            'hoverParts'  => function_exists( 'ecbb_repeater_hover_part_slugs' )
-                ? ecbb_repeater_hover_part_slugs()
+            'hoverParts'  => class_exists( 'ECBB_Controls', false )
+                ? \ECBB_Controls::ecbb_hover_part_types()
                 : [ 'title', 'categories', 'tags', 'read_more', 'event_tickets', 'event_rsvp', 'image' ],
-            'interactiveHoverParts' => function_exists( 'ecbb_repeater_interactive_hover_part_slugs' )
-                ? ecbb_repeater_interactive_hover_part_slugs()
+            'interactiveHoverParts' => class_exists( 'ECBB_Controls', false )
+                ? \ECBB_Controls::ecbb_hover_interactive_types()
                 : [ 'title', 'categories', 'tags', 'read_more', 'event_tickets', 'event_rsvp' ],
             'interactiveHoverKeys' => [
                 'ecbb_sep_hover',
@@ -337,8 +334,8 @@ final class ECBB_WidgetClass {
                 'ecbb_hover_text_decoration',
                 'ecbb_hover_animation',
             ],
-            'hoverKeys'   => function_exists( 'ecbb_repeater_hover_control_keys' )
-                ? ecbb_repeater_hover_control_keys()
+            'hoverKeys'   => class_exists( 'ECBB_Controls', false )
+                ? \ECBB_Controls::ecbb_hover_field_keys()
                 : [
                     'ecbb_sep_hover',
                     'ecbb_use_hover',
@@ -349,8 +346,8 @@ final class ECBB_WidgetClass {
                     'image_size_hover',
                     'ecbb_image_object_align_hover',
                 ],
-            'btnBorderKeys' => function_exists( 'ecbb_repeater_btn_border_control_keys' )
-                ? ecbb_repeater_btn_border_control_keys()
+            'btnBorderKeys' => class_exists( 'ECBB_Controls', false )
+                ? \ECBB_Controls::ecbb_btn_border_keys()
                 : [
                     'btn_sep_border',
                     'btn_border_type',
