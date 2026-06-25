@@ -1,6 +1,6 @@
 # Events Calendar for Bricks Builder
 
-A WordPress plugin that adds a custom **Events Widget** Bricks element (`ecbb-events-loop`) for The Events Calendar: list (Style 1 / Style 2), grid layout, configurable event parts, and AJAX load more.
+A WordPress plugin that adds a custom **Events Widget** Bricks element (`ecbb-events-loop`) for The Events Calendar: list (Style 1 / Style 2), grid layout, and configurable event parts.
 
 ## Documentation
 
@@ -8,7 +8,7 @@ A WordPress plugin that adds a custom **Events Widget** Bricks element (`ecbb-ev
 |-----|-------------|
 | [docs/README.md](docs/README.md) | Documentation index |
 | [docs/STRUCTURE.md](docs/STRUCTURE.md) | **Full file structure** — which file does what |
-| [docs/FLOW.md](docs/FLOW.md) | Bootstrap, render, and load-more flow |
+| [docs/FLOW.md](docs/FLOW.md) | Bootstrap and render flow |
 | [docs/DECISIONS.md](docs/DECISIONS.md) | Architecture decisions |
 
 ## Installation

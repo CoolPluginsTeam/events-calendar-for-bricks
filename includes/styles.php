@@ -1077,8 +1077,77 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 }
 
 /**
+ * CSS declarations for a featured-image part (scoped CSS; not inline on `<img>`).
+ *
+ * @param array<string,mixed> $item
+ * @param string              $device
+ * @return string[]
+ */
+
+	public static function ecbb_build_image_declarations( array $item, $device = 'desktop' ) {
+	$styles = [];
+
+	if ( ! empty( $item['image_aspect_ratio'] ) && is_string( $item['image_aspect_ratio'] ) && preg_match( '/^\d+\/\d+$/', $item['image_aspect_ratio'] ) ) {
+		$styles[] = 'aspect-ratio:' . $item['image_aspect_ratio'];
+	}
+
+	$border_css = '';
+	if ( ! empty( $item['ecbb_image_border'] ) ) {
+		$border_css = self::ecbb_border_to_css( $item['ecbb_image_border'] );
+	}
+	if ( $border_css === '' ) {
+		$bw = self::ecbb_normalize_css_size( $item['ecbb_image_border_width'] ?? '', 'px' );
+		$bc = function_exists( 'ecbb_normalize_bricks_color' ) ? ecbb_normalize_bricks_color( $item['ecbb_image_border_color'] ?? '' ) : '';
+		$bs = isset( $item['ecbb_image_border_style'] ) ? (string) $item['ecbb_image_border_style'] : 'solid';
+		$bs = in_array( $bs, [ 'solid', 'dashed', 'dotted' ], true ) ? $bs : 'solid';
+		if ( $bw !== '' && $bw !== '0px' && $bc !== '' ) {
+			$border_css = $bw . ' ' . $bs . ' ' . $bc;
+		}
+	}
+	if ( $border_css !== '' ) {
+		$styles[] = 'border:' . $border_css;
+	}
+
+	$radius = '';
+	if ( ! empty( $item['ecbb_image_radius'] ) && is_array( $item['ecbb_image_radius'] ) ) {
+		$radius = self::ecbb_spacing_to_css( $item['ecbb_image_radius'] );
+	}
+	if ( $radius === '' ) {
+		$radius = self::ecbb_normalize_css_size( $item['ecbb_image_radius'] ?? '', 'px' );
+	}
+	if ( $radius !== '' ) {
+		$styles[] = 'border-radius:' . $radius;
+	}
+
+	$w = self::ecbb_normalize_css_size(
+		self::ecbb_responsive_pick( $item['ecbb_image_width'] ?? '', $device ),
+		'%'
+	);
+	if ( $w !== '' ) {
+		$styles[] = 'width:' . $w;
+	}
+
+	$h = self::ecbb_normalize_css_size(
+		self::ecbb_responsive_pick( $item['ecbb_image_height'] ?? '', $device ),
+		'px'
+	);
+	if ( $h !== '' ) {
+		$styles[] = 'height:' . $h;
+	}
+
+	$fit = self::ecbb_responsive_pick( $item['ecbb_image_fit'] ?? '', $device );
+	$fit = is_string( $fit ) ? $fit : '';
+	if ( $fit !== '' && in_array( $fit, [ 'cover', 'contain', 'fill', 'none', 'scale-down' ], true ) ) {
+		$styles[] = 'object-fit:' . $fit;
+	}
+
+	return $styles;
+}
+
+/**
  * Build inline style attr for a part row (image sizing only; typography uses Bricks repeater CSS).
  *
+ * @deprecated Use scoped CSS via ecbb_build_image_declarations().
  * @param array<string,mixed> $item
  * @param bool                $allow_radius Image part.
  * @return string
@@ -1089,63 +1158,8 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 		return '';
 	}
 
-	$styles = [];
-
-	if ( ! empty( $item['image_aspect_ratio'] ) && is_string( $item['image_aspect_ratio'] ) && preg_match( '/^\d+\/\d+$/', $item['image_aspect_ratio'] ) ) {
-			$styles[] = 'aspect-ratio:' . $item['image_aspect_ratio'];
-		}
-
-		$border_css = '';
-		if ( ! empty( $item['ecbb_image_border'] ) ) {
-			$border_css = self::ecbb_border_to_css( $item['ecbb_image_border'] );
-		}
-		if ( $border_css === '' ) {
-			$bw = self::ecbb_normalize_css_size( $item['ecbb_image_border_width'] ?? '', 'px' );
-			$bc = function_exists( 'ecbb_normalize_bricks_color' ) ? ecbb_normalize_bricks_color( $item['ecbb_image_border_color'] ?? '' ) : '';
-			$bs = isset( $item['ecbb_image_border_style'] ) ? (string) $item['ecbb_image_border_style'] : 'solid';
-			$bs = in_array( $bs, [ 'solid', 'dashed', 'dotted' ], true ) ? $bs : 'solid';
-			if ( $bw !== '' && $bw !== '0px' && $bc !== '' ) {
-				$border_css = $bw . ' ' . $bs . ' ' . $bc;
-			}
-		}
-		if ( $border_css !== '' ) {
-			$styles[] = 'border:' . $border_css;
-		}
-
-		$radius = '';
-		if ( ! empty( $item['ecbb_image_radius'] ) && is_array( $item['ecbb_image_radius'] ) ) {
-			$radius = self::ecbb_spacing_to_css( $item['ecbb_image_radius'] );
-		}
-		if ( $radius === '' ) {
-			$radius = self::ecbb_normalize_css_size( $item['ecbb_image_radius'] ?? '', 'px' );
-		}
-		if ( $radius !== '' ) {
-			$styles[] = 'border-radius:' . $radius;
-		}
-
-		$w = self::ecbb_normalize_css_size(
-			self::ecbb_responsive_pick( $item['ecbb_image_width'] ?? '', 'desktop' ),
-			'%'
-		);
-		if ( $w !== '' ) {
-			$styles[] = 'width:' . $w;
-		}
-
-		$h = self::ecbb_normalize_css_size(
-			self::ecbb_responsive_pick( $item['ecbb_image_height'] ?? '', 'desktop' ),
-			'px'
-		);
-		if ( $h !== '' ) {
-			$styles[] = 'height:' . $h;
-		}
-
-		$fit = self::ecbb_responsive_pick( $item['ecbb_image_fit'] ?? '', 'desktop' );
-		$fit = is_string( $fit ) ? $fit : '';
-		if ( $fit !== '' && in_array( $fit, [ 'cover', 'contain', 'fill', 'none', 'scale-down' ], true ) ) {
-			$styles[] = 'object-fit:' . $fit;
-		}
-
-	return empty( $styles ) ? '' : implode( ';', $styles ) . ';';
+	$decls = self::ecbb_build_image_declarations( $item, 'desktop' );
+	return empty( $decls ) ? '' : implode( ';', $decls ) . ';';
 }
 
 /**
@@ -1300,9 +1314,7 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 					$btn_sel = function_exists( 'ecbb_part_button_inner_selectors' )
 						? self::ecbb_part_button_inner_selectors( $scope_sel )
 						: $scope_sel . ' .ecbb-event__link,' . $scope_sel . ' > a,' . $scope_sel . ' .ecbb-event__plain';
-					$btn_rule = $btn_sel . '{'
-						. implode( ';', $btn_decls )
-						. ';display:inline-flex;align-items:center;justify-content:center;text-decoration:none;box-sizing:border-box}';
+					$btn_rule = $btn_sel . '{' . implode( ';', $btn_decls ) . '}';
 					$style_css[] = ( $mq !== '' ? $mq . '{' . $btn_rule . '}' : $btn_rule );
 				}
 			}
@@ -1367,7 +1379,7 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 					$inner_sel  = function_exists( 'ecbb_part_title_inner_selectors' )
 						? self::ecbb_part_title_inner_selectors( $scope_sel )
 						: $scope_sel . ' .ecbb-event__link,' . $scope_sel . ' .ecbb-event__title-text';
-					$inner_rule = $inner_sel . '{display:inline-block;width:fit-content;max-width:100%;background-color:' . $bg_in . ' !important;}';
+					$inner_rule = $inner_sel . '{background-color:' . $bg_in . ' !important;}';
 					$style_css[] = ( $mq !== '' ? $mq . '{' . $inner_rule . '}' : $inner_rule );
 				}
 			}
@@ -1402,26 +1414,58 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 			}
 		}
 
-		if ( $part_type === 'image' && $hover_style_on && function_exists( 'ecbb_loop_image_uses_dual_layer' ) && function_exists( 'ecbb_object_position_from_image_align' ) ) {
-			if ( ! ecbb_loop_image_uses_dual_layer( $p ) ) {
-				foreach ( self::ecbb_style_breakpoints() as $device => $mq ) {
-					$align_b = self::ecbb_responsive_pick( $p['ecbb_image_object_align'] ?? '', $device );
-					$op_b    = ecbb_object_position_from_image_align( $align_b );
-					$op_h    = ecbb_object_position_from_image_align( $p['ecbb_image_object_align_hover'] ?? '' );
-					if ( $op_h !== '' && $op_h !== $op_b ) {
+		if ( $part_type === 'image' ) {
+			$dual = function_exists( 'ecbb_loop_image_uses_dual_layer' ) && ecbb_loop_image_uses_dual_layer( $p );
+
+			foreach ( self::ecbb_style_breakpoints() as $device => $mq ) {
+				$img_decls = self::ecbb_build_image_declarations( $p, $device );
+				if ( ! empty( $img_decls ) ) {
+					if ( $dual ) {
+						$img_sel = $scope_sel . ' .ecbb-event__image--base,'
+							. $scope_sel . ' .ecbb-event__image--hover';
+					} else {
 						$img_sel = $scope_sel . ' .ecbb-event__image';
-						if ( $op_b !== '' ) {
-							$base_rule   = $img_sel . '{object-position:' . $op_b . ';transition:object-position 0.35s ease;}';
-							$style_css[] = ( $mq !== '' ? $mq . '{' . $base_rule . '}' : $base_rule );
-						} else {
-							$base_rule   = $img_sel . '{transition:object-position 0.35s ease;}';
-							$style_css[] = ( $mq !== '' ? $mq . '{' . $base_rule . '}' : $base_rule );
-						}
-						$hover_css[] = $scope_sel . ':hover .ecbb-event__image{object-position:' . $op_h . ' !important;}';
-					} elseif ( $op_b !== '' ) {
-						$img_rule    = $scope_sel . ' .ecbb-event__image{object-position:' . $op_b . ';}';
-						$style_css[] = ( $mq !== '' ? $mq . '{' . $img_rule . '}' : $img_rule );
 					}
+					$img_rule    = $img_sel . '{' . implode( ';', $img_decls ) . '}';
+					$style_css[] = ( $mq !== '' ? $mq . '{' . $img_rule . '}' : $img_rule );
+				}
+
+				if ( ! function_exists( 'ecbb_object_position_from_image_align' ) ) {
+					continue;
+				}
+
+				if ( $dual ) {
+					$op_b = ecbb_object_position_from_image_align(
+						self::ecbb_responsive_pick( $p['ecbb_image_object_align'] ?? '', $device )
+					);
+					$op_h = ecbb_object_position_from_image_align( $p['ecbb_image_object_align_hover'] ?? '' );
+					if ( $op_b !== '' ) {
+						$base_rule   = $scope_sel . ' .ecbb-event__image--base{object-position:' . $op_b . ';}';
+						$style_css[] = ( $mq !== '' ? $mq . '{' . $base_rule . '}' : $base_rule );
+					}
+					if ( $op_h !== '' ) {
+						$hover_rule  = $scope_sel . ' .ecbb-event__image--hover{object-position:' . $op_h . ';}';
+						$style_css[] = ( $mq !== '' ? $mq . '{' . $hover_rule . '}' : $hover_rule );
+					}
+					continue;
+				}
+
+				$align_b = self::ecbb_responsive_pick( $p['ecbb_image_object_align'] ?? '', $device );
+				$op_b    = ecbb_object_position_from_image_align( $align_b );
+				$op_h    = ecbb_object_position_from_image_align( $p['ecbb_image_object_align_hover'] ?? '' );
+
+				if ( $hover_style_on && $op_h !== '' && $op_h !== $op_b ) {
+					if ( $op_b !== '' ) {
+						$base_rule   = $scope_sel . ' .ecbb-event__image{object-position:' . $op_b . ';transition:object-position 0.35s ease;}';
+						$style_css[] = ( $mq !== '' ? $mq . '{' . $base_rule . '}' : $base_rule );
+					} else {
+						$base_rule   = $scope_sel . ' .ecbb-event__image{transition:object-position 0.35s ease;}';
+						$style_css[] = ( $mq !== '' ? $mq . '{' . $base_rule . '}' : $base_rule );
+					}
+					$hover_css[] = $scope_sel . ':hover .ecbb-event__image{object-position:' . $op_h . ' !important;}';
+				} elseif ( $op_b !== '' ) {
+					$img_rule    = $scope_sel . ' .ecbb-event__image{object-position:' . $op_b . ';}';
+					$style_css[] = ( $mq !== '' ? $mq . '{' . $img_rule . '}' : $img_rule );
 				}
 			}
 		}
@@ -1717,6 +1761,11 @@ if ( ! function_exists( 'ecbb_read_responsive_spacing' ) ) {
 if ( ! function_exists( 'ecbb_button_declarations' ) ) {
 	function ecbb_button_declarations( ...$args ) {
 		return ECBB_Styles::ecbb_button_declarations( ...$args );
+	}
+}
+if ( ! function_exists( 'ecbb_build_image_declarations' ) ) {
+	function ecbb_build_image_declarations( ...$args ) {
+		return ECBB_Styles::ecbb_build_image_declarations( ...$args );
 	}
 }
 if ( ! function_exists( 'ecbb_build_inline_style_attr' ) ) {

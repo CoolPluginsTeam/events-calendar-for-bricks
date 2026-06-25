@@ -249,12 +249,11 @@ if ( ! class_exists( 'ECBB_Grid', false ) ) {
  *
  * @param \WP_Post $post            Event post.
  * @param array    $parts           Normalized repeater rows (order preserved).
- * @param string   $gap_style_value Vertical gap inside the meta column body.
  * @param callable $emit_part       function( \WP_Post $post, array $item, int $idx ): void
  * @return string
  */
 
-	public static function ecbb_grid_item_inner_markup( $post, array $parts, $gap_style_value, callable $emit_part ) {
+	public static function ecbb_grid_item_inner_markup( $post, array $parts, callable $emit_part ) {
 	ob_start();
 
 	echo '<div class="ecbb-ev__item-inner ecbb-ev__item-inner--grid">';
@@ -265,8 +264,7 @@ if ( ! class_exists( 'ECBB_Grid', false ) ) {
 	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	echo self::ecbb_grid_date_block_html( $post );
 
-	$gap_esc = esc_attr( $gap_style_value );
-	echo '<div class="ecbb-ev__grid-body" style="' . $gap_esc . '">';
+	echo '<div class="ecbb-ev__grid-body">';
 
 	$n = count( $parts );
 	for ( $i = 0; $i < $n; $i++ ) {

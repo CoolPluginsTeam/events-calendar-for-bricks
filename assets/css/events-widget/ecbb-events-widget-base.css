@@ -1,5 +1,5 @@
 /**
- * Events Widget — shared layout (list / grid), load more, featured image dual-layer hover.
+ * Events Widget — shared layout (list / grid), featured image dual-layer hover.
  * List chrome: `template/list/list-style-*.css`. Grid: `grid/ecbb-events-widget-grid.css`.
  */
 
@@ -144,52 +144,11 @@
 	line-height: 1.5;
 }
 
-/* Load more — layout/behavior defaults; colors & typography come from Dynamic Messages (Style). */
-.ecbb-load-more {
-	display: flex;
-	justify-content: center;
-	margin-top: 16px;
-	gap: 0.5rem;
-	flex-wrap: wrap;
-	align-items: center;
-}
-
-.ecbb-load-more__btn {
-	appearance: none;
-	border: 1px solid rgba(0, 0, 0, 0.15);
-	background: #111827;
-	color: #ffffff;
-	padding: 10px 16px;
-	border-radius: 8px;
-	cursor: pointer;
-	font-size: 14px;
-	line-height: 1.2;
-	font-family: inherit;
-	transition: opacity 0.2s ease, transform 0.2s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
-}
-
-/* Default hover motion is overridden by Dynamic Messages → Button hover in the builder. */
-
-.ecbb-load-more__btn:disabled,
-.ecbb-load-more__btn.is-loading {
-	opacity: 0.6;
-	cursor: not-allowed;
-	transform: none;
-}
-
-.ecbb-load-more__done {
+.ecbb-event-part--title .ecbb-event__link,
+.ecbb-event-part--title .ecbb-event__title-text {
 	display: inline-block;
-	padding: 8px 12px;
-	font-size: 14px;
-	line-height: 1.3;
-	color: rgba(0, 0, 0, 0.7);
-	background: rgba(0, 0, 0, 0.06);
-	border-radius: 999px;
-	transition: opacity 0.35s ease;
-}
-
-.ecbb-load-more__done.is-hiding {
-	opacity: 0;
+	width: fit-content;
+	max-width: 100%;
 }
 
 /* Featured image: optional second WP size on hover (crossfade). */

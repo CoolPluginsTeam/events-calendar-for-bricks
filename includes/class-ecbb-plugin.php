@@ -1,6 +1,6 @@
 <?php
 /**
- * Main plugin bootstrap (ECBB prefix: scripts, elements, AJAX).
+ * Main plugin bootstrap (ECBB prefix: scripts, elements).
  */
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
@@ -12,12 +12,7 @@ final class ECBB_WidgetClass {
 
     public function __construct() {
         add_action( 'init', [ $this, 'ecbb_register_elements' ], 11 );
-        add_action( 'init', [ $this, 'ecbb_register_elements' ], 99 );
-        add_action('wp_enqueue_scripts', [$this, 'ecbb_enqueue_scripts']);
-        add_action('wp_enqueue_scripts', [$this, 'ecbb_enqueue_builder_assets'], 25);
-        add_action('wp_enqueue_scripts', [$this, 'ecbb_enqueue_builder_preview_styles'], 99);
-        add_action('wp_ajax_ecbb_events_load_more', [$this, 'ecbb_ajax_events_load_more']);
-        add_action('wp_ajax_nopriv_ecbb_events_load_more', [$this, 'ecbb_ajax_events_load_more']);
+        add_action( 'wp_enqueue_scripts', [ $this, 'ecbb_enqueue_scripts' ], 25 );
         add_filter('bricks/element/settings', [$this, 'ecbb_filter_events_loop_element_settings'], 10, 2);
         add_action('wp_ajax_bricks_save_post', [$this, 'ecbb_preflight_merge_events_loop_repeaters_on_bricks_save'], 0);
     }
@@ -257,66 +252,54 @@ final class ECBB_WidgetClass {
     }
 
     /**
-     * Enqueue scripts and styles
+     * Enqueue front-end widget styles, builder panel assets, and iframe preview CSS.
      */
     public function ecbb_enqueue_scripts() {
         $this->ecbb_enqueue_events_widget_styles();
-    }
 
-    /**
-     * Bricks builder iframe preview: ensure loop front-end CSS is available (Style 2, etc.).
-     */
-    public function ecbb_enqueue_builder_preview_styles() {
-        if ( ! function_exists( 'bricks_is_builder_iframe' ) || ! bricks_is_builder_iframe() ) {
-            return;
+        if ( function_exists( 'bricks_is_builder_main' ) && bricks_is_builder_main() ) {
+            $this->ecbb_enqueue_builder_panel_assets();
         }
-        if ( wp_style_is( 'ecbb-events-widget-base', 'enqueued' ) || wp_style_is( 'ecbb-events-widget-base', 'done' ) ) {
-            return;
+
+        if ( function_exists( 'bricks_is_builder_iframe' ) && bricks_is_builder_iframe()
+            && ! wp_style_is( 'ecbb-events-widget-base', 'enqueued' )
+            && ! wp_style_is( 'ecbb-events-widget-base', 'done' ) ) {
+            $this->ecbb_enqueue_events_widget_styles();
         }
-        $this->ecbb_enqueue_events_widget_styles();
     }
 
     /**
      * Front-end CSS for the Events Widget (base + list styles under template/list + grid).
      */
     private function ecbb_enqueue_events_widget_styles() {
-        $base_path = ECBB_DIR . 'assets/css/events-widget/ecbb-events-widget-base.css';
-        wp_enqueue_style(
-            'ecbb-events-widget-base',
-            ECBB_URL . 'assets/css/events-widget/ecbb-events-widget-base.css',
-            [],
-            file_exists( $base_path ) ? (string) filemtime( $base_path ) : ECBB_VERSION
-        );
+        $this->ecbb_enqueue_style( 'ecbb-events-widget-base', 'assets/css/events-widget/ecbb-events-widget-base.css' );
+        $this->ecbb_enqueue_style( 'ecbb-list-1', 'assets/css/events-widget/template/list/list-style-1.css', [ 'ecbb-events-widget-base' ] );
+        $this->ecbb_enqueue_style( 'ecbb-list-2', 'assets/css/events-widget/template/list/list-style-2.css', [ 'ecbb-events-widget-base' ] );
+        $this->ecbb_enqueue_style( 'ecbb-events-widget-grid', 'assets/css/events-widget/grid/ecbb-events-widget-grid.css', [ 'ecbb-events-widget-base' ] );
+    }
 
-        $list1_path = ECBB_DIR . 'assets/css/events-widget/template/list/list-style-1.css';
-        wp_enqueue_style(
-            'ecbb-list-1',
-            ECBB_URL . 'assets/css/events-widget/template/list/list-style-1.css',
-            [ 'ecbb-events-widget-base' ],
-            file_exists( $list1_path ) ? (string) filemtime( $list1_path ) : ECBB_VERSION
-        );
+    /**
+     * Enqueue a plugin stylesheet from a single relative path.
+     *
+     * Resolves the disk path (for cache-busting via filemtime) and the public URL
+     * from one relative path, so the path is never duplicated at the call site.
+     *
+     * @param string        $handle        Unique style handle.
+     * @param string        $relative_path Path relative to the plugin root (e.g. assets/css/foo.css).
+     * @param array<string> $deps          Handles this style depends on.
+     * @return void
+     */
+    private function ecbb_enqueue_style( $handle, $relative_path, array $deps = [] ) {
+        $disk_path = ECBB_DIR . $relative_path;
+        $version   = file_exists( $disk_path ) ? (string) filemtime( $disk_path ) : ECBB_VERSION;
 
-        $list2_path = ECBB_DIR . 'assets/css/events-widget/template/list/list-style-2.css';
-        wp_enqueue_style(
-            'ecbb-list-2',
-            ECBB_URL . 'assets/css/events-widget/template/list/list-style-2.css',
-            [ 'ecbb-events-widget-base' ],
-            file_exists( $list2_path ) ? (string) filemtime( $list2_path ) : ECBB_VERSION
-        );
-
-        $grid_path = ECBB_DIR . 'assets/css/events-widget/grid/ecbb-events-widget-grid.css';
-        wp_enqueue_style(
-            'ecbb-events-widget-grid',
-            ECBB_URL . 'assets/css/events-widget/grid/ecbb-events-widget-grid.css',
-            [ 'ecbb-events-widget-base' ],
-            file_exists( $grid_path ) ? (string) filemtime( $grid_path ) : ECBB_VERSION
-        );
+        wp_enqueue_style( $handle, ECBB_URL . $relative_path, $deps, $version );
     }
 
     /**
      * Bricks main builder only: pill tabs for Event parts repeater (CONTENT | STYLE).
      */
-    public function ecbb_enqueue_builder_assets() {
+    private function ecbb_enqueue_builder_panel_assets() {
         if ( ! function_exists( 'bricks_is_builder_main' ) || ! bricks_is_builder_main() ) {
             return;
         }
@@ -377,393 +360,6 @@ final class ECBB_WidgetClass {
                     'btn_border_radius',
                 ],
         ] );
-    }
-
-    private function ecbb_normalize_color_value( $value ) {
-        return function_exists( 'ecbb_normalize_bricks_color' ) ? ecbb_normalize_bricks_color( $value ) : '';
-    }
-
-    private function ecbb_normalize_css_size( $value, $default_unit = 'px' ) {
-        $value = is_string( $value ) ? trim( $value ) : ( is_numeric( $value ) ? (string) $value : '' );
-        if ( $value === '' ) {
-            return '';
-        }
-
-        if ( preg_match( '/^-?\\d*\\.?\\d+(px|rem|em|%)$/', $value ) ) {
-            return $value;
-        }
-
-        if ( preg_match( '/^-?\\d*\\.?\\d+$/', $value ) ) {
-            $unit = in_array( $default_unit, [ 'px', 'rem', 'em', '%' ], true ) ? $default_unit : 'px';
-            return $value . $unit;
-        }
-
-        return '';
-    }
-
-    private function ecbb_build_inline_style_attr( array $item, $allow_radius = false ) {
-        if ( function_exists( 'ecbb_build_inline_style_attr' ) ) {
-            return ecbb_build_inline_style_attr( $item, $allow_radius );
-        }
-        return '';
-    }
-
-    private function ecbb_part_wrapper_attrs( array $item, int $idx, string $style = '' ): string {
-        return function_exists( 'ecbb_part_wrapper_attrs' )
-            ? ecbb_part_wrapper_attrs( $item, $idx, $style )
-            : ( $style !== '' ? ' style="' . esc_attr( $style ) . '"' : '' );
-    }
-
-    private function ecbb_render_part_html( \WP_Post $post, array $item, int $idx, string $skin = '' ): string {
-        if ( function_exists( 'ecbb_normalize_part_item' ) ) {
-            $item = ecbb_normalize_part_item( $item );
-        }
-        $part = isset( $item['part'] ) ? (string) $item['part'] : 'title';
-        $skin = (string) $skin;
-        $wrap = function_exists( 'ecbb_part_wrap_classes' )
-            ? ecbb_part_wrap_classes( $part, $idx, $skin, $item )
-            : ( 'ecbb-event-part ecbb-event-part--' . str_replace( '_', '-', $part ) . ' ecbb-p' . absint( $idx ) );
-
-        if ( function_exists( 'ecbb_event_part_extended_markup' ) ) {
-            $ext = ecbb_event_part_extended_markup( $post, $item, $idx, $this->ecbb_build_inline_style_attr( $item ), $skin );
-            if ( $ext !== false ) {
-                return $ext;
-            }
-        }
-
-        if ( $part === 'image' ) {
-            $thumb_id = (int) get_post_thumbnail_id( $post->ID );
-            if ( ! $thumb_id ) {
-                return '';
-            }
-
-            $img_style = $this->ecbb_build_inline_style_attr( $item, true );
-            $image_html = function_exists( 'ecbb_render_loop_featured_images' )
-                ? ecbb_render_loop_featured_images( $thumb_id, $item, $img_style )
-                : '';
-            if ( $image_html === '' ) {
-                $size = function_exists( 'ecbb_sanitize_attachment_image_size' )
-                    ? ecbb_sanitize_attachment_image_size( $item['image_size'] ?? '', 'large' )
-                    : ( isset( $item['image_size'] ) ? trim( (string) $item['image_size'] ) : 'large' );
-                if ( $size === '' ) {
-                    $size = 'large';
-                }
-                $image_html = wp_get_attachment_image(
-                    $thumb_id,
-                    $size,
-                    false,
-                    [
-                        'class' => 'ecbb-event__image',
-                        'style' => $img_style,
-                    ]
-                );
-            }
-            if ( ! $image_html ) {
-                return '';
-            }
-
-            $link = isset( $item['image_link'] ) ? (bool) $item['image_link'] : true;
-            $dual = function_exists( 'ecbb_loop_image_uses_dual_layer' ) && ecbb_loop_image_uses_dual_layer( $item );
-            $part_classes = $wrap;
-            if ( $dual ) {
-                $part_classes .= ' ecbb-is-dual-img';
-            }
-
-            $out  = '<div class="' . esc_attr( $part_classes ) . '"' . $this->ecbb_part_wrapper_attrs( $item, $idx ) . '>';
-            if ( $link ) {
-                $out .= '<a class="ecbb-event__link" href="' . esc_url( get_permalink( $post->ID ) ) . '">';
-            }
-            $out .= $image_html;
-            if ( $link ) {
-                $out .= '</a>';
-            }
-            $out .= '</div>';
-            return $out;
-        }
-
-        if ( $part === 'categories' ) {
-            $terms = get_the_terms( $post->ID, 'tribe_events_cat' );
-            if ( empty( $terms ) || is_wp_error( $terms ) ) {
-                return '';
-            }
-
-            $style = $this->ecbb_build_inline_style_attr( $item );
-            $inner = function_exists( 'ecbb_terms_list_html' )
-                ? ecbb_terms_list_html( $terms, $item, $style, $skin, 'categories' )
-                : '';
-            if ( $inner === '' ) {
-                return '';
-            }
-
-            return '<div class="' . esc_attr( $wrap ) . '"' . $this->ecbb_part_wrapper_attrs( $item, $idx, $style ) . '>' . $inner . '</div>';
-        }
-
-        if ( $part === 'tags' ) {
-            $terms = get_the_terms( $post->ID, 'post_tag' );
-            if ( empty( $terms ) || is_wp_error( $terms ) ) {
-                return '';
-            }
-
-            $style = $this->ecbb_build_inline_style_attr( $item );
-            $inner = function_exists( 'ecbb_terms_list_html' )
-                ? ecbb_terms_list_html( $terms, $item, $style, $skin, 'tags' )
-                : '';
-            if ( $inner === '' ) {
-                return '';
-            }
-
-            return '<div class="' . esc_attr( $wrap ) . '"' . $this->ecbb_part_wrapper_attrs( $item, $idx, $style ) . '>' . $inner . '</div>';
-        }
-
-        if ( $part === 'description' ) {
-            $source = $item['desc_source'] ?? 'auto';
-            $source = in_array( $source, [ 'auto', 'excerpt', 'content' ], true ) ? $source : 'auto';
-            $len_mode = isset( $item['desc_length'] ) ? (string) $item['desc_length'] : 'short';
-            $len_mode = in_array( $len_mode, [ 'short', 'full', 'custom' ], true ) ? $len_mode : 'short';
-            $words = isset( $item['desc_words'] ) ? max( 5, (int) $item['desc_words'] ) : 55;
-
-            $content = '';
-            if ( $source === 'content' || ( $source === 'auto' && $post->post_excerpt === '' ) ) {
-                $raw     = $post->post_content;
-                $content = has_blocks( $raw ) ? do_blocks( $raw ) : wpautop( $raw );
-                $content = do_shortcode( $content );
-            } elseif ( $post->post_excerpt ) {
-                $content = wpautop( $post->post_excerpt );
-            }
-            if ( $len_mode === 'short' ) {
-                $content = wpautop( wp_trim_words( wp_strip_all_tags( $content !== '' ? $content : $post->post_content ), 55 ) );
-            } elseif ( $len_mode === 'custom' ) {
-                $content = wpautop( wp_trim_words( wp_strip_all_tags( $content !== '' ? $content : $post->post_content ), $words ) );
-            }
-
-            $style = $this->ecbb_build_inline_style_attr( $item );
-            return '<div class="' . esc_attr( $wrap ) . '"' . $this->ecbb_part_wrapper_attrs( $item, $idx, $style ) . '>' . wp_kses_post( $content ) . '</div>';
-        }
-
-        if ( $part === 'date' ) {
-            $day  = '';
-            $time = '';
-            if ( function_exists( 'ecbb_event_part_build_day_time_range_parts' ) ) {
-                $parts_out = ecbb_event_part_build_day_time_range_parts( $post->ID, $item );
-                $day       = isset( $parts_out['day'] ) ? (string) $parts_out['day'] : '';
-                $time      = isset( $parts_out['time'] ) ? (string) $parts_out['time'] : '';
-            } elseif ( function_exists( 'tribe_get_start_date' ) ) {
-                $day = trim( wp_strip_all_tags( (string) \tribe_get_start_date( $post->ID, true ) ) );
-            } else {
-                $raw = get_post_meta( $post->ID, '_EventStartDate', true );
-                $ts  = $raw ? strtotime( (string) $raw ) : false;
-                $day = $ts
-                    ? trim( wp_strip_all_tags( date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $ts ) ) )
-                    : '';
-            }
-
-            $day  = trim( wp_strip_all_tags( (string) $day ) );
-            $time = trim( wp_strip_all_tags( (string) $time ) );
-
-            if ( $day === '' && $time === '' ) {
-                return '';
-            }
-
-            $style    = trim( (string) $this->ecbb_build_inline_style_attr( $item ) );
-            $row_icon = ( $time !== '' ) ? ' ecbb-has-row-icon' : '';
-            $out  = '<div class="' . esc_attr( $wrap . $row_icon ) . '"' . $this->ecbb_part_wrapper_attrs( $item, $idx, $style ) . '>';
-            $out .= '<span class="ecbb-event__date-day">' . esc_html( $day ) . '</span>';
-            if ( $time !== '' ) {
-                $out .= '<span class="ecbb-event__date-sep">,</span>';
-                $out .= '<span class="ecbb-event__date-time">' . esc_html( $time ) . '</span>';
-            }
-            $out .= '</div>';
-            return $out;
-        }
-
-        // Title: always h3; no link/hover when link or hover is off.
-        $tag   = 'h3';
-        $hover = ! function_exists( 'ecbb_event_part_hover_style_active' ) || ecbb_event_part_hover_style_active( $item );
-        $link  = function_exists( 'ecbb_event_part_title_link_active' )
-            ? ( ecbb_event_part_title_link_active( $item ) && $hover )
-            : ( ! empty( $item['link'] ) && $hover );
-        $style = $this->ecbb_build_inline_style_attr( $item );
-
-        $out = '<' . esc_attr( $tag ) . ' class="' . esc_attr( $wrap ) . '"' . $this->ecbb_part_wrapper_attrs( $item, $idx, $style ) . '>';
-        if ( $link ) {
-            $out .= '<a class="ecbb-event__link" href="' . esc_url( get_permalink( $post->ID ) ) . '">';
-            $out .= esc_html( get_the_title( $post->ID ) );
-            $out .= '</a>';
-        } else {
-            $out .= '<span class="ecbb-event__title-text">' . esc_html( get_the_title( $post->ID ) ) . '</span>';
-        }
-        $out .= '</' . esc_attr( $tag ) . '>';
-        return $out;
-    }
-
-    public function ecbb_ajax_events_load_more() {
-        check_ajax_referer( 'ecbb_events_load_more', 'nonce' );
-
-        $raw_settings = isset( $_POST['ecbb_settings'] ) ? wp_unslash( (string) $_POST['ecbb_settings'] ) : '';
-        $settings     = $raw_settings !== '' ? json_decode( $raw_settings, true ) : null;
-        $offset       = isset( $_POST['ecbb_offset'] ) ? absint( wp_unslash( $_POST['ecbb_offset'] ) ) : 0;
-        $limit        = isset( $_POST['ecbb_limit'] ) ? absint( wp_unslash( $_POST['ecbb_limit'] ) ) : 6;
-
-        if ( ! is_array( $settings ) ) {
-            wp_send_json_error(
-                [
-                    'message' => __( 'Invalid settings.', 'ecbb' ),
-                ],
-                400
-            );
-        }
-
-        if ( function_exists( 'ecbb_sanitize_load_more_settings' ) ) {
-            $settings = ecbb_sanitize_load_more_settings( $settings );
-        }
-
-        $item_chrome = function_exists( 'ecbb_sanitize_list_item_style' )
-            ? ecbb_sanitize_list_item_style( $settings['list_item_style'] ?? 'style-1' )
-            : 'style-1';
-
-        $template = isset( $settings['layout_template'] ) ? (string) $settings['layout_template'] : 'list';
-        if ( $template === 'carousel' ) {
-            $template = 'list';
-        }
-        $template = in_array( $template, [ 'list', 'grid' ], true ) ? $template : 'list';
-
-        $use_style1 = ( $template === 'list' && $item_chrome === 'style-1' );
-        $use_style2 = ( $template === 'list' && $item_chrome === 'style-2' );
-        $use_grid   = ( $template === 'grid' );
-
-        $item_classes = $use_grid
-            ? 'ecbb-ev__item ecbb-ev__item--grid repeater-item'
-            : 'ecbb-ev__item ecbb-ev__item--' . $item_chrome . ' repeater-item';
-
-        $parts_to_use = function_exists( 'ecbb_resolve_event_parts_for_context' )
-            ? ecbb_resolve_event_parts_for_context( $settings, $template, $item_chrome )
-            : [];
-        if ( ! is_array( $parts_to_use ) ) {
-            $parts_to_use = [];
-        }
-        if ( $use_grid && function_exists( 'ecbb_grid_normalize_parts' ) ) {
-            $parts_to_use = ecbb_grid_normalize_parts( $parts_to_use );
-        } elseif ( $use_style1 && function_exists( 'ecbb_list1_normalize_parts' ) ) {
-            $parts_to_use = ecbb_list1_normalize_parts( $parts_to_use );
-        } elseif ( $use_style2 ) {
-            $parts_to_use = ecbb_list2_normalize_parts( $parts_to_use );
-        } elseif (
-            $parts_to_use === []
-            || ( function_exists( 'ecbb_parts_array_is_effectively_empty' ) && ecbb_parts_array_is_effectively_empty( $parts_to_use ) )
-        ) {
-            $parts_to_use = [
-                [ 'part' => 'title', 'link' => true ],
-                [ 'part' => 'description', 'desc_source' => 'content' ],
-                [ 'part' => 'date', 'date_text_transform' => 'uppercase' ],
-            ];
-        }
-
-        if ( $limit < 1 ) {
-            $limit = 6;
-        }
-        $limit = min( $limit, 50 );
-
-        $base = function_exists( 'ecbb_query_tribe_args' ) ? ecbb_query_tribe_args( $settings ) : [];
-        if ( ! is_array( $base ) ) {
-            $base = [];
-        }
-        $base['post_type']           = 'tribe_events';
-        $base['post_status']         = 'publish';
-        $base['posts_per_page']      = $limit + 1; // fetch one extra to know if more exist
-        $base['offset']              = $offset;
-        $base['no_found_rows']       = true;
-        $base['ignore_sticky_posts'] = true;
-
-        $q = new \WP_Query( $base );
-
-        $posts = $q->posts;
-        $has_more = count($posts) > $limit;
-        if ( $has_more ) {
-            array_pop($posts);
-        }
-
-        $style2_last_month = null;
-        $style2_show_month = ecbb_list2_month_headings_enabled( $settings );
-
-        $style1_date_fmt = 'default';
-        if ( $use_style1 && function_exists( 'ecbb_list1_sanitize_date_format' ) ) {
-            $style1_date_fmt = ecbb_list1_sanitize_date_format( $settings['date_format'] ?? 'default' );
-        }
-
-        $html_items = '';
-        if ( function_exists( 'ecbb_render_settings' ) ) {
-            ecbb_render_settings( $settings );
-        }
-        foreach ( $posts as $p ) {
-            if ( ! $p instanceof \WP_Post ) {
-                continue;
-            }
-
-            if ( $use_style2 ) {
-                $html_items .= ecbb_list2_maybe_month_heading_html( $p->ID, $style2_last_month, $style2_show_month );
-            }
-
-            $html_items .= '<div class="' . esc_attr( $item_classes ) . '">';
-
-            if ( $use_style1 && function_exists( 'ecbb_list1_item_inner_markup' ) ) {
-                $gap_inner = 'display:flex;flex-direction:column;gap:8px;';
-                $self      = $this;
-                $html_items .= ecbb_list1_item_inner_markup(
-                    $p,
-                    $parts_to_use,
-                    $gap_inner,
-                    function ( $ev, $item, $idx ) use ( $self ) {
-                        echo $self->ecbb_render_part_html( $ev, $item, $idx, 'style1' );
-                    },
-                    $style1_date_fmt
-                );
-            } elseif ( $use_style2 ) {
-                $gap_inner = ecbb_list2_body_stack_gap_style( 8, 'px' );
-                $self      = $this;
-                $html_items .= ecbb_list2_item_inner_markup(
-                    $p,
-                    $parts_to_use,
-                    $gap_inner,
-                    function ( $ev, $item, $idx ) use ( $self ) {
-                        echo $self->ecbb_render_part_html( $ev, $item, $idx, 'style2' );
-                    }
-                );
-            } elseif ( $use_grid && function_exists( 'ecbb_grid_item_inner_markup' ) ) {
-                $gap_inner = 'display:flex;flex-direction:column;gap:3px;';
-                $self      = $this;
-                $html_items .= ecbb_grid_item_inner_markup(
-                    $p,
-                    $parts_to_use,
-                    $gap_inner,
-                    function ( $ev, $item, $idx ) use ( $self ) {
-                        echo $self->ecbb_render_part_html( $ev, $item, $idx );
-                    }
-                );
-            } else {
-                $part_idx   = 0;
-                $part_html = '';
-                foreach ( $parts_to_use as $item ) {
-                    if ( ! is_array( $item ) ) {
-                        continue;
-                    }
-                    $part_html .= $this->ecbb_render_part_html( $p, $item, $part_idx );
-                    $part_idx++;
-                }
-                $html_items .= $part_html;
-            }
-
-            $html_items .= '</div>';
-        }
-
-        if ( function_exists( 'ecbb_render_settings' ) ) {
-            ecbb_render_settings( [] );
-        }
-
-        wp_send_json_success([
-            'html'      => $html_items,
-            'nextOffset'=> $offset + count($posts),
-            'hasMore'   => $has_more,
-        ]);
     }
 }
 

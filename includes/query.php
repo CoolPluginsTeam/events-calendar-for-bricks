@@ -1,6 +1,6 @@
 <?php
 /**
- * Query helpers for the Events Widget (TEC tribe_get_events args, load-more AJAX).
+ * Query helpers for the Events Widget (TEC tribe_get_events args).
  *
  * @package ECBB
  */
@@ -219,219 +219,19 @@ if ( ! class_exists( 'ECBB_Query', false ) ) {
 }
 
 /**
- * Sanitize load-more AJAX settings (scalar keys used by the handler).
- *
- * Preserves repeater arrays; validates known fields only.
- *
- * @param array $settings Decoded JSON settings from the client.
- * @return array
- */
-
-	public static function ecbb_sanitize_load_more_settings( array $settings ) {
-	$out = $settings;
-
-	$template = isset( $out['layout_template'] ) ? sanitize_key( (string) $out['layout_template'] ) : 'list';
-	if ( 'carousel' === $template ) {
-		$template = 'list';
-	}
-	$out['layout_template'] = in_array( $template, [ 'list', 'grid' ], true ) ? $template : 'list';
-
-	if ( function_exists( 'ecbb_sanitize_list_item_style' ) ) {
-		$out['list_item_style'] = ecbb_sanitize_list_item_style( $out['list_item_style'] ?? 'style-1' );
-	}
-
-	if ( array_key_exists( 'style2_show_month_headings', $out ) ) {
-		$out['style2_show_month_headings'] = ecbb_sanitize_style2_show_month_headings( $out['style2_show_month_headings'] );
-	}
-
-	if ( isset( $out['item_gap'] ) && is_array( $out['item_gap'] ) ) {
-		foreach ( [ 'desktop', 'tablet', 'mobile' ] as $device ) {
-			if ( isset( $out['item_gap'][ $device ] ) && $out['item_gap'][ $device ] !== '' ) {
-				$out['item_gap'][ $device ] = max( 0, (float) $out['item_gap'][ $device ] );
-			}
-		}
-	} elseif ( isset( $out['item_gap'] ) ) {
-		$out['item_gap'] = max( 0, (float) $out['item_gap'] );
-	}
-
-	foreach ( array_keys( $out ) as $setting_key ) {
-		if ( strpos( (string) $setting_key, 'item_gap:' ) === 0 ) {
-			$out[ $setting_key ] = max( 0, (float) $out[ $setting_key ] );
-		}
-	}
-
-	if ( isset( $out['grid_cols'] ) ) {
-		if ( is_array( $out['grid_cols'] ) ) {
-			foreach ( [ 'desktop', 'tablet', 'mobile' ] as $device ) {
-				if ( isset( $out['grid_cols'][ $device ] ) && $out['grid_cols'][ $device ] !== '' ) {
-					$out['grid_cols'][ $device ] = max( 1, (int) $out['grid_cols'][ $device ] );
-				}
-			}
-		} else {
-			$out['grid_cols'] = max( 1, (int) $out['grid_cols'] );
-		}
-	}
-
-	foreach ( array_keys( $out ) as $setting_key ) {
-		if ( strpos( (string) $setting_key, 'grid_cols:' ) === 0 ) {
-			$out[ $setting_key ] = max( 1, (int) $out[ $setting_key ] );
-		}
-	}
-
-	foreach ( [ 'grid_cols_desktop', 'grid_cols_tablet', 'grid_cols_mobile' ] as $legacy_cols_key ) {
-		if ( isset( $out[ $legacy_cols_key ] ) ) {
-			$out[ $legacy_cols_key ] = max( 1, (int) $out[ $legacy_cols_key ] );
-		}
-	}
-
-	$item_gap_unit = isset( $out['item_gap_unit'] ) ? (string) $out['item_gap_unit'] : 'px';
-	$out['item_gap_unit'] = in_array( $item_gap_unit, [ 'px', 'rem', 'em' ], true ) ? $item_gap_unit : 'px';
-
-	if ( isset( $out['date_format'] ) && function_exists( 'ecbb_list1_sanitize_date_format' ) ) {
-		$out['date_format'] = ecbb_list1_sanitize_date_format( $out['date_format'] );
-	}
-
-	if ( isset( $out['event_cost_currency'] ) && function_exists( 'ecbb_sanitize_event_cost_currency' ) ) {
-		$out['event_cost_currency'] = ecbb_sanitize_event_cost_currency( $out['event_cost_currency'] );
-	}
-
-	if ( isset( $out['event_categories'] ) && is_array( $out['event_categories'] ) ) {
-		$out['event_categories'] = array_values(
-			array_filter(
-				array_map( 'sanitize_title', $out['event_categories'] )
-			)
-		);
-	}
-
-	if ( isset( $out['order'] ) ) {
-		$out['order'] = ( ! empty( $out['order'] ) && 'DESC' === strtoupper( (string) $out['order'] ) ) ? 'DESC' : 'ASC';
-	}
-
-	if ( isset( $out['event_type'] ) ) {
-		$type = sanitize_key( (string) $out['event_type'] );
-		$out['event_type'] = in_array( $type, [ 'past', 'future', 'all' ], true ) ? $type : 'all';
-	}
-
-	if ( isset( $out['event_time_mode'] ) ) {
-		$mode = sanitize_key( (string) $out['event_time_mode'] );
-		$out['event_time_mode'] = ( 'between' === $mode ) ? 'between' : 'all';
-	}
-
-	if ( isset( $out['event_range_start'] ) ) {
-		$out['event_range_start'] = sanitize_text_field( (string) $out['event_range_start'] );
-	}
-
-	if ( isset( $out['event_range_end'] ) ) {
-		$out['event_range_end'] = sanitize_text_field( (string) $out['event_range_end'] );
-	}
-
-	if ( array_key_exists( 'load_more', $out ) ) {
-		$lm = $out['load_more'];
-		$out['load_more'] = ( $lm === true || $lm === 'true' || $lm === 1 || $lm === '1' );
-	}
-
-	foreach ( [ 'load_more_text', 'load_more_loading_text', 'load_more_no_more_text' ] as $text_key ) {
-		if ( isset( $out[ $text_key ] ) ) {
-			$out[ $text_key ] = sanitize_text_field( (string) $out[ $text_key ] );
-		}
-	}
-
-	if ( isset( $out['load_more_done_hide_ms'] ) ) {
-		$out['load_more_done_hide_ms'] = max( 300, (int) $out['load_more_done_hide_ms'] );
-	}
-
-	return $out;
-}
-
-/**
- * @param array $settings Element settings.
- * @return bool
- */
-
-	public static function ecbb_load_more_enabled( array $settings ) {
-	if ( empty( $settings['load_more'] ) ) {
-		return false;
-	}
-	$v = $settings['load_more'];
-	return $v === true || $v === 'true' || $v === 1 || $v === '1';
-}
-
-/**
- * Events shown per load-more batch (uses Number of events; 0 when unlimited).
+ * Query events for the initial widget render.
  *
  * @param array $settings Element settings.
- * @return int
- */
-
-	public static function ecbb_load_more_batch_size( array $settings ) {
-	$ppp = array_key_exists( 'posts_per_page', $settings ) ? (int) $settings['posts_per_page'] : 10;
-	return $ppp > 0 ? $ppp : 0;
-}
-
-/**
- * Query events for the initial widget render (optionally fetches one extra for pagination).
- *
- * @param array $settings Element settings.
- * @return array{0:\WP_Post[],1:bool,2:int} [events, has_more, batch_size]
+ * @return \WP_Post[]
  */
 
 	public static function ecbb_fetch_events_for_display( array $settings ) {
-	$batch     = self::ecbb_load_more_batch_size( $settings );
-	$load_more = self::ecbb_load_more_enabled( $settings ) && $batch > 0;
-
-	$args = self::ecbb_query_tribe_args( $settings );
-	if ( $load_more ) {
-		$args['posts_per_page'] = $batch + 1;
-	}
-
-	$events = function_exists( 'tribe_get_events' ) ? tribe_get_events( $args ) : [];
+	$events = function_exists( 'tribe_get_events' ) ? tribe_get_events( self::ecbb_query_tribe_args( $settings ) ) : [];
 	if ( ! is_array( $events ) ) {
 		$events = [];
 	}
 
-	$has_more = false;
-	if ( $load_more && count( $events ) > $batch ) {
-		$has_more = true;
-		array_pop( $events );
-	}
-
-	return [ $events, $has_more, $batch ];
-}
-
-/**
- * Register and enqueue the load-more script (once per request).
- *
- * @return void
- */
-
-	public static function ecbb_enqueue_load_more_assets() {
-	static $done = false;
-	if ( $done ) {
-		return;
-	}
-	$done = true;
-
-	if ( ! wp_script_is( 'ecbb-load-more', 'registered' ) ) {
-		$lm_path = ECBB_DIR . 'assets/js/events-load-more.js';
-		wp_register_script(
-			'ecbb-load-more',
-			ECBB_URL . 'assets/js/events-load-more.js',
-			[],
-			file_exists( $lm_path ) ? (string) filemtime( $lm_path ) : ECBB_VERSION,
-			true
-		);
-
-		wp_localize_script(
-			'ecbb-load-more',
-			'ECBBEventsLoadMore',
-			[
-				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-				'nonce'   => wp_create_nonce( 'ecbb_events_load_more' ),
-			]
-		);
-	}
-
-	wp_enqueue_script( 'ecbb-load-more' );
+	return $events;
 }
 
 	}
@@ -473,28 +273,8 @@ if ( ! function_exists( 'ecbb_query_tribe_args' ) ) {
 		return ECBB_Query::ecbb_query_tribe_args( ...$args );
 	}
 }
-if ( ! function_exists( 'ecbb_sanitize_load_more_settings' ) ) {
-	function ecbb_sanitize_load_more_settings( ...$args ) {
-		return ECBB_Query::ecbb_sanitize_load_more_settings( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_load_more_enabled' ) ) {
-	function ecbb_load_more_enabled( ...$args ) {
-		return ECBB_Query::ecbb_load_more_enabled( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_load_more_batch_size' ) ) {
-	function ecbb_load_more_batch_size( ...$args ) {
-		return ECBB_Query::ecbb_load_more_batch_size( ...$args );
-	}
-}
 if ( ! function_exists( 'ecbb_fetch_events_for_display' ) ) {
 	function ecbb_fetch_events_for_display( ...$args ) {
 		return ECBB_Query::ecbb_fetch_events_for_display( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_enqueue_load_more_assets' ) ) {
-	function ecbb_enqueue_load_more_assets( ...$args ) {
-		return ECBB_Query::ecbb_enqueue_load_more_assets( ...$args );
 	}
 }

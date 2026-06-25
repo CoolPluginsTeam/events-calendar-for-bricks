@@ -113,6 +113,9 @@
 /* ── Middle body ── */
 
 .ecbb-ev__style1-body {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
 	background-color: var(--ecbb-s1-body-bg);
 	padding: 1.5rem 1.75rem;
 	min-width: 0;

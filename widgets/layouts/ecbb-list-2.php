@@ -414,42 +414,19 @@ if ( ! class_exists( 'ECBB_List_2', false ) ) {
 }
 
 /**
- * Inline flex stack style for the Style 2 body column — slightly tighter than raw `part_gap`
- * so repeater rows do not read overly loose.
- *
- * @param float|string $part_gap      Saved part gap (number).
- * @param string       $part_gap_unit px|rem|em.
- * @return string                     Full `style=""` fragment value (no attribute wrapper).
- */
-
-	public static function ecbb_list2_body_stack_gap_style( $part_gap, $part_gap_unit ) {
-	$part_gap = is_numeric( $part_gap ) ? (float) $part_gap : 0.0;
-	$unit     = in_array( (string) $part_gap_unit, [ 'px', 'rem', 'em' ], true ) ? (string) $part_gap_unit : 'px';
-	if ( 'px' === $unit ) {
-		$g = max( 4, min( $part_gap, 7 ) );
-	} else {
-		$g = max( 0.3, min( $part_gap, 0.5625 ) );
-	}
-	return sprintf( 'display:flex;flex-direction:column;gap:%s%s;', (string) $g, $unit );
-}
-
-/**
  * Markup for the inner Style 2 row (date rail + repeater body + optional image column).
  * Read more stays in the body column; only the featured image is placed in the trail aside.
  *
  * @param \WP_Post $post            Event post.
  * @param array    $parts           Full repeater settings (order preserved).
- * @param string   $gap_style_value       e.g. display:flex;flex-direction:column;gap:12px;
  * @param callable $emit_part       function( \WP_Post $post, array $item, int $idx ): void
  * @return string
  */
 
-	public static function ecbb_list2_item_inner_markup( $post, array $parts, $gap_style_value, callable $emit_part ) {
+	public static function ecbb_list2_item_inner_markup( $post, array $parts, callable $emit_part ) {
 	if ( ! ( $post instanceof \WP_Post ) ) {
 		return '';
 	}
-
-	$gap_style_value = (string) $gap_style_value;
 
 	ob_start();
 	$img_info   = self::ecbb_list2_find_first_image_part_row( $parts );
@@ -462,8 +439,7 @@ if ( ! class_exists( 'ECBB_List_2', false ) ) {
 	echo '<div class="' . esc_attr( $inner_class ) . '">';
 	echo self::ecbb_list2_date_rail_html( $post ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- builder-internal HTML, fields escaped at source.
 
-	$gap_esc = esc_attr( $gap_style_value );
-	echo '<div class="ecbb-style2-body" style="' . $gap_esc . '">';
+	echo '<div class="ecbb-style2-body">';
 
 	$n = count( $parts );
 	for ( $i = 0; $i < $n; $i++ ) {
@@ -570,11 +546,6 @@ if ( ! function_exists( 'ecbb_list2_find_first_image_part_row' ) ) {
 if ( ! function_exists( 'ecbb_list2_skip_middle_part' ) ) {
 	function ecbb_list2_skip_middle_part( ...$args ) {
 		return ECBB_List_2::ecbb_list2_skip_middle_part( ...$args );
-	}
-}
-if ( ! function_exists( 'ecbb_list2_body_stack_gap_style' ) ) {
-	function ecbb_list2_body_stack_gap_style( ...$args ) {
-		return ECBB_List_2::ecbb_list2_body_stack_gap_style( ...$args );
 	}
 }
 if ( ! function_exists( 'ecbb_list2_item_inner_markup' ) ) {

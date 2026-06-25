@@ -463,13 +463,12 @@ if ( ! class_exists( 'ECBB_List_1', false ) ) {
  *
  * @param \WP_Post $post            Event post.
  * @param array    $parts           Full repeater settings (order preserved).
- * @param string   $gap_style_value e.g. display:flex;flex-direction:column;gap:12px;
  * @param callable $emit_part       function( \WP_Post $post, array $item, int $idx ): void
  * @param string   $date_format     Style 1 left-column format key (see Events Query control).
  * @return string
  */
 
-	public static function ecbb_list1_item_inner_markup( $post, array $parts, $gap_style_value, callable $emit_part, $date_format = 'default' ) {
+	public static function ecbb_list1_item_inner_markup( $post, array $parts, callable $emit_part, $date_format = 'default' ) {
 	if ( ! ( $post instanceof \WP_Post ) ) {
 		return '';
 	}
@@ -482,8 +481,7 @@ if ( ! class_exists( 'ECBB_List_1', false ) ) {
 	echo '<div class="' . esc_attr( $inner_class ) . '">';
 	echo self::ecbb_list1_date_block_html( $post, $date_format ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- builder-internal HTML, fields escaped at source.
 
-	$gap_esc = esc_attr( $gap_style_value );
-	echo '<div class="ecbb-ev__style1-body" style="' . $gap_esc . '">';
+	echo '<div class="ecbb-ev__style1-body">';
 
 	$n = count( $parts );
 	for ( $i = 0; $i < $n; $i++ ) {
