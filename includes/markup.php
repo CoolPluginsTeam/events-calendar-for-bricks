@@ -2128,9 +2128,34 @@ if (! class_exists('ECBB_Markup', false)) {
 		}
 
 		/**
-		* @param mixed $value Saved control value.
-		* @return string style-1 or style-2
-		*/
+		 * @param mixed $value Saved `layout_template` control value.
+		 * @return string list|grid
+		 */
+		public static function ecbb_sanitize_template( $template ) {
+			$template = is_string( $template ) ? trim( $template ) : 'list';
+			if ( $template === 'carousel' ) {
+				$template = 'list';
+			}
+			return in_array( $template, [ 'list', 'grid' ], true ) ? $template : 'list';
+		}
+
+		/**
+		 * Normalize layout template + list style from element settings.
+		 *
+		 * @param array<string,mixed> $settings Element or AJAX settings.
+		 * @return array{template:string,item_chrome:string}
+		 */
+		public static function ecbb_sanitize_layout_template( array $settings ) {
+			return [
+				'template'    => self::ecbb_sanitize_template( $settings['layout_template'] ?? 'list' ),
+				'item_chrome' => self::ecbb_sanitize_list_style( $settings['list_item_style'] ?? 'style-1' ),
+			];
+		}
+
+		/**
+		 * @param mixed $value Saved control value.
+		 * @return string style-1 or style-2
+		 */
 
 		public static function ecbb_sanitize_list_style($value)
 		{
@@ -2228,12 +2253,7 @@ if (! class_exists('ECBB_Markup', false)) {
 		};
 
 		$template = is_string($template) ? trim($template) : '';
-		if ($template === 'carousel') {
-			$template = 'list';
-		}
-		if (! in_array($template, ['list', 'grid'], true)) {
-			$template = 'list';
-		}
+		$template = self::ecbb_sanitize_template( $template );
 
 		$item_chrome = self::ecbb_sanitize_list_style($item_chrome);
 

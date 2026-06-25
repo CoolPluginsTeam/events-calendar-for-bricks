@@ -18,6 +18,26 @@ if ( ! class_exists( 'ECBB_WidgetClass', false ) ) {
 		}
 
 		/**
+		* Include the render/builder helper files on demand.
+		*
+		* Called lazily (element load, settings filter, AJAX save, builder
+		* assets) so these files are only parsed when the events widget is
+		* actually built or rendered — not on every request. Idempotent via
+		* require_once.
+		*
+		* @return void
+		*/
+		public static function ecbb_load_render_dependencies() {
+			require_once ECBB_DIR . 'includes/query.php';
+			require_once ECBB_DIR . 'includes/markup.php';
+			require_once ECBB_DIR . 'includes/styles.php';
+			require_once ECBB_DIR . 'includes/controls.php';
+			require_once ECBB_DIR . 'widgets/layouts/ecbb-list-1.php';
+			require_once ECBB_DIR . 'widgets/layouts/ecbb-grid.php';
+			require_once ECBB_DIR . 'widgets/layouts/ecbb-list-2.php';
+		}
+
+		/**
 		* Before Bricks reads $_POST content, merge inactive layout repeaters from the last saved data.
 		* Hidden `required` repeaters are often sent empty/omitted when saving while another template is selected,
 		* which cleared `parts_grid` / `parts_style*` in post meta after refresh.
@@ -38,6 +58,8 @@ if ( ! class_exists( 'ECBB_WidgetClass', false ) ) {
 			if ( ! current_user_can( 'edit_post', $post_id ) ) {
 				return;
 			}
+
+			self::ecbb_load_render_dependencies();
 
 			foreach ( [ 'content', 'header', 'footer' ] as $area ) {
 				if ( empty( $_POST[ $area ] ) || ! is_string( $_POST[ $area ] ) ) {
@@ -100,10 +122,6 @@ if ( ! class_exists( 'ECBB_WidgetClass', false ) ) {
 		* @return array<int,array<string,mixed>>
 		*/
 		private function ecbb_apply_inactive_part_repeater_preservation( array $new_elements, array $old_elements_indexed ) {
-			if ( ! class_exists( 'ECBB_Markup', false ) ) {
-				return $new_elements;
-			}
-
 			foreach ( $new_elements as $i => $element ) {
 				if ( ! is_array( $element ) ) {
 					continue;
@@ -124,16 +142,11 @@ if ( ! class_exists( 'ECBB_WidgetClass', false ) ) {
 				}
 				$new_settings = &$new_elements[ $i ]['settings'];
 
-				if ( class_exists( 'ECBB_Markup', false ) ) {
-					$new_settings = \ECBB_Markup::ecbb_norm_settings_hover( $new_settings );
-				}
+				$new_settings = \ECBB_Markup::ecbb_norm_settings_hover( $new_settings );
 
-				$layout_template = isset( $new_settings['layout_template'] ) ? (string) $new_settings['layout_template'] : 'list';
-				if ( $layout_template === 'carousel' ) {
-					$layout_template = 'list';
-				}
-				$layout_template = in_array( $layout_template, [ 'list', 'grid' ], true ) ? $layout_template : 'list';
-				$list_item_style = \ECBB_Markup::ecbb_sanitize_list_style( $new_settings['list_item_style'] ?? 'style-1' );
+				$layout          = \ECBB_Markup::ecbb_sanitize_layout_template( $new_settings );
+				$layout_template = $layout['template'];
+				$list_item_style = $layout['item_chrome'];
 
 				foreach ( [ 'parts_style1', 'parts_style2', 'parts_grid' ] as $parts_repeater_key ) {
 					$is_active_repeater = false;
@@ -184,47 +197,36 @@ if ( ! class_exists( 'ECBB_WidgetClass', false ) ) {
 			if ( ! isset( $element->name ) || $element->name !== 'ecbb-events-loop' ) {
 				return $settings;
 			}
-			if ( ! class_exists( 'ECBB_Markup', false ) ) {
-				return $settings;
-			}
 
-			if ( class_exists( 'ECBB_Markup', false ) ) {
-				$settings = \ECBB_Markup::ecbb_norm_settings_hover( $settings );
-			}
+			self::ecbb_load_render_dependencies();
 
-			$layout_template = isset( $settings['layout_template'] ) ? (string) $settings['layout_template'] : 'list';
-			if ( $layout_template === 'carousel' ) {
-				$layout_template = 'list';
-			}
-			$layout_template = in_array( $layout_template, [ 'list', 'grid' ], true ) ? $layout_template : 'list';
-			$list_item_style = \ECBB_Markup::ecbb_sanitize_list_style( $settings['list_item_style'] ?? 'style-1' );
+			$settings = \ECBB_Markup::ecbb_norm_settings_hover( $settings );
+
+			$layout          = \ECBB_Markup::ecbb_sanitize_layout_template( $settings );
+			$layout_template = $layout['template'];
+			$list_item_style = $layout['item_chrome'];
 
 			if ( $layout_template === 'list' && $list_item_style === 'style-1' ) {
 				$parts_repeater = isset( $settings['parts_style1'] ) && is_array( $settings['parts_style1'] ) ? $settings['parts_style1'] : [];
-				if ( class_exists( 'ECBB_Markup', false )
-					&& ! \ECBB_Markup::ecbb_parts_is_empty( $parts_repeater )
+				if ( ! \ECBB_Markup::ecbb_parts_is_empty( $parts_repeater )
 					&& class_exists( 'ECBB_List_1', false ) ) {
 					$settings['parts_style1'] = \ECBB_List_1::ecbb_norm_parts( $parts_repeater );
 				}
 			} elseif ( $layout_template === 'list' && $list_item_style === 'style-2' ) {
 				$parts_repeater = isset( $settings['parts_style2'] ) && is_array( $settings['parts_style2'] ) ? $settings['parts_style2'] : [];
-				if ( class_exists( 'ECBB_Markup', false )
-					&& ! \ECBB_Markup::ecbb_parts_is_empty( $parts_repeater )
+				if ( ! \ECBB_Markup::ecbb_parts_is_empty( $parts_repeater )
 					&& class_exists( 'ECBB_List_2', false ) ) {
 					$settings['parts_style2'] = \ECBB_List_2::ecbb_norm_parts( $parts_repeater );
 				}
 			} elseif ( $layout_template === 'grid' ) {
 				$parts_repeater = isset( $settings['parts_grid'] ) && is_array( $settings['parts_grid'] ) ? $settings['parts_grid'] : [];
-				if ( class_exists( 'ECBB_Markup', false )
-					&& ! \ECBB_Markup::ecbb_parts_is_empty( $parts_repeater )
+				if ( ! \ECBB_Markup::ecbb_parts_is_empty( $parts_repeater )
 					&& class_exists( 'ECBB_Grid', false ) ) {
 					$settings['parts_grid'] = \ECBB_Grid::ecbb_norm_parts( $parts_repeater );
 				}
 			}
 
-			if ( class_exists( 'ECBB_Markup', false ) ) {
-				$settings = \ECBB_Markup::ecbb_migrate_cost_currency( $settings );
-			}
+			$settings = \ECBB_Markup::ecbb_migrate_cost_currency( $settings );
 
 			return $settings;
 		}
@@ -265,13 +267,13 @@ if ( ! class_exists( 'ECBB_WidgetClass', false ) ) {
 		}
 
 		/**
-		* Front-end CSS for the Events Widget (base + list styles under template/list + grid).
+		* Front-end CSS for the Events Widget (base + list/grid template styles).
 		*/
 		private function ecbb_enqueue_events_widget_styles() {
 			$this->ecbb_enqueue_style( 'ecbb-events-widget-base', 'assets/css/events-widget/ecbb-events-widget-base.css' );
-			$this->ecbb_enqueue_style( 'ecbb-list-1', 'assets/css/events-widget/template/list/list-style-1.css', [ 'ecbb-events-widget-base' ] );
-			$this->ecbb_enqueue_style( 'ecbb-list-2', 'assets/css/events-widget/template/list/list-style-2.css', [ 'ecbb-events-widget-base' ] );
-			$this->ecbb_enqueue_style( 'ecbb-events-widget-grid', 'assets/css/events-widget/grid/ecbb-events-widget-grid.css', [ 'ecbb-events-widget-base' ] );
+			$this->ecbb_enqueue_style( 'ecbb-list-1', 'assets/css/events-widget/list-style-1.css', [ 'ecbb-events-widget-base' ] );
+			$this->ecbb_enqueue_style( 'ecbb-list-2', 'assets/css/events-widget/list-style-2.css', [ 'ecbb-events-widget-base' ] );
+			$this->ecbb_enqueue_style( 'ecbb-events-widget-grid', 'assets/css/events-widget/ecbb-events-widget-grid.css', [ 'ecbb-events-widget-base' ] );
 		}
 
 		/**
@@ -296,9 +298,7 @@ if ( ! class_exists( 'ECBB_WidgetClass', false ) ) {
 		* Bricks main builder only: pill tabs for Event parts repeater (CONTENT | STYLE).
 		*/
 		private function ecbb_enqueue_builder_panel_assets() {
-			if ( ! function_exists( 'bricks_is_builder_main' ) || ! bricks_is_builder_main() ) {
-				return;
-			}
+			self::ecbb_load_render_dependencies();
 
 			$builder_css_path = ECBB_DIR . 'assets/css/ecbb-builder.css';
 			wp_enqueue_style(
@@ -318,43 +318,19 @@ if ( ! class_exists( 'ECBB_WidgetClass', false ) ) {
 			);
 
 			wp_localize_script( 'ecbb-builder', 'ECBBBuilder', [
-				'tabContent'  => esc_html__( 'CONTENT', 'ecbb' ),
-				'tabStyle'    => esc_html__( 'STYLE', 'ecbb' ),
-				'hoverParts'  => class_exists( 'ECBB_Controls', false )
-					? \ECBB_Controls::ecbb_hover_part_types()
-					: [ 'title', 'categories', 'tags', 'read_more', 'event_tickets', 'event_rsvp', 'image' ],
-				'interactiveHoverParts' => class_exists( 'ECBB_Controls', false )
-					? \ECBB_Controls::ecbb_hover_interactive_types()
-					: [ 'title', 'categories', 'tags', 'read_more', 'event_tickets', 'event_rsvp' ],
-				'interactiveHoverKeys' => [
+				'tabContent'            => esc_html__( 'CONTENT', 'ecbb' ),
+				'tabStyle'              => esc_html__( 'STYLE', 'ecbb' ),
+				'hoverParts'            => \ECBB_Controls::ecbb_hover_part_types(),
+				'interactiveHoverParts' => \ECBB_Controls::ecbb_hover_interactive_types(),
+				'interactiveHoverKeys'  => [
 					'ecbb_sep_hover',
 					'ecbb_hover_color',
 					'ecbb_hover_background',
 					'ecbb_hover_text_decoration',
 					'ecbb_hover_animation',
 				],
-				'hoverKeys'   => class_exists( 'ECBB_Controls', false )
-					? \ECBB_Controls::ecbb_hover_field_keys()
-					: [
-						'ecbb_sep_hover',
-						'ecbb_use_hover',
-						'ecbb_hover_color',
-						'ecbb_hover_background',
-						'ecbb_hover_text_decoration',
-						'ecbb_hover_animation',
-						'image_size_hover',
-						'ecbb_image_object_align_hover',
-					],
-				'btnBorderKeys' => class_exists( 'ECBB_Controls', false )
-					? \ECBB_Controls::ecbb_btn_border_keys()
-					: [
-						'btn_sep_border',
-						'btn_border_type',
-						'btn_border_width',
-						'btn_border_color',
-						'btn_padding',
-						'btn_border_radius',
-					],
+				'hoverKeys'             => \ECBB_Controls::ecbb_hover_field_keys(),
+				'btnBorderKeys'         => \ECBB_Controls::ecbb_btn_border_keys(),
 			] );
 		}
 	}

@@ -1,6 +1,6 @@
 /**
  * Events Widget — shared layout (list / grid), featured image dual-layer hover.
- * List chrome: `template/list/list-style-*.css`. Grid: `grid/ecbb-events-widget-grid.css`.
+ * List chrome: `list-style-*.css`. Grid: `ecbb-events-widget-grid.css`.
  */
 
 .ecbb-ev__list--list {

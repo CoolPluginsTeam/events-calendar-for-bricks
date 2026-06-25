@@ -1,10 +1,10 @@
 <?php
 /**
  * Plugin Name: Events Calendar for Bricks Builder
- * Plugin URI: https://example.com/ecbb
+ *  Plugin URI: https://eventscalendaraddons.com/?utm_source=ectbe_plugin&utm_medium=inside&utm_campaign=get_pro&utm_content=plugin_uri
  * Description: A custom addon for Bricks theme to add events-related widgets with typography. Requires The Events Calendar plugin and Bricks theme.
  * Version: 1.0.0
- * Author: Your Name
+ * Author: Cool Plugins
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: ecbb
@@ -38,16 +38,14 @@ if ( ! class_exists( 'EventsCalendarForBricks' ) ) {
 		}
 
 		/**
-		 * Load widget helpers, layouts, and bootstrap class.
+		 * Load the lightweight integration bootstrap (hooks only).
+		 *
+		 * The heavy render/builder helpers (query, markup, styles, controls,
+		 * layouts) are loaded on demand by {@see ECBB_WidgetClass} so they are
+		 * not parsed on cron, REST, or front-end requests that never use the
+		 * events widget.
 		 */
 		public function ecbb_load_files() {
-			require_once ECBB_DIR . 'includes/query.php';
-			require_once ECBB_DIR . 'includes/markup.php';
-			require_once ECBB_DIR . 'includes/styles.php';
-			require_once ECBB_DIR . 'includes/controls.php';
-			require_once ECBB_DIR . 'widgets/layouts/ecbb-list-1.php';
-			require_once ECBB_DIR . 'widgets/layouts/ecbb-grid.php';
-			require_once ECBB_DIR . 'widgets/layouts/ecbb-list-2.php';
 			require_once ECBB_DIR . 'includes/class-ecbb-plugin.php';
 		}
 
@@ -117,18 +115,7 @@ if ( ! class_exists( 'EventsCalendarForBricks' ) ) {
 			if ( ! is_admin() || ! current_user_can( 'activate_plugins' ) ) {
 				return;
 			}
-			if ( ! function_exists( 'is_plugin_active' ) ) {
-				require_once ABSPATH . 'wp-admin/includes/plugin.php';
-			}
-			$activation_error = get_transient( 'ecbb_activation_error' );
-			if ( is_string( $activation_error ) && $activation_error !== '' ) {
-				delete_transient( 'ecbb_activation_error' );
-				echo '<div class="notice notice-error is-dismissible"><p>' . wp_kses_post( $activation_error ) . '</p></div>';
-				return;
-			}
-			if ( ! is_plugin_active( ECBB_BASENAME ) ) {
-				return;
-			}
+
 			$missing = self::ecbb_get_missing_dependencies();
 			if ( $missing === array() ) {
 				return;
@@ -139,19 +126,12 @@ if ( ! class_exists( 'EventsCalendarForBricks' ) ) {
 		public function ecbb_activate() {
 			update_option( 'ecbb-installDate', gmdate( 'Y-m-d h:i:s' ) );
 
-			if ( ! self::ecbb_dependencies_met() ) {
-				$message = self::ecbb_dependency_notice_html( self::ecbb_get_missing_dependencies() );
-				if ( $message !== '' ) {
-					set_transient( 'ecbb_activation_error', $message, 60 );
-				}
-			}
-
 			if ( ! get_option( 'ecbb_initial_save_version' ) ) {
 				add_option( 'ecbb_initial_save_version', ECBB_VERSION );
 			}
 
-			if ( ! get_option( 'ecbb-initial-installDate' ) ) {
-				add_option( 'ecbb-initial-installDate', gmdate( 'Y-m-d h:i:s' ) );
+			if ( ! get_option( 'ecbb_initial_installDate' ) ) {
+				add_option( 'ecbb_initial_installDate', gmdate( 'Y-m-d h:i:s' ) );
 			}
 		}
 	}

@@ -3,7 +3,7 @@
  *
  * Layout: `.ecbb-ev__grid-media` | `.ecbb-ev__grid-meta` ( `.ecbb-ev__grid-date-col` | `.ecbb-ev__grid-body` )
  *
- * File: `assets/css/events-widget/grid/ecbb-events-widget-grid.css`.
+ * File: `assets/css/events-widget/ecbb-events-widget-grid.css`.
  *
  * Default part typography uses :where() so Bricks repeater Style controls can override.
  */

@@ -6,6 +6,13 @@ if (! defined('ABSPATH')) {
 	exit;
 }
 
+// Bricks includes this element file only in the builder or when rendering a
+// page that uses the widget, so this is the right place to pull in the render
+// helpers (idempotent via require_once inside the loader).
+if ( class_exists( '\ECBB_WidgetClass', false ) ) {
+	\ECBB_WidgetClass::ecbb_load_render_dependencies();
+}
+
 class ECBB_Widget extends \Bricks\Element
 {
 
@@ -510,16 +517,9 @@ class ECBB_Widget extends \Bricks\Element
 	 */
 	private function ecbb_get_layout_context() {
 		$settings = is_array( $this->settings ) ? $this->settings : [];
-
-		$template = isset( $settings['layout_template'] ) ? (string) $settings['layout_template'] : 'list';
-		if ( $template === 'carousel' ) {
-			$template = 'list';
-		}
-		$template = in_array( $template, [ 'list', 'grid' ], true ) ? $template : 'list';
-
-		$item_chrome = class_exists( 'ECBB_Markup', false )
-			? \ECBB_Markup::ecbb_sanitize_list_style( $settings['list_item_style'] ?? 'style-1' )
-			: 'style-1';
+		$layout   = \ECBB_Markup::ecbb_sanitize_layout_template( $settings );
+		$template = $layout['template'];
+		$item_chrome = $layout['item_chrome'];
 
 		$use_style1_shell = ( $template === 'list' && $item_chrome === 'style-1' );
 		$use_style2_shell = ( $template === 'list' && $item_chrome === 'style-2' );
@@ -621,11 +621,32 @@ class ECBB_Widget extends \Bricks\Element
 		}
 
 		$css = wp_strip_all_tags( str_replace( '</style', '<\/style', implode( "\n", $all_css ) ) );
+
 		if ( wp_style_is( 'ecbb-events-widget-base', 'enqueued' ) || wp_style_is( 'ecbb-events-widget-base', 'done' ) ) {
 			wp_add_inline_style( 'ecbb-events-widget-base', $css );
-		} else {
-			echo '<style>' . $css . '</style>';
+			return;
 		}
+
+		wp_add_inline_style( $this->ecbb_ensure_inline_style_handle(), $css );
+	}
+
+	/**
+	 * Register/enqueue an inline-only stylesheet handle so dynamic CSS can be attached
+	 * via wp_add_inline_style() when the base stylesheet is not available.
+	 *
+	 * @return string Style handle ready for wp_add_inline_style().
+	 */
+	private function ecbb_ensure_inline_style_handle() {
+		$handle = 'ecbb-events-widget-inline';
+
+		if ( ! wp_style_is( $handle, 'registered' ) ) {
+			wp_register_style( $handle, false, [], ECBB_VERSION );
+		}
+		if ( ! wp_style_is( $handle, 'enqueued' ) ) {
+			wp_enqueue_style( $handle );
+		}
+
+		return $handle;
 	}
 
 	/**
