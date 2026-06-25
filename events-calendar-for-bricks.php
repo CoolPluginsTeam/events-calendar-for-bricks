@@ -26,7 +26,6 @@ define( 'ECBB_FILE', __FILE__ );
 define( 'ECBB_DIR', plugin_dir_path( ECBB_FILE ) );
 define( 'ECBB_URL', plugin_dir_url( ECBB_FILE ) );
 define( 'ECBB_BASENAME', plugin_basename( ECBB_FILE ) );
-define( 'ECBB_TEC_PLUGIN_FILE', 'the-events-calendar/the-events-calendar.php' );
 
 if ( ! class_exists( 'EventsCalendarForBricks' ) ) {
 
@@ -34,7 +33,6 @@ if ( ! class_exists( 'EventsCalendarForBricks' ) ) {
 
 		public function __construct() {
 			register_activation_hook( ECBB_FILE, array( $this, 'ecbb_activate' ) );
-			add_action( 'init', array( $this, 'ecbb_load_textdomain' ) );
 			add_action( 'admin_notices', array( $this, 'ecbb_render_dependency_notice' ) );
 			add_action( 'after_setup_theme', array( $this, 'ecbb_register_bricks_widget' ), 11 );
 		}
@@ -53,20 +51,6 @@ if ( ! class_exists( 'EventsCalendarForBricks' ) ) {
 			require_once ECBB_DIR . 'includes/class-ecbb-plugin.php';
 		}
 
-		/**
-		 * Load plugin text domain and track install metadata.
-		 */
-		public function ecbb_load_textdomain() {
-			load_plugin_textdomain( 'ecbb', false, basename( dirname( ECBB_FILE ) ) . '/languages/' );
-
-			if ( ! get_option( 'ecbb_initial_save_version' ) ) {
-				add_option( 'ecbb_initial_save_version', ECBB_VERSION );
-			}
-
-			if ( ! get_option( 'ecbb-initial-installDate' ) ) {
-				add_option( 'ecbb-initial-installDate', gmdate( 'Y-m-d h:i:s' ) );
-			}
-		}
 
 		/**
 		 * Load integration files and register the Bricks events widget element
@@ -90,24 +74,11 @@ if ( ! class_exists( 'EventsCalendarForBricks' ) ) {
 			return defined( 'BRICKS_VERSION' ) || get_template() === 'bricks';
 		}
 
-		public static function ecbb_is_tec_active() {
-			if ( class_exists( 'Tribe__Events__Main' ) || function_exists( 'tribe_get_events' ) ) {
-				return true;
-			}
-			if ( ! function_exists( 'is_plugin_active' ) ) {
-				require_once ABSPATH . 'wp-admin/includes/plugin.php';
-			}
-			return is_plugin_active( ECBB_TEC_PLUGIN_FILE );
-		}
-
 		/** @return array<string,bool> */
 		public static function ecbb_get_missing_dependencies() {
 			$missing = array();
 			if ( ! self::ecbb_is_bricks_active() ) {
 				$missing['theme'] = true;
-			}
-			if ( ! self::ecbb_is_tec_active() ) {
-				$missing['plugin'] = true;
 			}
 			return $missing;
 		}
@@ -125,25 +96,6 @@ if ( ! class_exists( 'EventsCalendarForBricks' ) ) {
 					esc_html__( 'Bricks theme — %s', 'ecbb' ),
 					'<a href="' . esc_url( admin_url( 'themes.php' ) ) . '">' . esc_html__( 'activate Bricks in Appearance → Themes', 'ecbb' ) . '</a>'
 				);
-			}
-
-			if ( ! empty( $missing['plugin'] ) ) {
-				if ( ! function_exists( 'get_plugins' ) ) {
-					require_once ABSPATH . 'wp-admin/includes/plugin.php';
-				}
-				$plugins       = get_plugins();
-				$tec_installed = isset( $plugins[ ECBB_TEC_PLUGIN_FILE ] );
-				if ( $tec_installed ) {
-					$lines[] = sprintf(
-						esc_html__( 'The Events Calendar — %s', 'ecbb' ),
-						'<a href="' . esc_url( admin_url( 'plugins.php' ) ) . '">' . esc_html__( 'activate it on the Plugins screen', 'ecbb' ) . '</a>'
-					);
-				} else {
-					$lines[] = sprintf(
-						esc_html__( 'The Events Calendar — %s', 'ecbb' ),
-						'<a href="' . esc_url( admin_url( 'plugin-install.php?s=the-events-calendar&tab=search&type=term' ) ) . '">' . esc_html__( 'install and activate the plugin', 'ecbb' ) . '</a>'
-					);
-				}
 			}
 
 			if ( $lines === array() ) {
