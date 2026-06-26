@@ -65,7 +65,7 @@ if ( ! class_exists( 'ECBB_WidgetClass', false ) ) {
 				if ( empty( $_POST[ $area ] ) || ! is_string( $_POST[ $area ] ) ) {
 					continue;
 				}
-				$posted_json = wp_unslash( $_POST[ $area ] );
+				$posted_json = wp_unslash( $_POST[ $area ] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 				$merged      = $this->ecbb_merge_events_loop_repeaters_into_posted_area( $posted_json, $post_id, $area );
 				if ( is_string( $merged ) ) {
 					$_POST[ $area ] = $merged;
@@ -318,8 +318,8 @@ if ( ! class_exists( 'ECBB_WidgetClass', false ) ) {
 			);
 
 			wp_localize_script( 'ecbb-builder', 'ECBBBuilder', [
-				'tabContent'            => esc_html__( 'CONTENT', 'ecbb' ),
-				'tabStyle'              => esc_html__( 'STYLE', 'ecbb' ),
+				'tabContent'            => esc_html__( 'CONTENT', 'events-calendar-for-bricks' ),
+				'tabStyle'              => esc_html__( 'STYLE', 'events-calendar-for-bricks' ),
 				'hoverParts'            => \ECBB_Controls::ecbb_hover_part_types(),
 				'interactiveHoverParts' => \ECBB_Controls::ecbb_hover_interactive_types(),
 				'interactiveHoverKeys'  => [

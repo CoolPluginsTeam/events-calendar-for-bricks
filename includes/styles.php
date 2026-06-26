@@ -608,8 +608,8 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 
 		public static function ecbb_date_options() {
 			return [
-			''        => esc_html__( 'Default', 'ecbb' ),
-			'default' => esc_html__( 'Default (01 January 2025)', 'ecbb' ),
+			''        => esc_html__( 'Default', 'events-calendar-for-bricks' ),
+			'default' => esc_html__( 'Default (01 January 2025)', 'events-calendar-for-bricks' ),
 			'MD,Y'    => 'Md,Y (Jan 01, 2025)',
 			'FD,Y'    => 'Fd,Y (January 01, 2025)',
 			'DM'      => 'dM (01 Jan)',
@@ -629,7 +629,7 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 			'sed'     => 'SED (01 Jan - 02 Jan 2025)',
 			'sedt'    => 'SEDT (01 Jan - 02 Jan 2025 8:00am-5:00pm)',
 			'D.j.F'   => 'D.,j. F (Wed., 15. May)',
-			'custom'  => esc_html__( 'Custom…', 'ecbb' ),
+			'custom'  => esc_html__( 'Custom…', 'events-calendar-for-bricks' ),
 			];
 		}
 
@@ -641,19 +641,19 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 
 		public static function ecbb_part_options() {
 			return [
-			'title'       => esc_html__( 'Title', 'ecbb' ),
-			'description' => esc_html__( 'Description', 'ecbb' ),
-			'date'        => esc_html__( 'Date & time', 'ecbb' ),
-			'venue'       => esc_html__( 'Venue', 'ecbb' ),
-			'organizer'   => esc_html__( 'Organizer', 'ecbb' ),
-			'event_link'  => esc_html__( 'Event link', 'ecbb' ),
-			'event_cost'  => esc_html__( 'Cost', 'ecbb' ),
-			'event_tickets' => esc_html__( 'Tickets', 'ecbb' ),
-			'event_rsvp'  => esc_html__( 'RSVP', 'ecbb' ),
-			'read_more'   => esc_html__( 'Read more', 'ecbb' ),
-			'categories'  => esc_html__( 'Categories', 'ecbb' ),
-			'tags'        => esc_html__( 'Tags', 'ecbb' ),
-			'image'       => esc_html__( 'Featured image', 'ecbb' ),
+			'title'       => esc_html__( 'Title', 'events-calendar-for-bricks' ),
+			'description' => esc_html__( 'Description', 'events-calendar-for-bricks' ),
+			'date'        => esc_html__( 'Date & time', 'events-calendar-for-bricks' ),
+			'venue'       => esc_html__( 'Venue', 'events-calendar-for-bricks' ),
+			'organizer'   => esc_html__( 'Organizer', 'events-calendar-for-bricks' ),
+			'event_link'  => esc_html__( 'Event link', 'events-calendar-for-bricks' ),
+			'event_cost'  => esc_html__( 'Cost', 'events-calendar-for-bricks' ),
+			'event_tickets' => esc_html__( 'Tickets', 'events-calendar-for-bricks' ),
+			'event_rsvp'  => esc_html__( 'RSVP', 'events-calendar-for-bricks' ),
+			'read_more'   => esc_html__( 'Read more', 'events-calendar-for-bricks' ),
+			'categories'  => esc_html__( 'Categories', 'events-calendar-for-bricks' ),
+			'tags'        => esc_html__( 'Tags', 'events-calendar-for-bricks' ),
+			'image'       => esc_html__( 'Featured image', 'events-calendar-for-bricks' ),
 			];
 		}
 

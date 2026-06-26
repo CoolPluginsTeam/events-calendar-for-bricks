@@ -486,7 +486,7 @@ if ( ! class_exists( 'ECBB_List_1', false ) ) {
 		$cta_wrap = 'ecbb-event-part ecbb-event-part--read-more ecbb-p999';
 		}
 		echo '<div class="' . esc_attr( $cta_wrap ) . '">';
-		echo '<a class="ecbb-event__link" href="' . esc_url( get_permalink( $post->ID ) ) . '">' . esc_html__( 'Find Out More', 'ecbb' ) . '</a>';
+		echo '<a class="ecbb-event__link" href="' . esc_url( get_permalink( $post->ID ) ) . '">' . esc_html__( 'Find Out More', 'events-calendar-for-bricks' ) . '</a>';
 		echo '</div>';
 		echo '</aside>';
 

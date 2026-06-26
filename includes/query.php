@@ -186,18 +186,18 @@ if (! class_exists('ECBB_Query', false)) {
 				'posts_per_page' => $posts_per_page,
 				'order'          => $order,
 				'orderby'        => 'meta_value',
-				'meta_key'       => '_EventStartDate',
+				'meta_key'       => '_EventStartDate',//phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
 				'meta_type'      => 'DATETIME',
 			];
 
 			$meta_query = self::ecbb_date_meta_query($settings);
 			if (! empty($meta_query)) {
-				$query_args['meta_query'] = $meta_query;
+				$query_args['meta_query'] = $meta_query;//phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 			}
 
 			$tax_query = self::ecbb_tax_query($settings);
 			if (! empty($tax_query)) {
-				$query_args['tax_query'] = $tax_query;
+				$query_args['tax_query'] = $tax_query;//phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
 			}
 
 			return $query_args;

@@ -167,7 +167,7 @@ if ( ! class_exists( 'ECBB_List_2', false ) ) {
 			],
 			[
 			'part'           => 'read_more',
-			'read_more_text' => esc_html__( 'More Details', 'ecbb' ),
+			'read_more_text' => esc_html__( 'More Details', 'events-calendar-for-bricks' ),
 			],
 			];
 
@@ -473,7 +473,7 @@ if ( ! class_exists( 'ECBB_List_2', false ) ) {
 		echo '</div>';
 
 		if ( $has_media ) {
-			echo '<aside class="ecbb-style2-trail" aria-label="' . esc_attr__( 'Event image', 'ecbb' ) . '">';
+			echo '<aside class="ecbb-style2-trail" aria-label="' . esc_attr__( 'Event image', 'events-calendar-for-bricks' ) . '">';
 			echo '<div class="ecbb-style2-media">';
 			$emit_part( $post, $img_info['row'], $img_info['index'] );
 			echo '</div>';

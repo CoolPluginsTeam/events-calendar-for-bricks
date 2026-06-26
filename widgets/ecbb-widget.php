@@ -23,7 +23,7 @@ class ECBB_Widget extends \Bricks\Element
 
 	public function get_label()
 	{
-		return esc_html__('Events Widget', 'ecbb');
+		return esc_html__('Events Widget', 'events-calendar-for-bricks');
 	}
 
 	public function get_keywords()
@@ -35,27 +35,27 @@ class ECBB_Widget extends \Bricks\Element
 	{
 		// Order: Layouts → Events Query → Elements → Dynamic Messages.
 		$this->control_groups['layouts'] = [
-			'title' => esc_html__('Layouts', 'ecbb'),
+			'title' => esc_html__('Layouts', 'events-calendar-for-bricks'),
 			'tab'   => 'content',
 		];
 
 		$this->control_groups['event_query'] = [
-			'title' => esc_html__('Events Query', 'ecbb'),
+			'title' => esc_html__('Events Query', 'events-calendar-for-bricks'),
 			'tab'   => 'content',
 		];
 
 		$this->control_groups['elements'] = [
-			'title' => esc_html__('Elements', 'ecbb'),
+			'title' => esc_html__('Elements', 'events-calendar-for-bricks'),
 			'tab'   => 'content',
 		];
 
 		$this->control_groups['dynamic_messages'] = [
-			'title' => esc_html__('Dynamic Messages', 'ecbb'),
+			'title' => esc_html__('Dynamic Messages', 'events-calendar-for-bricks'),
 			'tab'   => 'content',
 		];
 
 		$this->control_groups['dynamic_messages_style'] = [
-			'title' => esc_html__('Dynamic Messages', 'ecbb'),
+			'title' => esc_html__('Dynamic Messages', 'events-calendar-for-bricks'),
 			'tab'   => 'style',
 		];
 	}
@@ -69,7 +69,7 @@ class ECBB_Widget extends \Bricks\Element
 	{
 		$text = isset($this->settings['no_events_text']) ? trim((string) $this->settings['no_events_text']) : '';
 		if ($text === '') {
-			return esc_html__('No events found', 'ecbb');
+			return esc_html__('No events found', 'events-calendar-for-bricks');
 		}
 		return $text;
 	}
@@ -200,6 +200,23 @@ class ECBB_Widget extends \Bricks\Element
 	}
 
 	/**
+	 * Print an Event part opening tag.
+	 *
+	 * @param string              $tag   Allow-listed tag name.
+	 * @param string              $class Wrapper class names.
+	 * @param array<string,mixed> $item  Repeater row.
+	 * @param int                 $idx   Row index.
+	 * @param string              $style Inline style declaration string.
+	 * @return void
+	 */
+	private function ecbb_print_part_open_tag( $tag, $class, array $item, $idx, $style = '' ) {
+		$tag = in_array( $tag, [ 'div', 'h3' ], true ) ? $tag : 'div';
+
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- tag is allow-listed; ecbb_part_wrap_attrs() returns escaped attribute fragments.
+		echo '<' . tag_escape( $tag ) . ' class="' . esc_attr( $class ) . '"' . $this->ecbb_part_wrap_attrs( $item, $idx, $style ) . '>';
+	}
+
+	/**
 	 * @param array<string,mixed> $item
 	 * @param int                 $idx
 	 * @param string              $skin
@@ -318,7 +335,7 @@ class ECBB_Widget extends \Bricks\Element
 		$dual         = class_exists( 'ECBB_Markup', false ) && \ECBB_Markup::ecbb_image_dual_layer( $item );
 		$part_classes = $dual ? $wrap . ' ecbb-is-dual-img' : $wrap;
 
-		echo '<div class="' . esc_attr( $part_classes ) . '"' . $this->ecbb_part_wrap_attrs( $item, $idx ) . '>';
+		$this->ecbb_print_part_open_tag( 'div', $part_classes, $item, $idx );
 		if ( $link ) {
 			echo '<a class="ecbb-event__link" href="' . esc_url( get_permalink( $post->ID ) ) . '">';
 		}
@@ -377,7 +394,7 @@ class ECBB_Widget extends \Bricks\Element
 			return;
 		}
 
-		echo '<div class="' . esc_attr( $wrap ) . '"' . $this->ecbb_part_wrap_attrs( $item, $idx, $style ) . '>';
+		$this->ecbb_print_part_open_tag( 'div', $wrap, $item, $idx, $style );
 		echo $inner; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in \ECBB_Markup::ecbb_terms_html().
 		echo '</div>';
 	}
@@ -412,7 +429,7 @@ class ECBB_Widget extends \Bricks\Element
 		}
 
 		$style = $this->ecbb_inline_style_attr( $item );
-		echo '<div class="' . esc_attr( $wrap ) . '"' . $this->ecbb_part_wrap_attrs( $item, $idx, $style ) . '>';
+		$this->ecbb_print_part_open_tag( 'div', $wrap, $item, $idx, $style );
 		echo wp_kses_post( $content );
 		echo '</div>';
 	}
@@ -450,7 +467,7 @@ class ECBB_Widget extends \Bricks\Element
 
 		$style    = trim( (string) $this->ecbb_inline_style_attr( $item ) );
 		$row_icon = ( $time !== '' ) ? ' ecbb-has-row-icon' : '';
-		echo '<div class="' . esc_attr( $wrap . $row_icon ) . '"' . $this->ecbb_part_wrap_attrs( $item, $idx, $style ) . '>';
+		$this->ecbb_print_part_open_tag( 'div', $wrap . $row_icon, $item, $idx, $style );
 		echo '<span class="ecbb-event__date-day">' . esc_html( $day ) . '</span>';
 		if ( $time !== '' ) {
 			echo '<span class="ecbb-event__date-sep">,</span>';
@@ -473,7 +490,7 @@ class ECBB_Widget extends \Bricks\Element
 			: ( ! empty( $item['link'] ) && $hover );
 		$style = $this->ecbb_inline_style_attr( $item );
 
-		echo '<h3 class="' . esc_attr( $wrap ) . '"' . $this->ecbb_part_wrap_attrs( $item, $idx, $style ) . '>';
+		$this->ecbb_print_part_open_tag( 'h3', $wrap, $item, $idx, $style );
 		if ( $link ) {
 			echo '<a class="ecbb-event__link" href="' . esc_url( get_permalink( $post->ID ) ) . '">';
 			echo esc_html( get_the_title( $post->ID ) );
@@ -680,6 +697,7 @@ class ECBB_Widget extends \Bricks\Element
 			setup_postdata( $post );
 
 			if ( $layout['use_style2_shell'] && class_exists( 'ECBB_List_2', false ) ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- ECBB_List_2::ecbb_month_heading() returns fixed markup with dynamic fields escaped internally.
 				echo \ECBB_List_2::ecbb_month_heading( $post->ID, $style2_last_month, $style2_show_month );
 			}
 
@@ -710,6 +728,7 @@ class ECBB_Widget extends \Bricks\Element
 			$emit   = static function ( $ev, $item, $idx ) use ( $widget ) {
 				$widget->ecbb_render_part( $ev, $item, $idx, 'style1' );
 			};
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- ECBB_List_1::ecbb_item_inner() composes fixed layout markup and escaped part output.
 			echo \ECBB_List_1::ecbb_item_inner( $post, $parts_effective, $emit, $layout['style1_date_format'] );
 			return;
 		}
@@ -719,6 +738,7 @@ class ECBB_Widget extends \Bricks\Element
 			$emit   = static function ( $ev, $item, $idx ) use ( $widget ) {
 				$widget->ecbb_render_part( $ev, $item, $idx, 'style2' );
 			};
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- ECBB_List_2::ecbb_item_inner() composes fixed layout markup and escaped part output.
 			echo \ECBB_List_2::ecbb_item_inner( $post, $parts_effective, $emit );
 			return;
 		}
@@ -728,6 +748,7 @@ class ECBB_Widget extends \Bricks\Element
 			$emit   = static function ( $ev, $item, $idx ) use ( $widget ) {
 				$widget->ecbb_render_part( $ev, $item, $idx );
 			};
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- ECBB_Grid::ecbb_item_inner() composes fixed layout markup and escaped part output.
 			echo \ECBB_Grid::ecbb_item_inner( $post, $parts_effective, $emit );
 			return;
 		}
@@ -751,13 +772,14 @@ class ECBB_Widget extends \Bricks\Element
 		$layout   = $this->ecbb_get_layout_context();
 		$parts    = $this->ecbb_get_parts_effective( $layout['template'], $layout['item_chrome'], $layout );
 
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Bricks render_attributes() returns the element's escaped attribute string.
 		echo '<div ' . $this->render_attributes( '_root' ) . '>';
 
 		$this->ecbb_print_widget_css( $scope_class, $settings, $parts, $layout );
 
 		if ( ! function_exists( 'tribe_get_events' ) ) {
 			if ( \Bricks\Capabilities::current_user_can_use_builder() ) {
-				echo '<div class="ecbb-event-placeholder">' . esc_html__( 'The Events Calendar is required to render Events Widget.', 'ecbb' ) . '</div>';
+				echo '<div class="ecbb-event-placeholder">' . esc_html__( 'The Events Calendar is required to render Events Widget.', 'events-calendar-for-bricks' ) . '</div>';
 			}
 			echo '</div>';
 			return;

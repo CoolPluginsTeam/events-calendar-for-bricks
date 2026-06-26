@@ -7,7 +7,7 @@
  * Author: Cool Plugins
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain: ecbb
+ * Text Domain: events-calendar-for-bricks
  * Requires Plugins: the-events-calendar
  */
 
@@ -91,8 +91,9 @@ if ( ! class_exists( 'EventsCalendarForBricks' ) ) {
 
 			if ( ! empty( $missing['theme'] ) ) {
 				$lines[] = sprintf(
-					esc_html__( 'Bricks theme — %s', 'ecbb' ),
-					'<a href="' . esc_url( admin_url( 'themes.php' ) ) . '">' . esc_html__( 'activate Bricks in Appearance → Themes', 'ecbb' ) . '</a>'
+					/* translators: %s: HTML link to the Themes screen for activating the Bricks theme. */
+					esc_html__( 'Bricks theme — %s', 'events-calendar-for-bricks' ),
+					'<a href="' . esc_url( admin_url( 'themes.php' ) ) . '">' . esc_html__( 'activate Bricks in Appearance → Themes', 'events-calendar-for-bricks' ) . '</a>'
 				);
 			}
 
@@ -100,8 +101,8 @@ if ( ! class_exists( 'EventsCalendarForBricks' ) ) {
 				return '';
 			}
 
-			$html  = '<strong>' . esc_html__( 'Events Calendar for Bricks Builder is missing required dependencies.', 'ecbb' ) . '</strong> ';
-			$html .= esc_html__( 'This plugin requires:', 'ecbb' );
+			$html  = '<strong>' . esc_html__( 'Events Calendar for Bricks Builder is missing required dependencies.', 'events-calendar-for-bricks' ) . '</strong> ';
+			$html .= esc_html__( 'This plugin requires:', 'events-calendar-for-bricks' );
 			$html .= '<ul style="list-style:disc;margin:0.5em 0 0 1.5em;">';
 			foreach ( $lines as $line ) {
 				$html .= '<li>' . $line . '</li>';
