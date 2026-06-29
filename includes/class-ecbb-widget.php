@@ -26,7 +26,7 @@ class ECBB_Widget extends \Bricks\Element
 
 	public function set_control_groups()
 	{
-		// Order: Layouts → Events Query → Elements → Dynamic Messages.
+		// Order: Layouts → Events Query → Elements → Dynamic Messages → List Style 1.
 		$this->control_groups['layouts'] = [
 			'title' => esc_html__('Layouts', 'events-calendar-for-bricks'),
 			'tab'   => 'content',
@@ -47,8 +47,8 @@ class ECBB_Widget extends \Bricks\Element
 			'tab'   => 'content',
 		];
 
-		$this->control_groups['dynamic_messages_style'] = [
-			'title' => esc_html__('Dynamic Messages', 'events-calendar-for-bricks'),
+		$this->control_groups['list_style1'] = [
+			'title' => esc_html__('List Style 1', 'events-calendar-for-bricks'),
 			'tab'   => 'style',
 		];
 	}
@@ -79,70 +79,6 @@ class ECBB_Widget extends \Bricks\Element
 		echo '<div class="ecbb-ev__empty" role="status">';
 		echo '<' . esc_attr($tag) . ' class="ecbb-ev__empty-message">' . esc_html($this->ecbb_get_no_events_message()) . '</' . esc_attr($tag) . '>';
 		echo '</div>';
-	}
-
-	/**
-	 * Scoped motion CSS for the empty-state message (transitions, transform presets, fade animations).
-	 *
-	 * @param string $scope_class Instance scope class (e.g. ecbb-ev--abc).
-	 * @return string[]           Raw CSS rules.
-	 */
-	private function ecbb_build_no_events_dynamic_style_css($scope_class)
-	{
-		$scope_class = preg_replace('/[^a-zA-Z0-9\-_]/', '', (string) $scope_class);
-		if ($scope_class === '') {
-			return [];
-		}
-
-		$sel = '.' . $scope_class . ' .ecbb-ev__empty-message';
-		$out = [];
-
-		$dur_ms = isset($this->settings['no_events_transition_duration']) ? (float) $this->settings['no_events_transition_duration'] : 0;
-		if ($dur_ms > 0) {
-			$d     = $dur_ms . 'ms';
-			$out[] = $sel . '{transition:opacity ' . $d . ' ease,transform ' . $d . ' ease,background-color ' . $d . ' ease,color ' . $d . ' ease,border-color ' . $d . ' ease,box-shadow ' . $d . ' ease;}';
-		}
-
-		$anim = isset($this->settings['no_events_hover_animation']) ? (string) $this->settings['no_events_hover_animation'] : '';
-		if ($anim !== '' && class_exists('ECBB_Markup', false)) {
-			$blocks = \ECBB_Markup::ecbb_hover_anim_css($sel, $anim);
-			if (! empty($blocks['base'])) {
-				$out[] = $blocks['base'];
-			}
-			if (! empty($blocks['hover'])) {
-				$out[] = $blocks['hover'];
-			}
-		} else {
-			$transform = isset($this->settings['no_events_transform_hover']) ? (string) $this->settings['no_events_transform_hover'] : 'none';
-			$hover_tf  = '';
-			switch ($transform) {
-				case 'lift':
-					$hover_tf = 'transform:translateY(-3px);';
-					break;
-				case 'scale_up':
-					$hover_tf = 'transform:scale(1.03);';
-					break;
-				case 'scale_down':
-					$hover_tf = 'transform:scale(0.98);';
-					break;
-				case 'none':
-				default:
-					$hover_tf = '';
-					break;
-			}
-			if ($hover_tf !== '') {
-				$out[] = $sel . ':hover{' . $hover_tf . '}';
-			}
-		}
-
-		if (isset($this->settings['no_events_opacity_hover']) && $this->settings['no_events_opacity_hover'] !== '') {
-			$op = (float) $this->settings['no_events_opacity_hover'];
-			if ($op >= 0 && $op <= 1) {
-				$out[] = $sel . ':hover{opacity:' . $op . ';}';
-			}
-		}
-
-		return $out;
 	}
 
 	/**
@@ -647,8 +583,7 @@ class ECBB_Widget extends \Bricks\Element
 				$gap_css !== '' ? [ $gap_css ] : [],
 				$grid_css !== '' ? [ $grid_css ] : [],
 				$style_css,
-				$hover_css,
-				$this->ecbb_build_no_events_dynamic_style_css( $scope_class )
+				$hover_css
 			)
 		);
 

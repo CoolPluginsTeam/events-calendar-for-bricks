@@ -119,7 +119,7 @@
 	opacity: inherit !important;
 }
 
-/* Empty state — layout defaults; typography/colors/hover from Dynamic Messages (Style). */
+/* Empty state — layout defaults. */
 .ecbb-ev__empty {
 	display: flex;
 	width: 100%;

@@ -1,6 +1,6 @@
 <?php
 /**
- * Bricks element controls for ecbb-events-loop (layouts → query → elements → messages).
+ * Bricks element controls for ecbb-events-loop (layouts → query → elements → messages → style).
  *
  * @package ECBB
  */
@@ -140,6 +140,18 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 		 */
 		public static function ecbb_req_title_inner_bg() {
 			return [ [ 'part', '=', 'title' ] ];
+		}
+
+		/**
+		 * Bricks `required` rule: List template + Style 1 chrome.
+		 *
+		 * @return array<int,array{0:string,1:string,2:string}>
+		 */
+		public static function ecbb_req_list_style1() {
+			return [
+				[ 'layout_template', '=', 'list' ],
+				[ 'list_item_style', '=', 'style-1' ],
+			];
 		}
 
 		/**
@@ -872,350 +884,253 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			'inline'  => true,
 		];
 
-		// ── Dynamic Messages (style) — grouped ──
-		$element->controls['no_events_sep'] = [
-			'tab'   => 'style',
-			'group' => 'dynamic_messages_style',
-			'type'  => 'separator',
-			'label' => esc_html__( 'No events found', 'events-calendar-for-bricks' ),
+		$style1_required = self::ecbb_req_list_style1();
+
+		// ── List Style 1 (style) — static columns outside the Event parts repeater ──
+		$element->controls['style1_sep_date'] = [
+			'tab'      => 'style',
+			'group'    => 'list_style1',
+			'type'     => 'separator',
+			'label'    => esc_html__( 'Date column', 'events-calendar-for-bricks' ),
+			'required' => $style1_required,
 		];
 
-		$element->controls['no_events_align'] = [
-			'tab'     => 'style',
-			'group'   => 'dynamic_messages_style',
-			'label'   => esc_html__( 'Horizontal align', 'events-calendar-for-bricks' ),
-			'type'    => 'select',
-			'options' => [
-				'flex-start' => esc_html__( 'Left', 'events-calendar-for-bricks' ),
-				'center'     => esc_html__( 'Center', 'events-calendar-for-bricks' ),
-				'flex-end'   => esc_html__( 'Right', 'events-calendar-for-bricks' ),
-			],
-			'inline'  => true,
-			'default' => 'center',
-			'css'     => [
-				[
-					'property' => 'justify-content',
-					'selector' => '& .ecbb-ev__empty',
-				],
-			],
-		];
-
-		$element->controls['no_events_align_items'] = [
-			'tab'     => 'style',
-			'group'   => 'dynamic_messages_style',
-			'label'   => esc_html__( 'Vertical align', 'events-calendar-for-bricks' ),
-			'type'    => 'select',
-			'options' => [
-				'flex-start' => esc_html__( 'Top', 'events-calendar-for-bricks' ),
-				'center'     => esc_html__( 'Center', 'events-calendar-for-bricks' ),
-				'flex-end'   => esc_html__( 'Bottom', 'events-calendar-for-bricks' ),
-				'stretch'    => esc_html__( 'Stretch', 'events-calendar-for-bricks' ),
-			],
-			'inline'  => true,
-			'default' => 'center',
-			'css'     => [
-				[
-					'property' => 'align-items',
-					'selector' => '& .ecbb-ev__empty',
-				],
-			],
-		];
-
-		$element->controls['no_events_margin'] = [
-			'tab'   => 'style',
-			'group' => 'dynamic_messages_style',
-			'label' => esc_html__( 'Wrapper margin', 'events-calendar-for-bricks' ),
-			'type'  => 'spacing',
-			'css'   => [
-				[
-					'property' => 'margin',
-					'selector' => '& .ecbb-ev__empty',
-				],
-			],
-			'default' => [
-				'top'    => '24px',
-				'right'  => '0',
-				'bottom' => '0',
-				'left'   => '0',
-			],
-		];
-
-		$element->controls['no_events_wrapper_padding'] = [
-			'tab'   => 'style',
-			'group' => 'dynamic_messages_style',
-			'label' => esc_html__( 'Wrapper padding', 'events-calendar-for-bricks' ),
-			'type'  => 'spacing',
-			'css'   => [
-				[
-					'property' => 'padding',
-					'selector' => '& .ecbb-ev__empty',
-				],
-			],
-		];
-
-		$element->controls['no_events_min_height'] = [
+		$element->controls['style1_date_bg'] = [
 			'tab'         => 'style',
-			'group'       => 'dynamic_messages_style',
-			'label'       => esc_html__( 'Wrapper min height', 'events-calendar-for-bricks' ),
-			'type'        => 'number',
-			'units'       => true,
-			'placeholder' => '120px',
-			'css'         => [
-				[
-					'property' => 'min-height',
-					'selector' => '& .ecbb-ev__empty',
-				],
-			],
-		];
-
-		$element->controls['no_events_sep_typography'] = [
-			'tab'   => 'style',
-			'group' => 'dynamic_messages_style',
-			'type'  => 'separator',
-			'label' => esc_html__( 'Message typography & box', 'events-calendar-for-bricks' ),
-		];
-
-		$element->controls['no_events_typography'] = [
-			'tab'   => 'style',
-			'group' => 'dynamic_messages_style',
-			'label' => esc_html__( 'Typography', 'events-calendar-for-bricks' ),
-			'type'  => 'typography',
-			'css'   => [
-				[
-					'property' => 'font',
-					'selector' => '& .ecbb-ev__empty-message',
-				],
-			],
-		];
-
-		$element->controls['no_events_bg'] = [
-			'tab'         => 'style',
-			'group'       => 'dynamic_messages_style',
+			'group'       => 'list_style1',
 			'label'       => esc_html__( 'Background', 'events-calendar-for-bricks' ),
 			'type'        => 'color',
-			'placeholder' => 'transparent',
+			'placeholder' => '#1d9aee',
+			'required'    => $style1_required,
 			'css'         => [
 				[
 					'property' => 'background-color',
-					'selector' => '& .ecbb-ev__empty-message',
+					'selector' => '& .ecbb-ev__style1-date',
 				],
 			],
 		];
 
-		$element->controls['no_events_border'] = [
-			'tab'   => 'style',
-			'group' => 'dynamic_messages_style',
-			'label' => esc_html__( 'Border', 'events-calendar-for-bricks' ),
-			'type'  => 'border',
-			'css'   => [
-				[
-					'property' => 'border',
-					'selector' => '& .ecbb-ev__empty-message',
-				],
-			],
-		];
-
-		$element->controls['no_events_padding'] = [
-			'tab'   => 'style',
-			'group' => 'dynamic_messages_style',
-			'label' => esc_html__( 'Padding', 'events-calendar-for-bricks' ),
-			'type'  => 'spacing',
-			'css'   => [
-				[
-					'property' => 'padding',
-					'selector' => '& .ecbb-ev__empty-message',
-				],
-			],
-			'default' => [
-				'top'    => '16px',
-				'right'  => '24px',
-				'bottom' => '16px',
-				'left'   => '24px',
-			],
-		];
-
-		$element->controls['no_events_max_width'] = [
+		$element->controls['style1_date_color'] = [
 			'tab'         => 'style',
-			'group'       => 'dynamic_messages_style',
-			'label'       => esc_html__( 'Message max width', 'events-calendar-for-bricks' ),
-			'type'        => 'number',
-			'units'       => true,
-			'placeholder' => '640px',
-			'css'         => [
-				[
-					'property' => 'max-width',
-					'selector' => '& .ecbb-ev__empty-message',
-				],
-			],
-		];
-
-		$element->controls['no_events_width'] = [
-			'tab'     => 'style',
-			'group'   => 'dynamic_messages_style',
-			'label'   => esc_html__( 'Message width', 'events-calendar-for-bricks' ),
-			'type'    => 'select',
-			'options' => [
-				'auto' => esc_html__( 'Auto', 'events-calendar-for-bricks' ),
-				'100%' => esc_html__( 'Full width', 'events-calendar-for-bricks' ),
-			],
-			'inline'  => true,
-			'default' => 'auto',
-			'css'     => [
-				[
-					'property' => 'width',
-					'selector' => '& .ecbb-ev__empty-message',
-				],
-			],
-		];
-
-		$element->controls['no_events_box_shadow'] = [
-			'tab'   => 'style',
-			'group' => 'dynamic_messages_style',
-			'label' => esc_html__( 'Box shadow', 'events-calendar-for-bricks' ),
-			'type'  => 'box-shadow',
-			'css'   => [
-				[
-					'property' => 'box-shadow',
-					'selector' => '& .ecbb-ev__empty-message',
-				],
-			],
-		];
-
-		$element->controls['no_events_display'] = [
-			'tab'     => 'style',
-			'group'   => 'dynamic_messages_style',
-			'label'   => esc_html__( 'Message display', 'events-calendar-for-bricks' ),
-			'type'    => 'select',
-			'options' => [
-				'inline-block' => esc_html__( 'Inline block', 'events-calendar-for-bricks' ),
-				'block'        => esc_html__( 'Block', 'events-calendar-for-bricks' ),
-			],
-			'inline'  => true,
-			'default' => 'inline-block',
-			'css'     => [
-				[
-					'property' => 'display',
-					'selector' => '& .ecbb-ev__empty-message',
-				],
-			],
-		];
-
-		$element->controls['no_events_sep_hover'] = [
-			'tab'   => 'style',
-			'group' => 'dynamic_messages_style',
-			'type'  => 'separator',
-			'label' => esc_html__( 'Hover', 'events-calendar-for-bricks' ),
-		];
-
-		$element->controls['no_events_color_hover'] = [
-			'tab'         => 'style',
-			'group'       => 'dynamic_messages_style',
-			'label'       => esc_html__( 'Text color (hover)', 'events-calendar-for-bricks' ),
+			'group'       => 'list_style1',
+			'label'       => esc_html__( 'Text color', 'events-calendar-for-bricks' ),
 			'type'        => 'color',
-			'placeholder' => '#111111',
+			'placeholder' => '#ffffff',
+			'required'    => $style1_required,
 			'css'         => [
 				[
 					'property' => 'color',
-					'selector' => '& .ecbb-ev__empty-message:hover',
+					'selector' => '& .ecbb-ev__style1-date',
 				],
 			],
 		];
 
-		$element->controls['no_events_bg_hover'] = [
+		$element->controls['style1_date_typography'] = [
+			'tab'      => 'style',
+			'group'    => 'list_style1',
+			'label'    => esc_html__( 'Typography', 'events-calendar-for-bricks' ),
+			'type'     => 'typography',
+			'required' => $style1_required,
+			'css'      => [
+				[
+					'property' => 'font',
+					'selector' => '& .ecbb-ev__style1-date',
+				],
+			],
+		];
+
+		$element->controls['style1_date_padding'] = [
+			'tab'      => 'style',
+			'group'    => 'list_style1',
+			'label'    => esc_html__( 'Padding', 'events-calendar-for-bricks' ),
+			'type'     => 'spacing',
+			'required' => $style1_required,
+			'css'      => [
+				[
+					'property' => 'padding',
+					'selector' => '& .ecbb-ev__style1-date',
+				],
+			],
+		];
+
+		$element->controls['style1_date_width'] = [
 			'tab'         => 'style',
-			'group'       => 'dynamic_messages_style',
-			'label'       => esc_html__( 'Background (hover)', 'events-calendar-for-bricks' ),
+			'group'       => 'list_style1',
+			'label'       => esc_html__( 'Column width', 'events-calendar-for-bricks' ),
+			'type'        => 'number',
+			'units'       => true,
+			'placeholder' => '18rem',
+			'required'    => $style1_required,
+			'css'         => [
+				[
+					'property' => '--ecbb-s1-date-width',
+					'selector' => '& .ecbb-ev__item-inner--style1',
+				],
+			],
+		];
+
+		$element->controls['style1_sep_body'] = [
+			'tab'      => 'style',
+			'group'    => 'list_style1',
+			'type'     => 'separator',
+			'label'    => esc_html__( 'Body column', 'events-calendar-for-bricks' ),
+			'required' => $style1_required,
+		];
+
+		$element->controls['style1_body_bg'] = [
+			'tab'         => 'style',
+			'group'       => 'list_style1',
+			'label'       => esc_html__( 'Background', 'events-calendar-for-bricks' ),
 			'type'        => 'color',
-			'placeholder' => 'transparent',
+			'placeholder' => '#e7f6fa',
+			'required'    => $style1_required,
 			'css'         => [
 				[
 					'property' => 'background-color',
-					'selector' => '& .ecbb-ev__empty-message:hover',
+					'selector' => '& .ecbb-ev__style1-body',
 				],
 			],
 		];
 
-		$element->controls['no_events_border_hover'] = [
-			'tab'   => 'style',
-			'group' => 'dynamic_messages_style',
-			'label' => esc_html__( 'Border (hover)', 'events-calendar-for-bricks' ),
-			'type'  => 'border',
-			'css'   => [
-				[
-					'property' => 'border',
-					'selector' => '& .ecbb-ev__empty-message:hover',
-				],
-			],
-		];
-
-		$element->controls['no_events_box_shadow_hover'] = [
-			'tab'   => 'style',
-			'group' => 'dynamic_messages_style',
-			'label' => esc_html__( 'Box shadow (hover)', 'events-calendar-for-bricks' ),
-			'type'  => 'box-shadow',
-			'css'   => [
-				[
-					'property' => 'box-shadow',
-					'selector' => '& .ecbb-ev__empty-message:hover',
-				],
-			],
-		];
-
-		$element->controls['no_events_transform_hover'] = [
-			'tab'     => 'style',
-			'group'   => 'dynamic_messages_style',
-			'label'   => esc_html__( 'Hover motion (transform)', 'events-calendar-for-bricks' ),
-			'type'    => 'select',
-			'options' => [
-				'none'       => esc_html__( 'None', 'events-calendar-for-bricks' ),
-				'lift'       => esc_html__( 'Lift up', 'events-calendar-for-bricks' ),
-				'scale_up'   => esc_html__( 'Scale up', 'events-calendar-for-bricks' ),
-				'scale_down' => esc_html__( 'Scale down', 'events-calendar-for-bricks' ),
-			],
-			'inline'   => true,
-			'default'  => 'none',
-			'required' => [
-				[ 'no_events_hover_animation', '=', '' ],
-			],
-		];
-
-		$element->controls['no_events_hover_animation'] = [
-			'tab'     => 'style',
-			'group'   => 'dynamic_messages_style',
-			'label'   => esc_html__( 'Hover animation', 'events-calendar-for-bricks' ),
-			'type'    => 'select',
-			'options' => [
-				''              => esc_html__( 'None (use transform above)', 'events-calendar-for-bricks' ),
-				'fade_in_up'    => esc_html__( 'Fade in up', 'events-calendar-for-bricks' ),
-				'fade_in_right' => esc_html__( 'Fade in right', 'events-calendar-for-bricks' ),
-				'fade_in_down'  => esc_html__( 'Fade in down', 'events-calendar-for-bricks' ),
-				'fade_in_left'  => esc_html__( 'Fade in left', 'events-calendar-for-bricks' ),
-				'zoom_in'       => esc_html__( 'Zoom in', 'events-calendar-for-bricks' ),
-				'zoom_out'      => esc_html__( 'Zoom out', 'events-calendar-for-bricks' ),
-			],
-			'default' => '',
-		];
-
-		$element->controls['no_events_opacity_hover'] = [
+		$element->controls['style1_body_color'] = [
 			'tab'         => 'style',
-			'group'       => 'dynamic_messages_style',
-			'label'       => esc_html__( 'Opacity on hover', 'events-calendar-for-bricks' ),
-			'type'        => 'number',
-			'min'         => 0,
-			'max'         => 1,
-			'step'        => 0.05,
-			'placeholder' => '1',
+			'group'       => 'list_style1',
+			'label'       => esc_html__( 'Text color', 'events-calendar-for-bricks' ),
+			'type'        => 'color',
+			'placeholder' => '#4b5563',
+			'required'    => $style1_required,
+			'css'         => [
+				[
+					'property' => 'color',
+					'selector' => '& .ecbb-ev__style1-body',
+				],
+			],
 		];
 
-		$element->controls['no_events_transition_duration'] = [
+		$element->controls['style1_body_padding'] = [
+			'tab'      => 'style',
+			'group'    => 'list_style1',
+			'label'    => esc_html__( 'Padding', 'events-calendar-for-bricks' ),
+			'type'     => 'spacing',
+			'required' => $style1_required,
+			'css'      => [
+				[
+					'property' => 'padding',
+					'selector' => '& .ecbb-ev__style1-body',
+				],
+			],
+		];
+
+		$element->controls['style1_sep_cta'] = [
+			'tab'      => 'style',
+			'group'    => 'list_style1',
+			'type'     => 'separator',
+			'label'    => esc_html__( 'CTA column', 'events-calendar-for-bricks' ),
+			'required' => $style1_required,
+		];
+
+		$element->controls['style1_cta_bg'] = [
 			'tab'         => 'style',
-			'group'       => 'dynamic_messages_style',
-			'label'       => esc_html__( 'Transition duration (ms)', 'events-calendar-for-bricks' ),
+			'group'       => 'list_style1',
+			'label'       => esc_html__( 'Background', 'events-calendar-for-bricks' ),
+			'type'        => 'color',
+			'placeholder' => '#e7f6fa',
+			'required'    => $style1_required,
+			'css'         => [
+				[
+					'property' => 'background-color',
+					'selector' => '& .ecbb-ev__style1-cta',
+				],
+			],
+		];
+
+		$element->controls['style1_cta_bg_hover'] = [
+			'tab'         => 'style',
+			'group'       => 'list_style1',
+			'label'       => esc_html__( 'Background (hover)', 'events-calendar-for-bricks' ),
+			'type'        => 'color',
+			'placeholder' => '#1d9aee',
+			'required'    => $style1_required,
+			'css'         => [
+				[
+					'property' => 'background-color',
+					'selector' => '& .ecbb-ev__style1-cta:hover',
+				],
+			],
+		];
+
+		$element->controls['style1_cta_color'] = [
+			'tab'         => 'style',
+			'group'       => 'list_style1',
+			'label'       => esc_html__( 'Text color', 'events-calendar-for-bricks' ),
+			'type'        => 'color',
+			'placeholder' => '#111827',
+			'required'    => $style1_required,
+			'css'         => [
+				[
+					'property' => 'color',
+					'selector' => '& .ecbb-ev__style1-cta .ecbb-event__link',
+				],
+			],
+		];
+
+		$element->controls['style1_cta_color_hover'] = [
+			'tab'         => 'style',
+			'group'       => 'list_style1',
+			'label'       => esc_html__( 'Text color (hover)', 'events-calendar-for-bricks' ),
+			'type'        => 'color',
+			'placeholder' => '#ffffff',
+			'required'    => $style1_required,
+			'css'         => [
+				[
+					'property' => 'color',
+					'selector' => '& .ecbb-ev__style1-cta:hover .ecbb-event__link',
+				],
+			],
+		];
+
+		$element->controls['style1_cta_typography'] = [
+			'tab'      => 'style',
+			'group'    => 'list_style1',
+			'label'    => esc_html__( 'Typography', 'events-calendar-for-bricks' ),
+			'type'     => 'typography',
+			'required' => $style1_required,
+			'css'      => [
+				[
+					'property' => 'font',
+					'selector' => '& .ecbb-ev__style1-cta .ecbb-event__link',
+				],
+			],
+		];
+
+		$element->controls['style1_cta_padding'] = [
+			'tab'      => 'style',
+			'group'    => 'list_style1',
+			'label'    => esc_html__( 'Link padding', 'events-calendar-for-bricks' ),
+			'type'     => 'spacing',
+			'required' => $style1_required,
+			'css'      => [
+				[
+					'property' => 'padding',
+					'selector' => '& .ecbb-ev__style1-cta .ecbb-event__link',
+				],
+			],
+		];
+
+		$element->controls['style1_cta_width'] = [
+			'tab'         => 'style',
+			'group'       => 'list_style1',
+			'label'       => esc_html__( 'Column width', 'events-calendar-for-bricks' ),
 			'type'        => 'number',
-			'min'         => 0,
-			'step'        => 50,
-			'placeholder' => '200',
-			'default'     => 200,
+			'units'       => true,
+			'placeholder' => '18rem',
+			'required'    => $style1_required,
+			'css'         => [
+				[
+					'property' => '--ecbb-s1-cta-width',
+					'selector' => '& .ecbb-ev__item-inner--style1',
+				],
+			],
 		];
 
 			$part_repeater_fields = self::ecbb_part_fields();
