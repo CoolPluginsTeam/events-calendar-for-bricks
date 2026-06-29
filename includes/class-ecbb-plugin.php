@@ -10,6 +10,17 @@ if ( ! class_exists( 'ECBB_WidgetClass', false ) ) {
 
 	final class ECBB_WidgetClass {
 
+		/**
+		 * Layout template files (loaded on demand — never globally).
+		 *
+		 * @var array<int,string>
+		 */
+		const ECBB_LAYOUT_FILES = [
+			'templates/list/list-style-1.php',
+			'templates/list/list-style-2.php',
+			'templates/grid/grid.php',
+		];
+
 		public function __construct() {
 			add_action( 'init', [ $this, 'ecbb_register_elements' ], 11 );
 			add_action( 'wp_enqueue_scripts', [ $this, 'ecbb_enqueue_scripts' ], 25 );
@@ -18,23 +29,41 @@ if ( ! class_exists( 'ECBB_WidgetClass', false ) ) {
 		}
 
 		/**
-		* Include the render/builder helper files on demand.
+		* Shared helper includes used by every events-widget code path
+		* (element load, settings filter, AJAX save, builder assets).
 		*
-		* Called lazily (element load, settings filter, AJAX save, builder
-		* assets) so these files are only parsed when the events widget is
-		* actually built or rendered — not on every request. Idempotent via
-		* require_once.
+		* Loaded together in a loop because they are interdependent. The layout
+		* template files in {@see self::ECBB_LAYOUT_FILES} are deliberately NOT
+		* loaded here — they are pulled in on demand only when a layout is
+		* actually normalized, built, or rendered. Idempotent via require_once.
 		*
 		* @return void
 		*/
 		public static function ecbb_load_render_dependencies() {
-			require_once ECBB_DIR . 'includes/query.php';
-			require_once ECBB_DIR . 'includes/markup.php';
-			require_once ECBB_DIR . 'includes/styles.php';
-			require_once ECBB_DIR . 'includes/controls.php';
-			require_once ECBB_DIR . 'widgets/layouts/ecbb-list-1.php';
-			require_once ECBB_DIR . 'widgets/layouts/ecbb-grid.php';
-			require_once ECBB_DIR . 'widgets/layouts/ecbb-list-2.php';
+			$includes = [
+				'includes/query.php',
+				'includes/markup.php',
+				'includes/styles.php',
+				'includes/controls.php',
+			];
+			foreach ( $includes as $relative_path ) {
+				require_once ECBB_DIR . $relative_path;
+			}
+		}
+
+		/**
+		* Load the layout template files on demand (never globally).
+		*
+		* The per-layout normalizers cross-reference each other to detect and
+		* upgrade stacks left over from a different template, so all three are
+		* loaded together once any layout is in play. Idempotent via require_once.
+		*
+		* @return void
+		*/
+		public static function ecbb_load_layouts() {
+			foreach ( self::ECBB_LAYOUT_FILES as $relative_path ) {
+				require_once ECBB_DIR . $relative_path;
+			}
 		}
 
 		/**
@@ -206,6 +235,8 @@ if ( ! class_exists( 'ECBB_WidgetClass', false ) ) {
 			$layout_template = $layout['template'];
 			$list_item_style = $layout['item_chrome'];
 
+			self::ecbb_load_layouts();
+
 			if ( $layout_template === 'list' && $list_item_style === 'style-1' ) {
 				$parts_repeater = isset( $settings['parts_style1'] ) && is_array( $settings['parts_style1'] ) ? $settings['parts_style1'] : [];
 				if ( ! \ECBB_Markup::ecbb_parts_is_empty( $parts_repeater )
@@ -243,7 +274,7 @@ if ( ! class_exists( 'ECBB_WidgetClass', false ) ) {
 				return;
 			}
 
-			$file  = ECBB_DIR . 'widgets/ecbb-widget.php';
+			$file  = ECBB_DIR . 'includes/class-ecbb-widget.php';
 			$class = 'ECBB\\Element_ECBB_Events_Widget';
 
 			if ( ! is_readable( $file ) ) {
@@ -254,12 +285,11 @@ if ( ! class_exists( 'ECBB_WidgetClass', false ) ) {
 		}
 
 		/**
-		* Enqueue front-end widget styles, builder panel assets, and iframe preview CSS.
+		* Register widget styles globally; enqueue only when the element renders
+		* ({@see ECBB_Widget::enqueue_scripts()}), like ECT loads CSS per shortcode.
 		*/
 		public function ecbb_enqueue_scripts() {
-			// Front end, builder main, and the builder iframe are all separate requests;
-			// this hook fires in each, so a single unconditional enqueue covers them all.
-			$this->ecbb_enqueue_events_widget_styles();
+			self::ecbb_register_events_widget_styles();
 
 			if ( function_exists( 'bricks_is_builder_main' ) && bricks_is_builder_main() ) {
 				$this->ecbb_enqueue_builder_panel_assets();
@@ -267,31 +297,41 @@ if ( ! class_exists( 'ECBB_WidgetClass', false ) ) {
 		}
 
 		/**
-		* Front-end CSS for the Events Widget (base + list/grid template styles).
+		* Register front-end CSS for the Events Widget (base + list/grid templates).
+		*
+		* @return void
 		*/
-		private function ecbb_enqueue_events_widget_styles() {
-			$this->ecbb_enqueue_style( 'ecbb-events-widget-base', 'assets/css/events-widget/ecbb-events-widget-base.css' );
-			$this->ecbb_enqueue_style( 'ecbb-list-1', 'assets/css/events-widget/list-style-1.css', [ 'ecbb-events-widget-base' ] );
-			$this->ecbb_enqueue_style( 'ecbb-list-2', 'assets/css/events-widget/list-style-2.css', [ 'ecbb-events-widget-base' ] );
-			$this->ecbb_enqueue_style( 'ecbb-events-widget-grid', 'assets/css/events-widget/ecbb-events-widget-grid.css', [ 'ecbb-events-widget-base' ] );
+		public static function ecbb_register_events_widget_styles() {
+			$styles = [
+				[ 'ecbb-events-widget-base', 'assets/css/events-widget/ecbb-events-widget-base.css', [] ],
+				[ 'ecbb-list-1', 'assets/css/events-widget/list-style-1.css', [ 'ecbb-events-widget-base' ] ],
+				[ 'ecbb-list-2', 'assets/css/events-widget/list-style-2.css', [ 'ecbb-events-widget-base' ] ],
+				[ 'ecbb-events-widget-grid', 'assets/css/events-widget/ecbb-events-widget-grid.css', [ 'ecbb-events-widget-base' ] ],
+			];
+
+			foreach ( $styles as $style ) {
+				list( $handle, $relative_path, $deps ) = $style;
+				if ( wp_style_is( $handle, 'registered' ) ) {
+					continue;
+				}
+				$disk_path = ECBB_DIR . $relative_path;
+				$version   = file_exists( $disk_path ) ? (string) filemtime( $disk_path ) : ECBB_VERSION;
+				wp_register_style( $handle, ECBB_URL . $relative_path, $deps, $version );
+			}
 		}
 
 		/**
-		* Enqueue a plugin stylesheet from a single relative path.
+		* Enqueue front-end widget styles (called from the Bricks element only).
 		*
-		* Resolves the disk path (for cache-busting via filemtime) and the public URL
-		* from one relative path, so the path is never duplicated at the call site.
-		*
-		* @param string        $handle        Unique style handle.
-		* @param string        $relative_path Path relative to the plugin root (e.g. assets/css/foo.css).
-		* @param array<string> $deps          Handles this style depends on.
 		* @return void
 		*/
-		private function ecbb_enqueue_style( $handle, $relative_path, array $deps = [] ) {
-			$disk_path = ECBB_DIR . $relative_path;
-			$version   = file_exists( $disk_path ) ? (string) filemtime( $disk_path ) : ECBB_VERSION;
-
-			wp_enqueue_style( $handle, ECBB_URL . $relative_path, $deps, $version );
+		public static function ecbb_enqueue_events_widget_styles() {
+			self::ecbb_register_events_widget_styles();
+			foreach ( [ 'ecbb-events-widget-base', 'ecbb-list-1', 'ecbb-list-2', 'ecbb-events-widget-grid' ] as $handle ) {
+				if ( ! wp_style_is( $handle, 'enqueued' ) ) {
+					wp_enqueue_style( $handle );
+				}
+			}
 		}
 
 		/**

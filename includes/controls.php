@@ -745,7 +745,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			'css'         => [
 				[
 					'property' => '--ecbb-gap',
-					'selector' => '.ecbb-ev',
+					'selector' => '.ecbb-ev__list',
 				],
 			],
 		];

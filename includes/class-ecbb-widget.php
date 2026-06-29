@@ -6,13 +6,6 @@ if (! defined('ABSPATH')) {
 	exit;
 }
 
-// Bricks includes this element file only in the builder or when rendering a
-// page that uses the widget, so this is the right place to pull in the render
-// helpers (idempotent via require_once inside the loader).
-if ( class_exists( '\ECBB_WidgetClass', false ) ) {
-	\ECBB_WidgetClass::ecbb_load_render_dependencies();
-}
-
 class ECBB_Widget extends \Bricks\Element
 {
 
@@ -152,8 +145,34 @@ class ECBB_Widget extends \Bricks\Element
 		return $out;
 	}
 
+	/**
+	 * Load render helpers + layout templates on demand (not at file include).
+	 *
+	 * @return void
+	 */
+	private function ecbb_ensure_widget_dependencies() {
+		if ( ! class_exists( '\ECBB_WidgetClass', false ) ) {
+			return;
+		}
+		\ECBB_WidgetClass::ecbb_load_render_dependencies();
+		\ECBB_WidgetClass::ecbb_load_layouts();
+	}
+
+	/**
+	 * Bricks calls this when the element is on the page (front end or builder iframe).
+	 * Mirrors ECT loading CSS only when a shortcode/block actually renders.
+	 *
+	 * @return void
+	 */
+	public function enqueue_scripts() {
+		if ( class_exists( '\ECBB_WidgetClass', false ) ) {
+			\ECBB_WidgetClass::ecbb_enqueue_events_widget_styles();
+		}
+	}
+
 	public function set_controls()
 	{
+		$this->ecbb_ensure_widget_dependencies();
 		if (class_exists('ECBB_Controls', false)) {
 			\ECBB_Controls::ecbb_register_controls($this);
 		}
@@ -764,6 +783,8 @@ class ECBB_Widget extends \Bricks\Element
 	}
 
 	public function render() {
+		$this->ecbb_ensure_widget_dependencies();
+
 		$scope_class = $this->ecbb_get_instance_scope_class();
 		$this->set_attribute( '_root', 'class', 'ecbb-ev' );
 		$this->set_attribute( '_root', 'class', $scope_class );
