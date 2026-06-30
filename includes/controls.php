@@ -57,25 +57,17 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 		 */
 		public static function ecbb_req_hover_controls() {
 			return [
-				[ 'part', '=', self::ecbb_hover_part_types() ],
+				self::ecbb_req_show_hover_toggle(),
 				self::ecbb_req_hover_on(),
 			];
 		}
 
 		/**
+		 * Hover fields for interactive parts only (title, chips, buttons — not image).
+		 *
 		 * @return array<int,array{0:string,1:string,2:mixed>>
 		 */
-		public static function ecbb_req_hover_bg() {
-			return [
-				[ 'part', '=', self::ecbb_hover_interactive_types() ],
-				self::ecbb_req_hover_on(),
-			];
-		}
-
-		/**
-		 * @return array<int,array{0:string,1:string,2:mixed>>
-		 */
-		public static function ecbb_req_hover_decoration() {
+		public static function ecbb_req_hover_interactive() {
 			return [
 				[ 'part', '=', self::ecbb_hover_interactive_types() ],
 				self::ecbb_req_hover_on(),
@@ -324,7 +316,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 				'label'    => esc_html__( 'Button styles', 'events-calendar-for-bricks' ),
 				'type'     => 'checkbox',
 				'default'  => false,
-				'required' => [ 'part', '=', [ 'event_tickets', 'event_rsvp', 'read_more' ] ],
+				'required' => [ 'part', '=', self::ecbb_btn_part_types() ],
 			],
 			'btn_sep_style' => [
 				'label'    => esc_html__( 'Button styling', 'events-calendar-for-bricks' ),
@@ -596,7 +588,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 				'label'       => esc_html__( 'Hover background', 'events-calendar-for-bricks' ),
 				'type'        => 'color',
 				'placeholder' => '#666666',
-				'required'    => self::ecbb_req_hover_bg(),
+				'required'    => self::ecbb_req_hover_interactive(),
 			],
 			'ecbb_hover_text_decoration' => [
 				'label'    => esc_html__( 'Text decoration (hover)', 'events-calendar-for-bricks' ),
@@ -609,7 +601,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 					'line-through' => esc_html__( 'Line through', 'events-calendar-for-bricks' ),
 				],
 				'default'  => '',
-				'required' => self::ecbb_req_hover_decoration(),
+				'required' => self::ecbb_req_hover_interactive(),
 			],
 			'ecbb_hover_animation' => [
 				'label'    => esc_html__( 'Hover animation', 'events-calendar-for-bricks' ),

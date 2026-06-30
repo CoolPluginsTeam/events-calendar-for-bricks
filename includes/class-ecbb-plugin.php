@@ -29,26 +29,46 @@ if ( ! class_exists( 'ECBB_WidgetClass', false ) ) {
 		}
 
 		/**
-		* Shared helper includes used by every events-widget code path
-		* (element load, settings filter, AJAX save, builder assets).
+		* Full render stack (query, markup, styles, controls) for widget output.
 		*
-		* Loaded together in a loop because they are interdependent. The layout
-		* template files in {@see self::ECBB_LAYOUT_FILES} are deliberately NOT
-		* loaded here — they are pulled in on demand only when a layout is
-		* actually normalized, built, or rendered. Idempotent via require_once.
+		* Lighter paths use {@see self::ecbb_load_markup_dependencies()} or
+		* {@see self::ecbb_load_builder_panel_dependencies()} instead. Layout
+		* templates in {@see self::ECBB_LAYOUT_FILES} are loaded separately via
+		* {@see self::ecbb_load_layouts()}. Idempotent via require_once.
 		*
 		* @return void
 		*/
 		public static function ecbb_load_render_dependencies() {
-			$includes = [
-				'includes/query.php',
-				'includes/markup.php',
-				'includes/styles.php',
-				'includes/controls.php',
-			];
-			foreach ( $includes as $relative_path ) {
-				require_once ECBB_DIR . $relative_path;
+			foreach ( [ 'includes/query.php', 'includes/markup.php', 'includes/styles.php', 'includes/controls.php' ] as $relative_path ) {
+				self::ecbb_require_file( $relative_path );
 			}
+		}
+
+		/**
+		* Markup helpers only (AJAX save merge, settings filter).
+		*
+		* @return void
+		*/
+		private static function ecbb_load_markup_dependencies() {
+			self::ecbb_require_file( 'includes/markup.php' );
+		}
+
+		/**
+		* Builder panel localization (controls delegate to markup for hover types).
+		*
+		* @return void
+		*/
+		private static function ecbb_load_builder_panel_dependencies() {
+			self::ecbb_load_markup_dependencies();
+			self::ecbb_require_file( 'includes/controls.php' );
+		}
+
+		/**
+		* @param string $relative_path Path relative to ECBB_DIR.
+		* @return void
+		*/
+		private static function ecbb_require_file( $relative_path ) {
+			require_once ECBB_DIR . $relative_path;
 		}
 
 		/**
@@ -62,8 +82,29 @@ if ( ! class_exists( 'ECBB_WidgetClass', false ) ) {
 		*/
 		public static function ecbb_load_layouts() {
 			foreach ( self::ECBB_LAYOUT_FILES as $relative_path ) {
-				require_once ECBB_DIR . $relative_path;
+				self::ecbb_require_file( $relative_path );
 			}
+		}
+
+		/**
+		* Whether a layout-specific parts repeater is the one currently selected in the UI.
+		*
+		* @param string $parts_repeater_key parts_style1|parts_style2|parts_grid
+		* @param string $layout_template    list|grid
+		* @param string $list_item_style    style-1|style-2
+		* @return bool
+		*/
+		private static function ecbb_is_active_parts_repeater( $parts_repeater_key, $layout_template, $list_item_style ) {
+			if ( 'parts_grid' === $parts_repeater_key ) {
+				return 'grid' === $layout_template;
+			}
+			if ( 'parts_style1' === $parts_repeater_key ) {
+				return 'list' === $layout_template && 'style-1' === $list_item_style;
+			}
+			if ( 'parts_style2' === $parts_repeater_key ) {
+				return 'list' === $layout_template && 'style-2' === $list_item_style;
+			}
+			return false;
 		}
 
 		/**
@@ -88,7 +129,7 @@ if ( ! class_exists( 'ECBB_WidgetClass', false ) ) {
 				return;
 			}
 
-			self::ecbb_load_render_dependencies();
+			self::ecbb_load_markup_dependencies();
 
 			foreach ( [ 'content', 'header', 'footer' ] as $area ) {
 				if ( empty( $_POST[ $area ] ) || ! is_string( $_POST[ $area ] ) ) {
@@ -171,22 +212,12 @@ if ( ! class_exists( 'ECBB_WidgetClass', false ) ) {
 				}
 				$new_settings = &$new_elements[ $i ]['settings'];
 
-				$new_settings = \ECBB_Markup::ecbb_norm_settings_hover( $new_settings );
-
 				$layout          = \ECBB_Markup::ecbb_sanitize_layout_template( $new_settings );
 				$layout_template = $layout['template'];
 				$list_item_style = $layout['item_chrome'];
 
 				foreach ( [ 'parts_style1', 'parts_style2', 'parts_grid' ] as $parts_repeater_key ) {
-					$is_active_repeater = false;
-					if ( 'parts_grid' === $parts_repeater_key ) {
-						$is_active_repeater = ( 'grid' === $layout_template );
-					} elseif ( 'parts_style1' === $parts_repeater_key ) {
-						$is_active_repeater = ( 'list' === $layout_template && 'style-1' === $list_item_style );
-					} elseif ( 'parts_style2' === $parts_repeater_key ) {
-						$is_active_repeater = ( 'list' === $layout_template && 'style-2' === $list_item_style );
-					}
-					if ( $is_active_repeater ) {
+					if ( self::ecbb_is_active_parts_repeater( $parts_repeater_key, $layout_template, $list_item_style ) ) {
 						continue;
 					}
 
@@ -227,7 +258,7 @@ if ( ! class_exists( 'ECBB_WidgetClass', false ) ) {
 				return $settings;
 			}
 
-			self::ecbb_load_render_dependencies();
+			self::ecbb_load_markup_dependencies();
 
 			$settings = \ECBB_Markup::ecbb_norm_settings_hover( $settings );
 
@@ -338,7 +369,7 @@ if ( ! class_exists( 'ECBB_WidgetClass', false ) ) {
 		* Bricks main builder only: pill tabs for Event parts repeater (CONTENT | STYLE).
 		*/
 		private function ecbb_enqueue_builder_panel_assets() {
-			self::ecbb_load_render_dependencies();
+			self::ecbb_load_builder_panel_dependencies();
 
 			$builder_css_path = ECBB_DIR . 'assets/css/ecbb-builder.css';
 			wp_enqueue_style(
@@ -376,8 +407,3 @@ if ( ! class_exists( 'ECBB_WidgetClass', false ) ) {
 	}
 
 }
-
-if ( ! class_exists( 'ECBB_Plugin', false ) ) {
-	class_alias( 'ECBB_WidgetClass', 'ECBB_Plugin' );
-}
-

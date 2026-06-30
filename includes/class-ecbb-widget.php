@@ -637,7 +637,7 @@ class ECBB_Widget extends \Bricks\Element
 			: false;
 
 		if ( class_exists( 'ECBB_Markup', false ) ) {
-			\ECBB_Markup::ecbb_print_scope_attrs( is_array( $this->settings ) ? $this->settings : [] );
+			\ECBB_Markup::ecbb_active_widget_settings( is_array( $this->settings ) ? $this->settings : [] );
 		}
 
 		echo '<div class="' . esc_attr( $list_class ) . '">';
@@ -666,7 +666,7 @@ class ECBB_Widget extends \Bricks\Element
 		$post = $original_post;
 
 		if ( class_exists( 'ECBB_Markup', false ) ) {
-			\ECBB_Markup::ecbb_print_scope_attrs( [] );
+			\ECBB_Markup::ecbb_active_widget_settings( [] );
 		}
 	}
 

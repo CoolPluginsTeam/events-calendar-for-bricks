@@ -61,7 +61,7 @@ if ( ! class_exists( 'EventsCalendarForBricks' ) ) {
 
 			$this->ecbb_load_files();
 
-			if ( ! class_exists( 'ECBB_Plugin', false ) ) {
+			if ( ! class_exists( 'ECBB_WidgetClass', false ) ) {
 				return;
 			}
 
