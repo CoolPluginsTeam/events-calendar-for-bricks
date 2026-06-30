@@ -211,16 +211,259 @@ if (! class_exists('ECBB_Markup', false)) {
 		}
 
 		/**
-		* Whether raw repeater rows match a layout default stack (order-sensitive slug fingerprint).
-		*
-		* @param array $parts        Raw Bricks repeater rows.
-		* @param array $default_rows Rows from an `ecbb_*_default_parts_rows()` helper.
-		* @return bool
-		*/
+		 * Preserve Bricks repeater row ids (and style fields) when replacing a stack with layout defaults.
+		 *
+		 * @param array<int,array<string,mixed>> $saved
+		 * @param array<int,array<string,mixed>> $defaults
+		 * @return array<int,array<string,mixed>>
+		 */
+		public static function ecbb_parts_preserve_bricks_rows( array $saved, array $defaults ) {
+			$style_keys = [
+				'id', 'ecbb_typography', 'ecbb_text_align', 'ecbb_background', 'ecbb_background_inner',
+				'ecbb_margin', 'ecbb_padding', 'ecbb_use_hover', 'ecbb_hover_color', 'ecbb_hover_background',
+				'ecbb_hover_text_decoration', 'ecbb_hover_animation', 'btn_style', 'btn_bg', 'btn_text_color',
+				'btn_border_type', 'btn_border_width', 'btn_border_color', 'btn_padding', 'btn_border_radius',
+			];
 
-		public static function ecbb_parts_match_defaults(array $parts, array $default_rows)
-		{
-			return self::ecbb_parts_slugs($parts) === self::ecbb_parts_slugs($default_rows);
+			foreach ( $defaults as $i => $row ) {
+				if ( ! is_array( $row ) || ! isset( $saved[ $i ] ) || ! is_array( $saved[ $i ] ) ) {
+					continue;
+				}
+				$saved_row = $saved[ $i ];
+				if ( (string) ( $saved_row['part'] ?? '' ) !== (string) ( $row['part'] ?? '' ) ) {
+					continue;
+				}
+				foreach ( $style_keys as $key ) {
+					if ( array_key_exists( $key, $saved_row ) ) {
+						$defaults[ $i ][ $key ] = $saved_row[ $key ];
+					}
+				}
+			}
+
+			return $defaults;
+		}
+
+		/**
+		 * Upgrade empty / foreign / legacy stacks to layout defaults while keeping Bricks row ids + styles.
+		 *
+		 * @param array    $parts       Raw repeater rows.
+		 * @param string   $layout      style1|style2|grid
+		 * @param callable $default_fn  Returns default rows for the layout.
+		 * @return array|null           Replacement stack, or null to keep saved rows.
+		 */
+		public static function ecbb_upgrade_layout_parts( array $parts, $layout, callable $default_fn ) {
+			if ( self::ecbb_parts_is_empty( $parts ) ) {
+				return $default_fn();
+			}
+
+			// Only replace the old Bricks factory stack (categories + image-era rows), not user stacks.
+			$factory = [ 'categories', 'title', 'date', 'venue', 'description', 'read_more' ];
+			if ( self::ecbb_parts_slugs( $parts ) === $factory ) {
+				return self::ecbb_parts_preserve_bricks_rows( $parts, $default_fn() );
+			}
+
+			return null;
+		}
+
+		/**
+		 * CSS scope selector for a repeater row (prefers Bricks data-field-id over index).
+		 *
+		 * @param string              $scope_class Widget instance scope class.
+		 * @param array<string,mixed> $item        Repeater row (before clean).
+		 * @param int                 $idx         Row index fallback.
+		 * @return string
+		 */
+		public static function ecbb_part_scope_selector( $scope_class, array $item, $idx ) {
+			$scope_class = preg_replace( '/[^a-zA-Z0-9\-_]/', '', (string) $scope_class );
+			if ( $scope_class === '' ) {
+				return '';
+			}
+			if ( ! empty( $item['id'] ) ) {
+				return '.' . $scope_class . ' [data-field-id="' . esc_attr( (string) $item['id'] ) . '"]';
+			}
+			return '.' . $scope_class . ' .' . self::ecbb_part_index_class( absint( $idx ) );
+		}
+
+		/**
+		 * Whether a repeater row should render inside a layout meta list (uses cleaned slug).
+		 *
+		 * @param array<string,mixed> $item
+		 * @param string              $layout style1|style2|grid
+		 * @return bool
+		 */
+		public static function ecbb_is_layout_meta_row( array $item, $layout ) {
+			$ui = (string) ( $item['part'] ?? '' );
+			if ( in_array( $ui, [ 'title', 'description', 'read_more', 'image', 'categories' ], true ) ) {
+				return false;
+			}
+			if ( $layout === 'grid' && $ui === 'date' && (string) ( $item['date_display'] ?? '' ) === 'range' ) {
+				return false;
+			}
+
+			$row   = class_exists( 'ECBB_Styles', false ) ? \ECBB_Styles::ecbb_clean_part( $item ) : $item;
+			$slug  = (string) ( $row['part'] ?? $ui );
+			$slugs = [
+				'date', 'event_date', 'event_time', 'event_day', 'venue', 'organizer', 'event_cost',
+				'tags', 'event_link', 'event_tickets', 'event_rsvp',
+				'venue_full_address', 'venue_street', 'venue_city', 'venue_state', 'venue_zip',
+				'venue_country', 'venue_phone', 'venue_website', 'event_map_link',
+				'organizer_email', 'organizer_phone', 'organizer_website',
+			];
+
+			return in_array( $slug, $slugs, true ) || in_array( $ui, $slugs, true );
+		}
+
+		/**
+		 * @param array<int,array{idx:int,item:array,price:bool}> $rows
+		 */
+		public static function ecbb_flush_meta_rows( $post, array $rows, $skin, $layout, callable $emit_meta ) {
+			if ( $rows === [] ) {
+				return;
+			}
+
+			if ( $layout === 'style1' ) {
+				$primary = [];
+				$price   = [];
+				foreach ( $rows as $row ) {
+					if ( ! empty( $row['price'] ) ) {
+						$price[] = $row;
+					} else {
+						$primary[] = $row;
+					}
+				}
+				self::ecbb_render_meta_lists( $post, $primary, $price, $skin, $layout, static function ( $ev, $item, $idx, $is_price ) use ( $emit_meta ) {
+					$emit_meta( $ev, $item, $idx, (bool) $is_price );
+				} );
+				return;
+			}
+
+			$ul_class = ( $layout === 'grid' ) ? 'event-meta event-meta--grid' : 'ecbb-event-card__meta';
+			echo '<ul class="' . esc_attr( $ul_class ) . '">';
+			foreach ( $rows as $row ) {
+				$emit_meta( $post, $row['item'], $row['idx'], false );
+			}
+			echo '</ul>';
+		}
+
+		/**
+		 * Render repeater rows in saved order (respects drag-and-drop + mixed flow/meta rows).
+		 *
+		 * @param \WP_Post $post
+		 * @param array    $parts
+		 * @param string   $layout style1|style2|grid
+		 * @param string   $skin   style1|style2|'' (grid uses layout for read-more chrome)
+		 * @param callable $emit_part  function( $post, $item, $idx )
+		 * @param callable $emit_meta  function( $post, $item, $idx, $price )
+		 * @return void
+		 */
+		public static function ecbb_render_layout_parts_sequence( $post, array $parts, $layout, $skin, callable $emit_part, callable $emit_meta ) {
+			if ( ! $post instanceof \WP_Post ) {
+				return;
+			}
+
+			$meta_rows = [];
+			$read_more = null;
+
+			$flush_meta = static function () use ( $post, $layout, $skin, &$meta_rows, $emit_meta ) {
+				if ( $meta_rows === [] ) {
+					return;
+				}
+				self::ecbb_flush_meta_rows( $post, $meta_rows, $skin, $layout, $emit_meta );
+				$meta_rows = [];
+			};
+
+			foreach ( $parts as $i => $item ) {
+				if ( ! is_array( $item ) ) {
+					continue;
+				}
+
+				$ui = (string) ( $item['part'] ?? '' );
+				if ( $ui === '' ) {
+					continue;
+				}
+
+				if ( $ui === 'read_more' ) {
+					$flush_meta();
+					$read_more = [ 'idx' => (int) $i, 'item' => $item ];
+					continue;
+				}
+
+				if ( self::ecbb_shell_skip_part( $ui, $layout ) ) {
+					continue;
+				}
+
+				if ( $ui === 'categories' && $layout === 'style2' ) {
+					$flush_meta();
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+					echo self::ecbb_render_style2_category( $post, $item, (int) $i, $skin );
+					continue;
+				}
+
+				if ( $layout === 'grid' && $ui === 'date' && (string) ( $item['date_display'] ?? '' ) === 'range' ) {
+					$flush_meta();
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+					echo self::ecbb_render_grid_date_flow( $post, $item, (int) $i, $skin );
+					continue;
+				}
+
+				if ( self::ecbb_is_layout_meta_row( $item, $layout ) ) {
+					$row_clean = class_exists( 'ECBB_Styles', false ) ? \ECBB_Styles::ecbb_clean_part( $item ) : $item;
+					$slug      = (string) ( $row_clean['part'] ?? $ui );
+					$meta_rows[] = [
+						'idx'   => (int) $i,
+						'item'  => $item,
+						'price' => ( $ui === 'event_cost' || $slug === 'event_cost' ),
+					];
+					continue;
+				}
+
+				$flush_meta();
+				$emit_part( $post, $item, (int) $i );
+			}
+
+			$flush_meta();
+
+			if ( $read_more !== null ) {
+				$rm_skin = $layout === 'grid' ? 'grid' : (string) $skin;
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				echo self::ecbb_render_layout_read_more_shell( $post, $read_more['item'], $read_more['idx'], $rm_skin, $emit_part );
+			}
+		}
+
+		/**
+		 * Shell read-more chrome around standard repeater part output (btn_style / hover / Style tab).
+		 *
+		 * @param \WP_Post $post
+		 * @param array    $item
+		 * @param int      $idx
+		 * @param string   $skin
+		 * @param callable $emit_part
+		 * @return string
+		 */
+		public static function ecbb_render_layout_read_more_shell( $post, array $item, $idx, $skin, callable $emit_part ) {
+			if ( ! $post instanceof \WP_Post ) {
+				return '';
+			}
+
+			$skin = (string) $skin;
+
+			ob_start();
+			$emit_part( $post, $item, $idx );
+			$html = trim( (string) ob_get_clean() );
+			if ( $html === '' ) {
+				return self::ecbb_render_layout_read_more( $post, $item, $idx, $skin );
+			}
+
+			$html = self::ecbb_read_more_merge_link_classes(
+				$html,
+				self::ecbb_layout_read_more_btn_class( $skin )
+			);
+
+			if ( $skin === 'style2' ) {
+				return '<div class="ecbb-event-card__divider"></div><div class="ecbb-event-card__footer">' . $html . '</div>';
+			}
+
+			return $html;
 		}
 
 		/**
@@ -233,25 +476,6 @@ if (! class_exists('ECBB_Markup', false)) {
 		public static function ecbb_parts_is_empty(array $parts)
 		{
 			return self::ecbb_parts_clean($parts) === [];
-		}
-
-		/**
-		* @param array  $parts Clean rows (see ecbb_parts_clean).
-		* @param string $slug  Part slug.
-		* @return bool
-		*/
-		public static function ecbb_parts_has(array $parts, $slug)
-		{
-			$slug = (string) $slug;
-			foreach ($parts as $row) {
-				if (! is_array($row)) {
-					continue;
-				}
-			if (isset($row['part']) && (string) $row['part'] === $slug) {
-				return true;
-			}
-		}
-		return false;
 		}
 
 		/**
@@ -807,6 +1031,25 @@ if (! class_exists('ECBB_Markup', false)) {
 		return self::ecbb_apply_cost_currency($cost, $currency_code);
 		}
 
+		public static function ecbb_layout_cost_label($post_id, array $item = [])
+		{
+			$cost = self::ecbb_format_cost_display($post_id, $item);
+			if ($cost === '') {
+				return '';
+			}
+			if (self::ecbb_cost_is_free($cost)) {
+				return __('Free', 'events-calendar-for-bricks');
+			}
+			if (stripos($cost, 'from') !== 0) {
+				return sprintf(
+					/* translators: %s: event price */
+					__('From %s', 'events-calendar-for-bricks'),
+					$cost
+				);
+			}
+			return $cost;
+		}
+
 		/**
 		* Build inner HTML for taxonomy terms (categories / tags).
 		*
@@ -1231,6 +1474,26 @@ if (! class_exists('ECBB_Markup', false)) {
 		return $name . ', ' . $state;
 		}
 
+		public static function ecbb_venue_name_city($event_id)
+		{
+			$name = self::ecbb_venue_name($event_id);
+			$city = self::ecbb_part_detail_text($event_id, 'venue_city');
+			$name = trim((string) $name);
+			$city = trim((string) $city);
+
+			if ($name === '' && $city === '') {
+				return '';
+			}
+			if ($name === '') {
+				return $city;
+			}
+			if ($city === '') {
+				return $name;
+			}
+
+			return $name . ', ' . $city;
+		}
+
 		/**
 		* Resolved venue display format for a repeater row (Style 2 defaults to name + state).
 		*
@@ -1243,7 +1506,11 @@ if (! class_exists('ECBB_Markup', false)) {
 		{
 			$display = isset($item['venue_display']) ? (string) $item['venue_display'] : '';
 			if ($display === '' || $display === 'name_and_address') {
-				return (string) $skin === 'style2' ? 'name_and_state' : 'full_details';
+				$skin = (string) $skin;
+				if ($skin === 'style1' || $skin === 'style2') {
+					return 'name_and_city';
+				}
+				return 'name';
 			}
 
 		return $display;
@@ -1287,6 +1554,9 @@ if (! class_exists('ECBB_Markup', false)) {
 		$display = self::ecbb_venue_display_key($item, $skin);
 		if ($display === 'name_and_state') {
 			return self::ecbb_venue_name_state($event_id);
+		}
+		if ($display === 'name_and_city') {
+			return self::ecbb_venue_name_city($event_id);
 		}
 
 		return self::ecbb_venue_name($event_id);
@@ -1407,13 +1677,30 @@ if (! class_exists('ECBB_Markup', false)) {
 		{
 			$preset = isset($item['date_format_preset']) ? (string) $item['date_format_preset'] : '';
 			$custom = isset($item['date_format_custom']) ? trim((string) $item['date_format_custom']) : '';
+			$part   = (string) $part;
+
+			if ($part === 'event_time') {
+				if ($preset === 'custom' && $custom !== '') {
+					return $custom;
+				}
+				if (class_exists('ECBB_Styles', false)) {
+					$mapped = \ECBB_Styles::ecbb_date_php_format($preset, 'event_time');
+					if ($mapped !== null && $mapped !== '') {
+						return $mapped;
+					}
+				}
+				if ($preset === 'site_time') {
+					return (string) get_option('time_format');
+				}
+				return (string) get_option('time_format');
+			}
 
 			if ($preset === 'custom') {
 				return $custom;
 			}
 
 		if (class_exists('ECBB_Styles', false)) {
-			$mapped = \ECBB_Styles::ecbb_date_php_format($preset, (string) $part);
+			$mapped = \ECBB_Styles::ecbb_date_php_format($preset, $part);
 			if ($mapped !== null && $mapped !== '') {
 				return $mapped;
 			}
@@ -1429,11 +1716,6 @@ if (! class_exists('ECBB_Markup', false)) {
 
 		if ($preset === 'site_date_time') {
 			return (string) get_option('date_format') . ' ' . (string) get_option('time_format');
-		}
-
-		// Default per part.
-		if ($part === 'event_time') {
-			return (string) get_option('time_format');
 		}
 
 		if ($part === 'event_date') {
@@ -1642,9 +1924,56 @@ if (! class_exists('ECBB_Markup', false)) {
 		* @return string        Space-separated classes (not escaped).
 		*/
 
-		public static function ecbb_btn_style_active(array $item)
-		{
-			return ! empty($item['btn_style']);
+		public static function ecbb_btn_style_active( array $item ) {
+			return self::ecbb_parse_bricks_checkbox( $item['btn_style'] ?? false );
+		}
+
+		/**
+		 * Reference layout button class for read-more per skin.
+		 *
+		 * @param string $skin style1|style2|grid
+		 * @return string
+		 */
+		public static function ecbb_layout_read_more_btn_class( $skin ) {
+			$skin = (string) $skin;
+			if ( $skin === 'style2' ) {
+				return 'ecbb-event-card__button';
+			}
+			if ( $skin === 'grid' ) {
+				return 'event-button event-button--filled';
+			}
+			return 'event-button event-button--outline';
+		}
+
+		/**
+		 * Merge layout/skin classes onto the first anchor in read-more markup.
+		 *
+		 * @param string $html          Part HTML.
+		 * @param string $extra_classes Classes to append.
+		 * @return string
+		 */
+		public static function ecbb_read_more_merge_link_classes( $html, $extra_classes ) {
+			$extra_classes = trim( (string) $extra_classes );
+			if ( $extra_classes === '' || strpos( $html, '<a ' ) === false ) {
+				return $html;
+			}
+
+			if ( preg_match( '#(<a\s[^>]*\sclass=")([^"]*)(")#', $html, $matches ) ) {
+				$merged = trim( $matches[2] . ' ' . $extra_classes );
+				return preg_replace(
+					'#(<a\s[^>]*\sclass=")([^"]*)(")#',
+					'$1' . $merged . '$3',
+					$html,
+					1
+				);
+			}
+
+			return preg_replace(
+				'#<a\s#',
+				'<a class="' . esc_attr( $extra_classes ) . '" ',
+				$html,
+				1
+			);
 		}
 
 		/**
@@ -1952,7 +2281,10 @@ if (! class_exists('ECBB_Markup', false)) {
 		// --- Links & terms ---
 
 		public static function ecbb_action_link_html( array $item, $href, $label, $link_attr = '', $extra_attrs = '' ) {
-			if ( ! self::ecbb_hover_style_active( $item ) && ! self::ecbb_btn_style_active( $item ) ) {
+			$part       = isset( $item['part'] ) ? (string) $item['part'] : '';
+			$force_link = in_array( $part, [ 'read_more', 'event_tickets', 'event_rsvp' ], true );
+
+			if ( ! $force_link && ! self::ecbb_hover_style_active( $item ) && ! self::ecbb_btn_style_active( $item ) ) {
 				return '<span class="ecbb-event__plain">' . esc_html( $label ) . '</span>';
 			}
 
@@ -2166,7 +2498,7 @@ if (! class_exists('ECBB_Markup', false)) {
 		'organizer_phone',
 		'organizer_website',
 		];
-		$extended = ['event_date', 'event_time', 'event_day', 'event_cost', 'event_tickets', 'event_rsvp', 'read_more', 'venue', 'organizer'];
+		$extended = ['date', 'event_date', 'event_time', 'event_day', 'event_cost', 'event_tickets', 'event_rsvp', 'read_more', 'venue', 'organizer'];
 		if (! in_array($part, $extended, true) && ! in_array($part, $detail_parts, true)) {
 			return false;
 		}
@@ -2181,6 +2513,34 @@ if (! class_exists('ECBB_Markup', false)) {
 
 		if ($part === 'organizer') {
 			return self::ecbb_render_organizer($post, $item, $idx, $style, $skin);
+		}
+
+		if ($part === 'date') {
+			$fmt = isset($item['date_display']) ? (string) $item['date_display'] : 'day_time_range';
+			if ($fmt === 'range') {
+				return self::ecbb_render_grid_date_flow($post, $item, $idx, $skin);
+			}
+			$tp   = self::ecbb_build_day_time_parts($post->ID, $item);
+			$html = '';
+			if ($fmt === 'time') {
+				$html = isset($tp['time']) ? trim((string) $tp['time']) : '';
+			} elseif ($fmt === 'day') {
+				$html = isset($tp['day']) ? trim((string) $tp['day']) : '';
+			} else {
+				$day  = isset($tp['day']) ? trim((string) $tp['day']) : '';
+				$time = isset($tp['time']) ? trim((string) $tp['time']) : '';
+				if ($day !== '' && $time !== '') {
+					$html = $day . ', ' . $time;
+				} elseif ($time !== '') {
+					$html = $time;
+				} else {
+					$html = $day;
+				}
+			}
+			if ($html === '') {
+				return '';
+			}
+			return '<div class="' . $wrap('date') . ($html !== '' ? ' ecbb-has-row-icon' : '') . '"' . $attr . '>' . esc_html($html) . '</div>';
 		}
 
 		$format = ($part === 'event_date' || $part === 'event_time')
@@ -2206,19 +2566,22 @@ if (! class_exists('ECBB_Markup', false)) {
 		}
 
 		if ($part === 'event_time') {
-			$html = '';
-			$php  = $format !== '' ? $format : get_option('time_format');
-			$php  = self::ecbb_time_fmt_lower($php);
-			if (function_exists('tribe_get_start_time')) {
-				$html = (string) \tribe_get_start_time($post->ID, $php);
-			} elseif (function_exists('tribe_get_start_date')) {
-			$html = (string) \tribe_get_start_date($post->ID, true, $php);
-		} else {
-		$raw = (string) get_post_meta($post->ID, '_EventStartDate', true);
-		$ts  = $raw ? strtotime($raw) : false;
-		$html = $ts ? date_i18n($php, $ts) : '';
-		}
-		$html = self::ecbb_time_lower_am(trim(wp_strip_all_tags($html)));
+			$tp   = self::ecbb_build_day_time_parts($post->ID, $item);
+			$html = isset($tp['time']) ? trim((string) $tp['time']) : '';
+			if ($html === '') {
+				$php = $format !== '' ? $format : get_option('time_format');
+				$php = self::ecbb_time_fmt_lower($php);
+				if (function_exists('tribe_get_start_time')) {
+					$html = (string) \tribe_get_start_time($post->ID, $php);
+				} elseif (function_exists('tribe_get_start_date')) {
+					$html = (string) \tribe_get_start_date($post->ID, true, $php);
+				} else {
+					$raw = (string) get_post_meta($post->ID, '_EventStartDate', true);
+					$ts  = $raw ? strtotime($raw) : false;
+					$html = $ts ? date_i18n($php, $ts) : '';
+				}
+				$html = self::ecbb_time_lower_am(trim(wp_strip_all_tags($html)));
+			}
 		if ($html === '') {
 			return '';
 		}
@@ -2277,7 +2640,7 @@ if (! class_exists('ECBB_Markup', false)) {
 		}
 
 		if ($part === 'event_cost') {
-			$cost = self::ecbb_format_cost_display($post->ID, $item);
+			$cost = self::ecbb_layout_cost_label($post->ID, $item);
 			if ($cost === '') {
 				return '';
 			}
@@ -2334,14 +2697,10 @@ if (! class_exists('ECBB_Markup', false)) {
 		if ($part === 'read_more') {
 			$label = isset($item['read_more_text']) ? trim((string) $item['read_more_text']) : '';
 			if ($label === '') {
-				if ($skin === 'style2') {
-					$label = esc_html__('More Details', 'events-calendar-for-bricks');
-				} else {
-				$label = esc_html__('Find Out More', 'events-calendar-for-bricks');
+				$label = esc_html__( 'View Details', 'events-calendar-for-bricks' );
+			} else {
+				$label = sanitize_text_field($label);
 			}
-		} else {
-		$label = sanitize_text_field($label);
-		}
 		$inner_el = self::ecbb_action_link_html(
 			$item,
 			get_permalink( $post->ID ),
@@ -2352,6 +2711,707 @@ if (! class_exists('ECBB_Markup', false)) {
 		}
 
 		return false;
+		}
+
+		// --- Layout shell helpers (List 1 / List 2 / Grid reference markup) ---
+
+		/**
+		 * Parse a Bricks checkbox value when the setting key is present.
+		 *
+		 * @param mixed $value Raw saved value.
+		 * @return bool
+		 */
+		public static function ecbb_parse_bricks_checkbox( $value ) {
+			if ( $value === false || $value === 0 || $value === '0' || $value === 'no' || $value === 'off' ) {
+				return false;
+			}
+			if ( $value === true || $value === 1 || $value === '1' || $value === 'yes' || $value === 'on' ) {
+				return true;
+			}
+			if ( is_array( $value ) && $value === [] ) {
+				return false;
+			}
+			if ( $value === null || $value === '' ) {
+				return false;
+			}
+			if ( is_string( $value ) ) {
+				$s = strtolower( sanitize_text_field( $value ) );
+				if ( in_array( $s, [ 'no', 'off', 'false', '0', 'hide', 'hidden' ], true ) ) {
+					return false;
+				}
+				if ( in_array( $s, [ 'yes', 'true', '1', 'show', 'on' ], true ) ) {
+					return true;
+				}
+			}
+			return (bool) $value;
+		}
+
+		/**
+		 * Merge passed settings with the active widget render context.
+		 *
+		 * @param array<string,mixed> $settings Partial settings from a template caller.
+		 * @return array<string,mixed>
+		 */
+		public static function ecbb_layout_settings( array $settings = [] ) {
+			$active = self::ecbb_active_widget_settings();
+			if ( ! is_array( $active ) || $active === [] ) {
+				return $settings;
+			}
+			if ( $settings === [] ) {
+				return $active;
+			}
+			return array_replace( $active, $settings );
+		}
+
+		/**
+		 * Normalize layout shell checkbox settings for Bricks save/render.
+		 *
+		 * @param array<string,mixed> $settings Element settings.
+		 * @return array<string,mixed>
+		 */
+		public static function ecbb_norm_layout_shell_settings( array $settings ) {
+			if (
+				! array_key_exists( 'list1_show_category_badge', $settings )
+				&& ! array_key_exists( 'grid_show_category_badge', $settings )
+				&& array_key_exists( 'shell_show_category_badge', $settings )
+			) {
+				$legacy = self::ecbb_parse_bricks_checkbox( $settings['shell_show_category_badge'] );
+				$legacy_val = $legacy ? 'show' : 'hide';
+				$settings['list1_show_category_badge'] = $legacy_val;
+				$settings['grid_show_category_badge']  = $legacy_val;
+			}
+
+			if ( array_key_exists( 'show_event_image', $settings ) ) {
+				$raw = $settings['show_event_image'];
+				if ( is_bool( $raw ) ) {
+					$settings['show_event_image'] = $raw ? 'show' : 'hide';
+				} elseif ( $raw === true || $raw === 1 || $raw === '1' || $raw === 'yes' || $raw === 'on' ) {
+					$settings['show_event_image'] = 'show';
+				} elseif ( $raw === false || $raw === 0 || $raw === '0' || $raw === 'no' || $raw === 'off' || $raw === '' || $raw === null ) {
+					$settings['show_event_image'] = 'hide';
+				}
+			}
+
+			foreach ( [ 'list1_show_category_badge', 'grid_show_category_badge', 'style2_show_date_badge' ] as $key ) {
+				if ( ! array_key_exists( $key, $settings ) ) {
+					continue;
+				}
+				$raw = $settings[ $key ];
+				if ( $raw === 'show' || $raw === 'hide' ) {
+					continue;
+				}
+				if ( in_array( $key, [ 'list1_show_category_badge', 'grid_show_category_badge' ], true ) ) {
+					if ( is_bool( $raw ) || $raw === 'yes' || $raw === 'no' || $raw === 'on' || $raw === 'off' || $raw === '1' || $raw === '0' ) {
+						$settings[ $key ] = self::ecbb_parse_bricks_checkbox( $raw ) ? 'show' : 'hide';
+						continue;
+					}
+				}
+				$settings[ $key ] = self::ecbb_parse_bricks_checkbox( $raw );
+			}
+
+			return $settings;
+		}
+
+		/**
+		 * Layout shell select (show/hide) or legacy Bricks checkbox value.
+		 *
+		 * @param array<string,mixed> $settings Element settings.
+		 * @param string              $key      Setting key.
+		 * @param string              $default  show|hide when the key is absent.
+		 * @return bool
+		 */
+		public static function ecbb_shell_select_on( array $settings, $key, $default = 'show' ) {
+			if ( ! array_key_exists( $key, $settings ) ) {
+				return $default !== 'hide';
+			}
+			$raw = $settings[ $key ];
+			if ( $raw === 'hide' || $raw === 'no' ) {
+				return false;
+			}
+			if ( $raw === 'show' || $raw === 'yes' ) {
+				return true;
+			}
+			return self::ecbb_parse_bricks_checkbox( $raw );
+		}
+
+		/**
+		 * Bricks checkbox is ON only when the setting key exists and is truthy.
+		 *
+		 * @param array<string,mixed> $settings Element settings.
+		 * @param string              $key      Setting key.
+		 * @return bool
+		 */
+		public static function ecbb_bricks_checkbox_on( array $settings, $key ) {
+			return isset( $settings[ $key ] ) && self::ecbb_parse_bricks_checkbox( $settings[ $key ] );
+		}
+
+		public static function ecbb_show_event_image( $settings ) {
+			$settings = self::ecbb_layout_settings( is_array( $settings ) ? $settings : [] );
+
+			if ( ! array_key_exists( 'show_event_image', $settings ) ) {
+				// Legacy Bricks checkbox off removes the key entirely.
+				return false;
+			}
+
+			$raw = $settings['show_event_image'];
+			if ( $raw === 'hide' || $raw === 'no' ) {
+				return false;
+			}
+			if ( $raw === 'show' || $raw === 'yes' ) {
+				return true;
+			}
+
+			return self::ecbb_parse_bricks_checkbox( $raw );
+		}
+
+		public static function ecbb_show_shell_category_badge( $settings ) {
+			$settings = self::ecbb_layout_settings( is_array( $settings ) ? $settings : [] );
+			if ( ! self::ecbb_show_event_image( $settings ) ) {
+				return false;
+			}
+			$layout   = self::ecbb_sanitize_layout_template( $settings );
+
+			if ( $layout['template'] === 'grid' ) {
+				return self::ecbb_shell_select_on( $settings, 'grid_show_category_badge', 'show' );
+			}
+			if ( $layout['template'] === 'list' && $layout['item_chrome'] === 'style-1' ) {
+				return self::ecbb_shell_select_on( $settings, 'list1_show_category_badge', 'show' );
+			}
+
+			return false;
+		}
+
+		public static function ecbb_show_style2_date_badge( $settings ) {
+			$settings = self::ecbb_layout_settings( is_array( $settings ) ? $settings : [] );
+			if ( ! self::ecbb_show_event_image( $settings ) ) {
+				return false;
+			}
+			$layout   = self::ecbb_sanitize_layout_template( $settings );
+			if ( $layout['template'] !== 'list' || $layout['item_chrome'] !== 'style-2' ) {
+				return false;
+			}
+			return self::ecbb_bricks_checkbox_on( $settings, 'style2_show_date_badge' );
+		}
+
+		public static function ecbb_style2_date_badge_order( $settings ) {
+			$settings = self::ecbb_layout_settings( is_array( $settings ) ? $settings : [] );
+			$order = isset( $settings['style2_date_badge_order'] ) ? (string) $settings['style2_date_badge_order'] : 'month_day';
+			return in_array( $order, [ 'month_day', 'day_month' ], true ) ? $order : 'month_day';
+		}
+
+		/**
+		 * Featured image attachment ID for an event (WP thumbnail + TEC fallback).
+		 *
+		 * @param int $post_id Event post ID.
+		 * @return int Attachment ID or 0.
+		 */
+		public static function ecbb_event_thumbnail_id( $post_id ) {
+			$post_id  = absint( $post_id );
+			$thumb_id = (int) get_post_thumbnail_id( $post_id );
+			if ( $thumb_id > 0 ) {
+				return $thumb_id;
+			}
+			if ( function_exists( 'tribe_get_event' ) ) {
+				$event = tribe_get_event( $post_id );
+				if ( $event && ! empty( $event->thumbnail_id ) ) {
+					return (int) $event->thumbnail_id;
+				}
+			}
+			return 0;
+		}
+
+		public static function ecbb_shell_skip_part( $slug, $layout ) {
+			$slug = (string) $slug;
+			if ( in_array( $slug, [ 'image', 'read_more', 'event_date', 'event_day' ], true ) ) {
+				return true;
+			}
+			if ( in_array( $slug, [ 'categories' ], true ) && in_array( $layout, [ 'style1', 'grid' ], true ) ) {
+				return true;
+			}
+			return false;
+		}
+
+		public static function ecbb_layout_surface_class( $part, $skin ) {
+			$part = (string) $part;
+			$skin = (string) $skin;
+			static $map = [
+				'style1' => [
+					'title'       => 'event-list-card__title',
+					'description' => 'event-list-card__description',
+				],
+				'style2' => [
+					'title'       => 'ecbb-event-card__title',
+					'description' => 'ecbb-event-card__description',
+					'categories'  => 'ecbb-event-card__category',
+				],
+				'grid'   => [
+					'title'       => 'event-grid-card__title',
+					'description' => 'event-grid-card__description',
+				],
+			];
+			return isset( $map[ $skin ][ $part ] ) ? $map[ $skin ][ $part ] : '';
+		}
+
+		/**
+		 * Plain-text event description for length checks (excerpt / content).
+		 *
+		 * @param \WP_Post            $post Event post.
+		 * @param array<string,mixed> $item Repeater row.
+		 * @return string
+		 */
+		public static function ecbb_description_plain_text( $post, array $item ) {
+			if ( ! $post instanceof \WP_Post ) {
+				return '';
+			}
+
+			$source = isset( $item['desc_source'] ) ? (string) $item['desc_source'] : 'auto';
+			$source = in_array( $source, [ 'auto', 'excerpt', 'content' ], true ) ? $source : 'auto';
+
+			$html = '';
+			if ( $source === 'excerpt' ) {
+				$html = (string) $post->post_excerpt;
+			} elseif ( $source === 'content' || ( $source === 'auto' && $post->post_excerpt === '' ) ) {
+				$raw  = (string) $post->post_content;
+				$html = has_blocks( $raw ) ? do_blocks( $raw ) : wpautop( $raw );
+				$html = do_shortcode( $html );
+			} elseif ( $post->post_excerpt !== '' ) {
+				$html = wpautop( (string) $post->post_excerpt );
+			}
+
+			if ( $html === '' && $post->post_content !== '' ) {
+				$raw  = (string) $post->post_content;
+				$html = has_blocks( $raw ) ? do_blocks( $raw ) : wpautop( $raw );
+				$html = do_shortcode( $html );
+			}
+
+			return trim( preg_replace( '/\s+/u', ' ', wp_strip_all_tags( $html ) ) );
+		}
+
+		/**
+		 * Grid card description word cap (default 20).
+		 *
+		 * @param array<string,mixed> $item Repeater row.
+		 * @return int
+		 */
+		public static function ecbb_grid_description_word_limit( array $item ) {
+			if ( isset( $item['desc_length'] ) && (string) $item['desc_length'] === 'full' ) {
+				return 0;
+			}
+			if ( isset( $item['desc_words'] ) && (int) $item['desc_words'] > 0 ) {
+				return max( 5, (int) $item['desc_words'] );
+			}
+			return 20;
+		}
+
+		/**
+		 * Grid description HTML with inline "Read more" when text exceeds the word cap.
+		 *
+		 * @param \WP_Post            $post Event post.
+		 * @param array<string,mixed> $item Repeater row.
+		 * @return string HTML (escaped fragments).
+		 */
+		public static function ecbb_grid_description_html( $post, array $item ) {
+			if ( ! $post instanceof \WP_Post ) {
+				return '';
+			}
+
+			$plain = self::ecbb_description_plain_text( $post, $item );
+			if ( $plain === '' ) {
+				return '';
+			}
+
+			$limit = self::ecbb_grid_description_word_limit( $item );
+			if ( $limit < 1 ) {
+				return esc_html( $plain );
+			}
+
+			$words = preg_split( '/\s+/u', $plain, -1, PREG_SPLIT_NO_EMPTY );
+			if ( ! is_array( $words ) || $words === [] ) {
+				return '';
+			}
+
+			if ( count( $words ) <= $limit ) {
+				return esc_html( $plain );
+			}
+
+			$excerpt = implode( ' ', array_slice( $words, 0, $limit ) );
+			$label   = esc_html__( 'Read more', 'events-calendar-for-bricks' );
+			$url     = get_permalink( $post->ID );
+
+			return esc_html( $excerpt ) . '&hellip; '
+				. '<a href="' . esc_url( $url ) . '" class="event-grid-card__desc-more ecbb-event__link">'
+				. esc_html( $label ) . '</a>';
+		}
+
+		public static function ecbb_meta_icon( $type ) {
+			$type = (string) $type;
+			static $svgs = [
+				'clock' => '<path d="M12 7v5l3.4 2.2" /><circle cx="12" cy="12" r="8" />',
+				'pin'   => '<path d="M12 21s6-5.1 6-11a6 6 0 0 0-12 0c0 5.9 6 11 6 11Z" /><circle cx="12" cy="10" r="2.4" />',
+				'cost'  => '<path d="M2 9a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3v1.2a2.5 2.5 0 0 0-.9 4.8V15a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3v-1.2a2.5 2.5 0 0 0-.9-4.8V9Z" /><path d="M13 5v14" />',
+			];
+			$inner = isset( $svgs[ $type ] ) ? $svgs[ $type ] : $svgs['clock'];
+			return '<span class="ecbb-event-card__meta-icon" aria-hidden="true"><svg viewBox="0 0 24 24">' . $inner . '</svg></span>';
+		}
+
+		public static function ecbb_meta_icon_for_part( $slug ) {
+			$slug = (string) $slug;
+			if ( in_array( $slug, [ 'venue', 'organizer', 'venue_full_address', 'venue_street', 'venue_city', 'venue_state', 'venue_zip', 'venue_country', 'venue_phone' ], true ) ) {
+				return self::ecbb_meta_icon( 'pin' );
+			}
+			if ( $slug === 'event_cost' ) {
+				return self::ecbb_meta_icon( 'cost' );
+			}
+			return self::ecbb_meta_icon( 'clock' );
+		}
+
+		public static function ecbb_render_meta_li( $post, array $item, $idx, $skin, $layout, $price = false ) {
+			if ( ! $post instanceof \WP_Post ) {
+				return '';
+			}
+
+			$style = '';
+			if ( class_exists( 'ECBB_Styles', false ) ) {
+				$style = \ECBB_Styles::ecbb_inline_style_attr( $item );
+			}
+
+			$html = self::ecbb_render_part_ext( $post, $item, $idx, $style, $skin );
+			if ( $html === '' || $html === false ) {
+				return '';
+			}
+
+			$row_clean = class_exists( 'ECBB_Styles', false ) ? \ECBB_Styles::ecbb_clean_part( $item ) : $item;
+			$part      = isset( $row_clean['part'] ) ? (string) $row_clean['part'] : '';
+			$icon      = self::ecbb_meta_icon_for_part( $part );
+
+			if ( $layout === 'style2' ) {
+				return '<li class="ecbb-event-card__meta-item">' . $icon . $html . '</li>';
+			}
+
+			$li_class = $price ? ' class="price"' : '';
+			return '<li' . $li_class . '>' . $icon . $html . '</li>';
+		}
+
+		public static function ecbb_render_meta_lists( $post, array $meta_primary, array $meta_price, $skin, $layout, callable $emit_li ) {
+			if ( $layout === 'style1' && ( $meta_primary !== [] || $meta_price !== [] ) ) {
+				if ( $meta_primary !== [] ) {
+					echo '<ul class="event-meta event-meta--list">';
+			foreach ( $meta_primary as $row ) {
+					$emit_li( $post, $row['item'], $row['idx'], false );
+				}
+					echo '</ul>';
+				}
+				if ( $meta_price !== [] ) {
+					echo '<ul class="event-meta event-meta--list">';
+					foreach ( $meta_price as $row ) {
+						$emit_li( $post, $row['item'], $row['idx'], true );
+					}
+					echo '</ul>';
+				}
+				return;
+			}
+
+			$all = array_merge( $meta_primary, $meta_price );
+			if ( $all === [] ) {
+				return;
+			}
+
+			$ul_class = ( $layout === 'grid' ) ? 'event-meta event-meta--grid' : 'ecbb-event-card__meta';
+			echo '<ul class="' . esc_attr( $ul_class ) . '">';
+			foreach ( $all as $row ) {
+				$emit_li( $post, $row['item'], $row['idx'], false );
+			}
+			echo '</ul>';
+		}
+
+		public static function ecbb_event_category_terms( $post_id ) {
+			$post_id = absint( $post_id );
+			if ( $post_id < 1 ) {
+				return [];
+			}
+
+			$by_id      = [];
+			$taxonomies = apply_filters( 'ecbb_event_category_taxonomies', [ 'tribe_events_cat' ], $post_id );
+
+			foreach ( (array) $taxonomies as $taxonomy ) {
+				if ( ! is_string( $taxonomy ) || ! taxonomy_exists( $taxonomy ) ) {
+					continue;
+				}
+				$raw = wp_get_object_terms(
+					$post_id,
+					$taxonomy,
+					[
+						'orderby' => 'name',
+						'order'   => 'ASC',
+					]
+				);
+				if ( is_wp_error( $raw ) || ! is_array( $raw ) ) {
+					continue;
+				}
+				foreach ( $raw as $term ) {
+					if ( $term instanceof \WP_Term ) {
+						$by_id[ (int) $term->term_id ] = $term;
+					}
+				}
+			}
+
+			if ( $by_id === [] && function_exists( 'tribe_get_event' ) ) {
+				$event = tribe_get_event( $post_id );
+				if ( $event && ! empty( $event->categories ) && is_array( $event->categories ) ) {
+					foreach ( $event->categories as $term ) {
+						if ( $term instanceof \WP_Term ) {
+							$by_id[ (int) $term->term_id ] = $term;
+							continue;
+						}
+						if ( is_object( $term ) && ! empty( $term->term_id ) ) {
+							$loaded = get_term( (int) $term->term_id );
+							if ( $loaded instanceof \WP_Term && ! is_wp_error( $loaded ) ) {
+								$by_id[ (int) $loaded->term_id ] = $loaded;
+							}
+						}
+					}
+				}
+			}
+
+			return array_values( $by_id );
+		}
+
+		public static function ecbb_shell_category_badge( $post ) {
+			if ( ! $post instanceof \WP_Post ) {
+				return '';
+			}
+			$terms = self::ecbb_event_category_terms( $post->ID );
+			if ( $terms === [] ) {
+				return '';
+			}
+			$links = [];
+			foreach ( $terms as $term ) {
+				$url = get_term_link( $term );
+				if ( is_wp_error( $url ) ) {
+					continue;
+				}
+				$links[] = '<a href="' . esc_url( $url ) . '" class="event-badge--blue">'
+					. esc_html( $term->name ) . '</a>';
+			}
+			if ( $links === [] ) {
+				return '';
+			}
+			return '<div class="event-badge">' . implode( '', $links ) . '</div>';
+		}
+
+		public static function ecbb_shell_featured_image( $post, $layout, $link = true, $include_wrap = true ) {
+			if ( ! $post instanceof \WP_Post ) {
+				return '';
+			}
+			$thumb_id = self::ecbb_event_thumbnail_id( $post->ID );
+			$url      = get_permalink( $post->ID );
+			$title    = wp_strip_all_tags( get_the_title( $post->ID ) );
+
+			static $map = [
+				'style1' => [
+					'wrap'  => 'event-list-card__image-wrap',
+					'link'  => 'event-list-card__image-link',
+					'img'   => 'event-list-card__image',
+				],
+				'style2' => [
+					'wrap'  => 'ecbb-event-card__image-wrap',
+					'link'  => 'ecbb-event-card__image-link',
+					'img'   => 'ecbb-event-card__image',
+				],
+				'grid'   => [
+					'wrap'  => 'event-grid-card__image-wrap',
+					'link'  => 'event-grid-card__image-link',
+					'img'   => 'event-grid-card__image',
+				],
+			];
+			if ( ! isset( $map[ $layout ] ) ) {
+				return '';
+			}
+			$cls = $map[ $layout ];
+			if ( $thumb_id < 1 ) {
+				return $include_wrap ? '<div class="' . esc_attr( $cls['wrap'] ) . '"></div>' : '';
+			}
+			$size = self::ecbb_sanitize_image_size( '', 'large' );
+			$img  = wp_get_attachment_image(
+				$thumb_id,
+				$size,
+				false,
+				[
+					'class'    => $cls['img'],
+					'loading'  => 'lazy',
+					'decoding' => 'async',
+					'alt'      => $title,
+				]
+			);
+			if ( ! is_string( $img ) || $img === '' ) {
+				return $include_wrap ? '<div class="' . esc_attr( $cls['wrap'] ) . '"></div>' : '';
+			}
+			$inner = $link
+				? '<a href="' . esc_url( $url ) . '" class="' . esc_attr( $cls['link'] ) . '">' . $img . '</a>'
+				: $img;
+			return $include_wrap
+				? '<div class="' . esc_attr( $cls['wrap'] ) . '">' . $inner . '</div>'
+				: $inner;
+		}
+
+		public static function ecbb_list1_date_column( $post ) {
+			if ( ! $post instanceof \WP_Post ) {
+				return '';
+			}
+			$start_ts = false;
+			if ( class_exists( 'ECBB_List_2', false ) ) {
+				list( $start_ts ) = \ECBB_List_2::ecbb_date_bounds( $post->ID );
+			} else {
+				$raw      = (string) get_post_meta( $post->ID, '_EventStartDate', true );
+				$start_ts = $raw ? strtotime( $raw ) : false;
+			}
+			if ( ! $start_ts ) {
+				return '<div class="event-list-card__date"></div>';
+			}
+			$order = 'day_month';
+			$day   = '<span class="event-list-card__day">' . esc_html( date_i18n( 'd', $start_ts ) ) . '</span>';
+			$month = '<span class="event-list-card__month">' . esc_html( date_i18n( 'M', $start_ts ) ) . '</span>';
+			$inner = $day . $month;
+			return '<div class="event-list-card__date event-list-card__date--' . esc_attr( $order ) . '">' . $inner . '</div>';
+		}
+
+		public static function ecbb_list2_date_badge( $post, $settings = [] ) {
+			if ( ! $post instanceof \WP_Post ) {
+				return '';
+			}
+			$start_ts = false;
+			if ( class_exists( 'ECBB_List_2', false ) ) {
+				list( $start_ts ) = \ECBB_List_2::ecbb_date_bounds( $post->ID );
+			} else {
+				$raw      = (string) get_post_meta( $post->ID, '_EventStartDate', true );
+				$start_ts = $raw ? strtotime( $raw ) : false;
+			}
+			if ( ! $start_ts ) {
+				return '';
+			}
+			$order = self::ecbb_style2_date_badge_order( is_array( $settings ) ? $settings : [] );
+			$cls   = 'ecbb-event-card__date-badge ecbb-event-card__date-badge--' . $order;
+			$label = date_i18n( 'F j, Y', $start_ts );
+			$month = '<span>' . esc_html( strtoupper( date_i18n( 'M', $start_ts ) ) ) . '</span>';
+			$day   = '<strong>' . esc_html( date_i18n( 'd', $start_ts ) ) . '</strong>';
+			$inner = ( $order === 'day_month' ) ? $day . $month : $month . $day;
+			return '<time class="' . esc_attr( $cls ) . '" datetime="' . esc_attr( date( 'Y-m-d', $start_ts ) ) . '" aria-label="' . esc_attr( $label ) . '">'
+				. $inner
+				. '</time>';
+		}
+
+		public static function ecbb_grid_date_range_text( $post, array $item = [] ) {
+			if ( ! $post instanceof \WP_Post ) {
+				return '';
+			}
+			$start_ts = false;
+			$end_ts   = false;
+			if ( class_exists( 'ECBB_List_2', false ) ) {
+				list( $start_ts, $end_ts ) = \ECBB_List_2::ecbb_date_bounds( $post->ID );
+			} else {
+				$raw      = (string) get_post_meta( $post->ID, '_EventStartDate', true );
+				$raw_end  = (string) get_post_meta( $post->ID, '_EventEndDate', true );
+				$start_ts = $raw ? strtotime( $raw ) : false;
+				$end_ts   = $raw_end ? strtotime( $raw_end ) : $start_ts;
+			}
+			if ( ! $start_ts ) {
+				return '';
+			}
+			if ( ! $end_ts ) {
+				$end_ts = $start_ts;
+			}
+
+			$php = self::ecbb_part_date_php_fmt( 'event_date', $item );
+			if ( $php === '' ) {
+				$php = 'd M, Y';
+			}
+
+			if ( date_i18n( 'Ymd', $start_ts ) === date_i18n( 'Ymd', $end_ts ) ) {
+				return date_i18n( $php, $start_ts );
+			}
+			return date_i18n( $php, $start_ts ) . ' - ' . date_i18n( $php, $end_ts );
+		}
+
+		public static function ecbb_render_grid_date_flow( $post, array $item, $idx, $skin = '' ) {
+			if ( ! $post instanceof \WP_Post ) {
+				return '';
+			}
+			$text = self::ecbb_grid_date_range_text( $post, $item );
+			if ( $text === '' ) {
+				return '';
+			}
+			$style = class_exists( 'ECBB_Styles', false ) ? \ECBB_Styles::ecbb_inline_style_attr( $item ) : '';
+			$wrap  = esc_attr(
+				self::ecbb_part_classes( 'date', $idx, $skin, $item ) . ' event-grid-card__date'
+			);
+			$attr  = self::ecbb_part_wrap_attrs( $item, $idx, $style );
+			return '<span class="' . $wrap . '"' . $attr . '>' . esc_html( strtoupper( $text ) ) . '</span>';
+		}
+
+		public static function ecbb_render_style2_category( $post, array $item, $idx, $skin ) {
+			if ( ! $post instanceof \WP_Post ) {
+				return '';
+			}
+			$terms = self::ecbb_event_category_terms( $post->ID );
+			if ( $terms === [] ) {
+				return '';
+			}
+
+			$skin  = (string) $skin;
+			$style = class_exists( 'ECBB_Styles', false ) ? \ECBB_Styles::ecbb_inline_style_attr( $item ) : '';
+			$attr  = self::ecbb_part_wrap_attrs( $item, $idx, $style );
+			$wrap  = esc_attr(
+				trim(
+					'ecbb-event-card__top '
+					. self::ecbb_part_classes( 'categories', $idx, $skin, $item )
+				)
+			);
+
+			$links = [];
+			foreach ( $terms as $term ) {
+				$url = get_term_link( $term );
+				if ( is_wp_error( $url ) ) {
+					continue;
+				}
+				$links[] = '<a href="' . esc_url( $url ) . '" class="ecbb-event-card__category ecbb-event__link">'
+					. esc_html( $term->name ) . '</a>';
+			}
+			if ( $links === [] ) {
+				return '';
+			}
+
+			return '<div class="' . $wrap . '"' . $attr . '>' . implode( '', $links ) . '</div>';
+		}
+
+		public static function ecbb_render_layout_read_more( $post, array $item, $idx, $skin ) {
+			if ( ! $post instanceof \WP_Post ) {
+				return '';
+			}
+			$label = isset( $item['read_more_text'] ) ? trim( (string) $item['read_more_text'] ) : '';
+			if ( $label === '' ) {
+				$label = esc_html__( 'View Details', 'events-calendar-for-bricks' );
+			} else {
+				$label = sanitize_text_field( $label );
+			}
+
+			$skin      = (string) $skin;
+			$skin_wrap = ( $skin === 'grid' ) ? '' : $skin;
+			$style     = class_exists( 'ECBB_Styles', false ) ? \ECBB_Styles::ecbb_inline_style_attr( $item ) : '';
+			$wrap      = esc_attr( self::ecbb_part_classes( 'read_more', $idx, $skin_wrap, $item ) );
+			$part_attr = self::ecbb_part_wrap_attrs( $item, $idx, $style );
+			$url       = get_permalink( $post->ID );
+			$link_cls  = esc_attr( trim( 'ecbb-event__link ' . self::ecbb_layout_read_more_btn_class( $skin ) ) );
+			$link      = '<a href="' . esc_url( $url ) . '" class="' . $link_cls . '">' . esc_html( $label ) . '</a>';
+			$block     = '<div class="' . $wrap . '"' . $part_attr . '>' . $link . '</div>';
+
+			if ( $skin === 'style2' ) {
+				return '<div class="ecbb-event-card__divider"></div>'
+					. '<div class="ecbb-event-card__footer">'
+					. $block
+					. '</div>';
+			}
+
+			return $block;
 		}
 
 	}

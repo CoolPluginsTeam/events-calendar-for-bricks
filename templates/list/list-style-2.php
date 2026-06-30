@@ -1,10 +1,6 @@
 <?php
 /**
- * Events Widget — List template / Style 2 (magazine list shell, month headings, date rail, inner markup).
- *
- * File: `widgets/layouts/ecbb-list-2.php`.
- *
- * Loaded after shared loop markup, Style 1, and Grid so normalizers can compare slug stacks.
+ * Events Widget — List template / Style 2 (ecbb-event-card reference layout).
  *
  * @package ECBB
  */
@@ -13,478 +9,187 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-/**
- * Style 2 surface class for a part slug (list style 2 only).
- *
- * @param string $part Internal part slug (underscores).
- * @return string
- */
-
 if ( ! class_exists( 'ECBB_List_2', false ) ) {
 
 	final class ECBB_List_2 {
 
 		public static function ecbb_part_class( $part ) {
 			$part = sanitize_key( (string) $part );
-			static $map = [
-			'title'              => 'ecbb-style2-title',
-			'description'        => 'ecbb-style2-description',
-			'date'               => 'ecbb-style2-date',
-			'venue'              => 'ecbb-style2-venue',
-			'venue_full_address' => 'ecbb-style2-venue',
-			'venue_street'       => 'ecbb-style2-venue',
-			'venue_city'         => 'ecbb-style2-venue',
-			'venue_state'        => 'ecbb-style2-venue',
-			'venue_zip'          => 'ecbb-style2-venue',
-			'venue_country'      => 'ecbb-style2-venue',
-			'venue_phone'        => 'ecbb-style2-venue',
-			'organizer'          => 'ecbb-style2-organizer',
-			'organizer_email'    => 'ecbb-style2-organizer',
-			'organizer_phone'    => 'ecbb-style2-organizer',
-			'categories'         => 'ecbb-style2-categories',
-			'tags'               => 'ecbb-style2-tags',
-			'image'              => 'ecbb-style2-image',
-			'read_more'          => 'ecbb-style2-read-more',
-			'event_date'         => 'ecbb-style2-event-date',
-			'event_time'         => 'ecbb-style2-time',
-			'event_day'          => 'ecbb-style2-day',
-			'event_cost'         => 'ecbb-style2-cost',
-			'event_tickets'      => 'ecbb-style2-tickets',
-			'event_rsvp'         => 'ecbb-style2-rsvp',
-			'venue_website'      => 'ecbb-style2-tickets',
-			'event_website'      => 'ecbb-style2-tickets',
-			'organizer_website'  => 'ecbb-style2-tickets',
-			'event_map_link'     => 'ecbb-style2-tickets',
-			'event_phone'        => 'ecbb-style2-time',
-			];
-			if ( isset( $map[ $part ] ) ) {
-				return $map[ $part ];
-			}
-		return 'ecbb-style2-' . str_replace( '_', '-', $part );
+			return 'ecbb-style2-' . str_replace( '_', '-', $part );
 		}
-
-		/**
-		* Sanitize the Style 2 “Show month header” control (Bricks checkbox or legacy values).
-		*
-		* @param mixed $value Raw control or AJAX value.
-		* @return bool
-		*/
-
-		public static function ecbb_sanitize_month_on( $value ) {
-			if ( $value === false || $value === 0 || $value === '0' || $value === 'no' || $value === 'off' ) {
-				return false;
-			}
-		if ( $value === null || $value === '' ) {
-			return false;
-		}
-		if ( $value === true || $value === 1 || $value === '1' || $value === 'yes' || $value === 'on' ) {
-			return true;
-		}
-		if ( is_string( $value ) ) {
-			$s = strtolower( sanitize_text_field( $value ) );
-			if ( in_array( $s, [ 'no', 'off', 'false', '0', 'hide', 'hidden' ], true ) ) {
-				return false;
-			}
-		if ( in_array( $s, [ 'yes', 'true', '1', 'show', 'on' ], true ) ) {
-			return true;
-		}
-		}
-		if ( is_array( $value ) && $value === [] ) {
-			return false;
-		}
-		return (bool) $value;
-		}
-
-		/**
-		* Whether Style 2 month group headings ("May 2026" blocks) are enabled.
-		*
-		* Bricks checkbox (bool); legacy select values yes/no still supported.
-		*
-		* @param array $settings Element or AJAX settings.
-		* @return bool
-		*/
-
-		public static function ecbb_month_headings_on( $settings ) {
-			if ( ! is_array( $settings ) ) {
-				return false;
-			}
-		if ( ! array_key_exists( 'style2_show_month_headings', $settings ) ) {
-			return false;
-		}
-		return self::ecbb_sanitize_month_on( $settings['style2_show_month_headings'] );
-		}
-
-		/**
-		* Detect the old 3-row default (title + description + date) so Style 2 can upgrade to the full stack.
-		*
-		* @param array $clean Rows from \ECBB_Markup::ecbb_parts_clean().
-		* @return bool
-		*/
-
-		public static function ecbb_is_legacy_stack( array $clean ) {
-			if ( count( $clean ) !== 3 ) {
-				return false;
-			}
-		$keys = [];
-		foreach ( $clean as $row ) {
-			$keys[] = (string) ( $row['part'] ?? '' );
-		}
-		sort( $keys );
-		return $keys === [ 'date', 'description', 'title' ];
-		}
-
-		/**
-		* Default Event parts for Style 2 list (body column). Featured image is not listed here;
-		* {@see self::ecbb_norm_parts()} appends an `image` row when missing so the static
-		* trail column can render. Read more is included by default at the end of the body stack.
-		*
-		* @return array<int,array<string,mixed>>
-		*/
 
 		public static function ecbb_default_parts() {
 			$rows = [
-			[
-			'part'                  => 'date',
-			'date_text_transform'   => 'uppercase',
-			'ecbb_color'            => '',
-			'ecbb_background'       => '',
-			'ecbb_background_inner' => '',
-			],
-			[
-			'part'       => 'title',
-			'link'       => true,
-			'ecbb_color' => '',
-			],
-			[
-			'part'          => 'venue',
-			'venue_display' => 'name_and_state',
-			'ecbb_color'    => '',
-			],
-			[
-			'part'        => 'description',
-			'desc_source' => 'content',
-			'ecbb_color'  => '',
-			],
-			[
-			'part'           => 'read_more',
-			'read_more_text' => esc_html__( 'More Details', 'events-calendar-for-bricks' ),
-			],
+				[
+					'part' => 'categories',
+				],
+				[
+					'part' => 'title',
+					'link' => true,
+				],
+				[
+					'part'        => 'description',
+					'desc_source' => 'content',
+				],
+				[
+					'part'          => 'venue',
+					'venue_display' => 'name_and_city',
+				],
+				[
+					'part'         => 'date',
+					'date_display' => 'time',
+				],
+				[
+					'part'          => 'event_cost',
+					'cost_currency' => 'default',
+				],
+				[
+					'part'           => 'read_more',
+					'read_more_text' => esc_html__( 'View Details', 'events-calendar-for-bricks' ),
+				],
 			];
 
 			return class_exists( 'ECBB_Markup', false )
-			? \ECBB_Markup::ecbb_parts_assign_ids( $rows )
-			: $rows;
+				? \ECBB_Markup::ecbb_parts_assign_ids( $rows )
+				: $rows;
 		}
-
-		/**
-		* Normalize repeater parts for Style 2 list: upgrade legacy / cross-layout stacks; ensure image row.
-		*
-		* @param array $parts Raw Bricks repeater rows.
-		* @return array<int,array<string,mixed>>
-		*/
 
 		public static function ecbb_norm_parts( array $parts ) {
 			if ( ! class_exists( 'ECBB_Markup', false ) ) {
 				return $parts;
 			}
 
-		$clean = \ECBB_Markup::ecbb_parts_clean( $parts );
-		$reset = ( $clean === [] ) || self::ecbb_is_legacy_stack( $clean );
-
-		if ( ! $reset && class_exists( 'ECBB_Markup', false ) ) {
-			if ( class_exists( 'ECBB_Grid', false )
-			&& \ECBB_Markup::ecbb_parts_match_defaults( $parts, \ECBB_Grid::ecbb_default_parts() ) ) {
-				$reset = true;
-			} elseif ( class_exists( 'ECBB_List_1', false )
-		&& \ECBB_Markup::ecbb_parts_match_defaults( $parts, \ECBB_List_1::ecbb_default_parts() ) ) {
-			$reset = true;
-		}
-		}
-
-		if ( $reset ) {
-			$clean = self::ecbb_default_parts();
-		}
-
-		if ( ! \ECBB_Markup::ecbb_parts_has( $clean, 'image' ) ) {
-			$clean[] = [
-			'part'       => 'image',
-			'image_link' => true,
-			'image_size' => '',
-			];
-		}
-
-		$clean = array_map(
-		static function ( $row ) {
-			if ( ! is_array( $row ) ) {
-				return $row;
+			$upgraded = \ECBB_Markup::ecbb_upgrade_layout_parts(
+				$parts,
+				'style2',
+				static function () {
+					return self::ecbb_default_parts();
+				}
+			);
+			if ( is_array( $upgraded ) ) {
+				$parts = $upgraded;
 			}
 
-		if ( (string) ( $row['part'] ?? '' ) !== 'venue' ) {
-			return $row;
+			$clean = \ECBB_Markup::ecbb_parts_clean( $parts );
+			if ( $clean === [] ) {
+				return \ECBB_Markup::ecbb_parts_preserve_bricks_rows( $parts, self::ecbb_default_parts() );
+			}
+
+			$clean = array_values(
+				array_filter(
+					$clean,
+					static function ( $row ) {
+						return ! is_array( $row ) || (string) ( $row['part'] ?? '' ) !== 'image';
+					}
+				)
+			);
+
+			$clean = array_map(
+				static function ( $row ) {
+					if ( ! is_array( $row ) ) {
+						return $row;
+					}
+					if ( (string) ( $row['part'] ?? '' ) === 'venue' ) {
+						$display = (string) ( $row['venue_display'] ?? '' );
+						if ( $display === '' || $display === 'name_and_address' || $display === 'name_and_state' ) {
+							$row['venue_display'] = 'name_and_city';
+						}
+					}
+					if ( (string) ( $row['part'] ?? '' ) === 'date' && ! isset( $row['date_display'] ) ) {
+						$row['date_display'] = 'time';
+					}
+					if ( (string) ( $row['part'] ?? '' ) === 'event_cost' && ( ! isset( $row['cost_currency'] ) || (string) $row['cost_currency'] === '' ) ) {
+						$row['cost_currency'] = 'default';
+					}
+					return $row;
+				},
+				$clean
+			);
+
+			return \ECBB_Markup::ecbb_parts_assign_ids( $clean );
 		}
-
-		$display = (string) ( $row['venue_display'] ?? '' );
-		if ( $display === '' || $display === 'name_and_address' ) {
-			$row['venue_display'] = 'name_and_state';
-		}
-
-		return $row;
-		},
-		$clean
-		);
-
-		return $clean;
-		}
-
-		/**
-		* Event start/end timestamps from TEC meta.
-		*
-		* @param int $post_id Event post ID.
-		* @return array{0:int|false,1:int|false}
-		*/
 
 		public static function ecbb_date_bounds( $post_id ) {
 			$post_id = absint( $post_id );
 			if ( $post_id < 1 ) {
 				return [ false, false ];
 			}
-		$start_raw = (string) get_post_meta( $post_id, '_EventStartDate', true );
-		$end_raw   = (string) get_post_meta( $post_id, '_EventEndDate', true );
-		$start_ts  = $start_raw ? strtotime( $start_raw ) : false;
-		$end_ts    = $end_raw ? strtotime( $end_raw ) : $start_ts;
-		if ( ! $start_ts ) {
-			return [ false, false ];
-		}
-		if ( ! $end_ts ) {
-			$end_ts = $start_ts;
-		}
-		return [ $start_ts, $end_ts ];
-		}
-
-		/**
-		* Month heading (e.g. "April 2026") when the month changes between events.
-		*
-		* @param int         $post_id         Event post ID.
-		* @param string|null $last_month_key  Stored "Y-m" of previous row; updated by reference.
-		* @param bool        $show            Whether month group headings are enabled (control).
-		* @return string                      Markup or empty.
-		*/
-
-		public static function ecbb_month_heading( $post_id, &$last_month_key, $show = false ) {
-			$show = (bool) $show;
-			if ( ! $show ) {
-				return '';
-			}
-		$post_id = absint( $post_id );
-		if ( $post_id < 1 ) {
-			return '';
-		}
-		list( $start_ts ) = self::ecbb_date_bounds( $post_id );
-		if ( ! $start_ts ) {
-			return '';
-		}
-		$key = sanitize_text_field( date_i18n( 'Y-m', $start_ts ) );
-		if ( is_string( $last_month_key ) && $last_month_key === $key ) {
-			return '';
-		}
-		$last_month_key = $key;
-		$label          = date_i18n( 'F Y', $start_ts );
-		return '<div class="ecbb-style2-month"><span class="ecbb-style2-month-label">' . esc_html( $label ) . '</span><span class="ecbb-style2-month-line" role="presentation"></span></div>';
-		}
-
-		/**
-		* Inner date stack for Style 2 LEFT rail (list template only).
-		*
-		* Markup: start month → days row (start | end block with sep, end day, end month).
-		*
-		* @param int|false $start_ts Start timestamp.
-		* @param int|false $end_ts   End timestamp.
-		* @return string HTML fragment (no wrapper).
-		*/
-
-		public static function ecbb_rail_date_stack( $start_ts, $end_ts ) {
+			$start_raw = (string) get_post_meta( $post_id, '_EventStartDate', true );
+			$end_raw   = (string) get_post_meta( $post_id, '_EventEndDate', true );
+			$start_ts  = $start_raw ? strtotime( $start_raw ) : false;
+			$end_ts    = $end_raw ? strtotime( $end_raw ) : $start_ts;
 			if ( ! $start_ts ) {
-				return '';
+				return [ false, false ];
 			}
-		if ( ! $end_ts ) {
-			$end_ts = $start_ts;
-		}
-
-		$start_month = strtoupper( date_i18n( 'M', $start_ts ) );
-		$end_month   = strtoupper( date_i18n( 'M', $end_ts ) );
-
-		$same_day   = ( date_i18n( 'Ymd', $start_ts ) === date_i18n( 'Ymd', $end_ts ) );
-		$same_month = ( date_i18n( 'Ym', $start_ts ) === date_i18n( 'Ym', $end_ts ) );
-
-		if ( $same_day ) {
-			return '<div class="ecbb-style2-rail-date ecbb-style2-rail-date--single">'
-			. '<div class="ecbb-style2-rail-month">' . esc_html( $start_month ) . '</div>'
-			. '<div class="ecbb-style2-rail-day-start">' . esc_html( date_i18n( 'd', $start_ts ) ) . '</div>'
-			. '</div>';
-		}
-
-		$d_start = date_i18n( 'd', $start_ts );
-		$d_end   = date_i18n( 'd', $end_ts );
-
-		$modifier = $same_month ? 'same-month' : 'cross-month';
-
-		$end_month_html = $same_month
-		? ''
-		: '<span class="ecbb-style2-rail-month-end">' . esc_html( $end_month ) . '</span>';
-
-		$end_block = '<div class="ecbb-style2-rail-end">'
-		. '<span class="ecbb-style2-rail-sep" aria-hidden="true">-</span>'
-		. '<span class="ecbb-style2-rail-day-end">' . esc_html( $d_end ) . '</span>'
-		. $end_month_html
-		. '</div>';
-
-		return '<div class="ecbb-style2-rail-date ecbb-style2-rail-date--range ecbb-style2-rail-date--' . esc_attr( $modifier ) . '">'
-		. '<div class="ecbb-style2-rail-month">' . esc_html( $start_month ) . '</div>'
-		. '<div class="ecbb-style2-rail-range">'
-		. '<div class="ecbb-style2-rail-days-row">'
-		. '<span class="ecbb-style2-rail-day-start">' . esc_html( $d_start ) . '</span>'
-		. $end_block
-		. '</div>'
-		. '</div>'
-		. '</div>';
+			if ( ! $end_ts ) {
+				$end_ts = $start_ts;
+			}
+			return [ $start_ts, $end_ts ];
 		}
 
 		/**
-		* Left column: start month / day range / end month (static, not from repeater).
-		*
-		* @param \WP_Post $post Event post.
-		* @return string Markup (aside).
-		*/
-
-		public static function ecbb_date_rail( $post ) {
+		 * @param \WP_Post $post       Event post.
+		 * @param array    $parts      Repeater rows.
+		 * @param callable $emit_part  Part renderer.
+		 * @param array    $settings   Widget settings.
+		 * @param callable|null $emit_meta Meta row renderer (optional).
+		 * @return string
+		 */
+		public static function ecbb_item_inner( $post, array $parts, callable $emit_part, $settings = [], callable $emit_meta = null ) {
 			if ( ! ( $post instanceof \WP_Post ) ) {
 				return '';
 			}
 
-		list( $start_ts, $end_ts ) = self::ecbb_date_bounds( $post->ID );
-		if ( ! $start_ts ) {
-			return '<aside class="ecbb-style2-rail" aria-hidden="true"><div class="ecbb-style2-rail-in"></div></aside>';
-		}
+			$settings = class_exists( 'ECBB_Markup', false )
+				? \ECBB_Markup::ecbb_layout_settings( is_array( $settings ) ? $settings : [] )
+				: ( is_array( $settings ) ? $settings : [] );
+			$show_image = class_exists( 'ECBB_Markup', false )
+				? \ECBB_Markup::ecbb_show_event_image( $settings )
+				: true;
+			$show_date_badge = class_exists( 'ECBB_Markup', false )
+				? \ECBB_Markup::ecbb_show_style2_date_badge( $settings )
+				: true;
 
-		$stack = self::ecbb_rail_date_stack( $start_ts, $end_ts );
+			$card_class = 'ecbb-event-card ecbb-style2 ecbb-ev__item-inner ecbb-ev__item-inner--style2';
+			if ( ! $show_image ) {
+				$card_class .= ' ecbb-event-card--no-image';
+			}
 
-		return '<aside class="ecbb-style2-rail" aria-hidden="true">'
-		. '<div class="ecbb-style2-rail-in">'
-		. $stack
-		. '</div></aside>';
-		}
+			ob_start();
 
-		/**
-		* First repeater row for the featured image (for the static right column).
-		*
-		* @param array $parts Repeater rows.
-		* @return array{index:int, row:array}
-		*/
+			echo '<div class="' . esc_attr( $card_class ) . '">';
 
-		public static function ecbb_find_image_row( array $parts ) {
-			foreach ( $parts as $i => $row ) {
-				if ( ! is_array( $row ) ) {
-					continue;
+			if ( $show_image && class_exists( 'ECBB_Markup', false ) ) {
+				echo '<div class="ecbb-event-card__image-wrap">';
+				if ( $show_date_badge ) {
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+					echo \ECBB_Markup::ecbb_list2_date_badge( $post, $settings );
 				}
-			$row_part = isset( $row['part'] ) ? sanitize_key( (string) $row['part'] ) : '';
-			if ( 'image' === $row_part ) {
-				return [ 'index' => (int) $i, 'row' => $row ];
-			}
-		}
-		return [
-		'index' => -1,
-		'row'   => [
-		'part'       => 'image',
-		'image_link' => true,
-		'image_size' => '',
-		],
-		];
-		}
-
-		/**
-		* Whether a repeater part is rendered in the Style 2 middle column (excludes static columns).
-		*
-		* @param string $part Part slug.
-		* @return bool True = skip middle (handled elsewhere or omitted).
-		*/
-
-		public static function ecbb_skip_body_part( $part ) {
-			$part = sanitize_key( (string) $part );
-			return in_array( $part, [ 'image', 'event_date' ], true );
-		}
-
-		/**
-		* Markup for the inner Style 2 row (date rail + repeater body + optional image column).
-		* Read more stays in the body column; only the featured image is placed in the trail aside.
-		*
-		* @param \WP_Post $post            Event post.
-		* @param array    $parts           Full repeater settings (order preserved).
-		* @param callable $emit_part       function( \WP_Post $post, array $item, int $idx ): void
-		* @return string
-		*/
-
-		public static function ecbb_item_inner( $post, array $parts, callable $emit_part ) {
-			if ( ! ( $post instanceof \WP_Post ) ) {
-				return '';
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				echo \ECBB_Markup::ecbb_shell_featured_image( $post, 'style2', true, false );
+				echo '</div>';
 			}
 
-		ob_start();
-		$img_info   = self::ecbb_find_image_row( $parts );
-		$has_media  = ( $img_info['index'] >= 0 );
+			echo '<div class="ecbb-event-card__content">';
 
-		$inner_class = 'ecbb-style2';
-		if ( $has_media ) {
-			$inner_class .= ' ecbb-style2--has-media';
-		}
-		echo '<div class="' . esc_attr( $inner_class ) . '">';
-		echo self::ecbb_date_rail( $post ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- builder-internal HTML, fields escaped at source.
-
-		echo '<div class="ecbb-style2-body">';
-
-		$n = count( $parts );
-		for ( $i = 0; $i < $n; $i++ ) {
-			$item = $parts[ $i ] ?? null;
-			if ( ! is_array( $item ) ) {
-				continue;
+			if ( class_exists( 'ECBB_Markup', false ) ) {
+				$emit_meta_cb = $emit_meta ?? static function ( $ev, $item, $idx, $price ) {
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+					echo \ECBB_Markup::ecbb_render_meta_li( $ev, $item, $idx, 'style2', 'style2', (bool) $price );
+				};
+				\ECBB_Markup::ecbb_render_layout_parts_sequence(
+					$post,
+					$parts,
+					'style2',
+					'style2',
+					$emit_part,
+					$emit_meta_cb
+				);
 			}
-		$p = isset( $item['part'] ) ? sanitize_key( (string) $item['part'] ) : '';
-		if ( self::ecbb_skip_body_part( $p ) ) {
-			continue;
-		}
-		$next   = $parts[ $i + 1 ] ?? null;
-		$next_p = is_array( $next ) && isset( $next['part'] ) ? sanitize_key( (string) $next['part'] ) : '';
-		if ( 'date' === $p ) {
-			echo '<div class="ecbb-style2-dayrow">';
-			$emit_part( $post, $item, $i );
-			echo '</div>';
-			continue;
-		}
-		if ( 'event_day' === $p && 'event_time' === $next_p ) {
-			echo '<div class="ecbb-style2-dayrow">';
-			$emit_part( $post, $item, $i );
-			$emit_part( $post, $next, $i + 1 );
-			echo '</div>';
-			$i++;
-			continue;
-		}
-		$emit_part( $post, $item, $i );
-		}
 
-		echo '</div>';
+			echo '</div></div>';
 
-		if ( $has_media ) {
-			echo '<aside class="ecbb-style2-trail" aria-label="' . esc_attr__( 'Event image', 'events-calendar-for-bricks' ) . '">';
-			echo '<div class="ecbb-style2-media">';
-			$emit_part( $post, $img_info['row'], $img_info['index'] );
-			echo '</div>';
-			echo '</aside>';
+			return ob_get_clean();
 		}
-
-		echo '</div>';
-		return ob_get_clean();
-		}
-
 	}
-
 }
-

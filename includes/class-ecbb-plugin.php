@@ -262,33 +262,9 @@ if ( ! class_exists( 'ECBB_WidgetClass', false ) ) {
 
 			$settings = \ECBB_Markup::ecbb_norm_settings_hover( $settings );
 
-			$layout          = \ECBB_Markup::ecbb_sanitize_layout_template( $settings );
-			$layout_template = $layout['template'];
-			$list_item_style = $layout['item_chrome'];
-
-			self::ecbb_load_layouts();
-
-			if ( $layout_template === 'list' && $list_item_style === 'style-1' ) {
-				$parts_repeater = isset( $settings['parts_style1'] ) && is_array( $settings['parts_style1'] ) ? $settings['parts_style1'] : [];
-				if ( ! \ECBB_Markup::ecbb_parts_is_empty( $parts_repeater )
-					&& class_exists( 'ECBB_List_1', false ) ) {
-					$settings['parts_style1'] = \ECBB_List_1::ecbb_norm_parts( $parts_repeater );
-				}
-			} elseif ( $layout_template === 'list' && $list_item_style === 'style-2' ) {
-				$parts_repeater = isset( $settings['parts_style2'] ) && is_array( $settings['parts_style2'] ) ? $settings['parts_style2'] : [];
-				if ( ! \ECBB_Markup::ecbb_parts_is_empty( $parts_repeater )
-					&& class_exists( 'ECBB_List_2', false ) ) {
-					$settings['parts_style2'] = \ECBB_List_2::ecbb_norm_parts( $parts_repeater );
-				}
-			} elseif ( $layout_template === 'grid' ) {
-				$parts_repeater = isset( $settings['parts_grid'] ) && is_array( $settings['parts_grid'] ) ? $settings['parts_grid'] : [];
-				if ( ! \ECBB_Markup::ecbb_parts_is_empty( $parts_repeater )
-					&& class_exists( 'ECBB_Grid', false ) ) {
-					$settings['parts_grid'] = \ECBB_Grid::ecbb_norm_parts( $parts_repeater );
-				}
-			}
-
 			$settings = \ECBB_Markup::ecbb_migrate_cost_currency( $settings );
+
+			$settings = \ECBB_Markup::ecbb_norm_layout_shell_settings( $settings );
 
 			return $settings;
 		}

@@ -295,15 +295,39 @@
 		injectTabs(item);
 	}
 
+	function hookPreviewResync() {
+		var preview = getPreviewDocument();
+		if (!preview || !preview.body || preview.__ecbbPreviewSyncHooked) {
+			return;
+		}
+		preview.__ecbbPreviewSyncHooked = true;
+		var previewObs = new MutationObserver(scheduleScan);
+		previewObs.observe(preview.body, {
+			childList: true,
+			subtree: true,
+		});
+	}
+
 	function scan() {
 		document.querySelectorAll(".repeater-item").forEach(function (item) {
 			ensureTabs(item);
 			syncHoverVisibility(item);
 			ensureAccordions(item);
 		});
+		hookPreviewResync();
 		syncAllButtonPaint();
 		syncAllTitleInnerBackground();
 		syncAllCategoryChipBackgrounds();
+		syncAllActionButtonRepeaterStyles();
+		syncAllTypographyFromWrapper();
+	}
+
+	function syncAllTypographyFromWrapper() {
+		document
+			.querySelectorAll(".ecbb-parts-repeater-item")
+			.forEach(function (item) {
+				syncTypographyColorFromWrapper(item);
+			});
 	}
 
 	var t = null;
@@ -352,6 +376,32 @@
 		return null;
 	}
 
+	var ACTION_BUTTON_PARTS = ["read_more", "event_tickets", "event_rsvp"];
+
+	function isActionButtonPart(repeaterItem) {
+		return ACTION_BUTTON_PARTS.indexOf(readPartValue(repeaterItem)) !== -1;
+	}
+
+	function getActionButtonSurfaces(wrapper) {
+		if (!wrapper) {
+			return [];
+		}
+		return wrapper.querySelectorAll(
+			".ecbb-event__link, a.event-button, a.ecbb-event-card__button"
+		);
+	}
+
+	function readBtnStyleEnabled(repeaterItem) {
+		var btnStyleInner = repeaterItem.querySelector(
+			'.repeater-item-inner[data-control-key="btn_style"]'
+		);
+		if (!btnStyleInner) {
+			return false;
+		}
+		var btnCb = btnStyleInner.querySelector('input[type="checkbox"]');
+		return !!(btnCb && btnCb.checked);
+	}
+
 	/**
 	 * Bricks repeater live CSS ignores child selectors in the builder; mirror wrapper
 	 * color onto category chips / links so typography color updates instantly.
@@ -377,23 +427,165 @@
 			return;
 		}
 
-		wrapper
-			.querySelectorAll(
-				".ecbb-event__term-chip, .ecbb-event__link, .ecbb-event__term, .ecbb-event__date-day, .ecbb-event__date-time, .ecbb-event__date-sep"
-			)
-			.forEach(function (node) {
+		var targets = wrapper.querySelectorAll(
+			".ecbb-event__term-chip, .ecbb-event__link, .ecbb-event__term, .ecbb-event__date-day, .ecbb-event__date-time, .ecbb-event__date-sep, a.event-button, a.ecbb-event-card__button, .ecbb-event-card__category"
+		);
+		var useImportant = isActionButtonPart(repeaterItem) && !readBtnStyleEnabled(repeaterItem);
+
+		targets.forEach(function (node) {
+			if (useImportant) {
+				node.style.setProperty("color", color, "important");
+			} else {
 				node.style.setProperty("color", color);
+			}
+		});
+	}
+
+	/** View Details / tickets / RSVP: Bricks paints the row wrapper; paint the inner button. */
+	function syncActionButtonRepeaterStyle(repeaterItem) {
+		if (!repeaterItem || !isActionButtonPart(repeaterItem)) {
+			return;
+		}
+		if (readBtnStyleEnabled(repeaterItem)) {
+			return;
+		}
+
+		var preview = getPreviewDocument();
+		if (!preview) {
+			return;
+		}
+
+		var rowId = readRepeaterRowId(repeaterItem);
+		if (!rowId) {
+			return;
+		}
+
+		var wrapper = preview.querySelector('[data-field-id="' + rowId + '"]');
+		if (!wrapper || !preview.defaultView) {
+			return;
+		}
+
+		var surfaces = getActionButtonSurfaces(wrapper);
+		if (!surfaces.length) {
+			return;
+		}
+
+		var computed = preview.defaultView.getComputedStyle(wrapper);
+		var bg = readControlInnerColor(
+			repeaterItem.querySelector(
+				'.repeater-item-inner[data-control-key="ecbb_background"]'
+			)
+		);
+		if (
+			!bg &&
+			computed.backgroundColor &&
+			computed.backgroundColor !== "rgba(0, 0, 0, 0)" &&
+			computed.backgroundColor !== "transparent"
+		) {
+			bg = computed.backgroundColor;
+		}
+
+		var pad =
+			computed.paddingTop !== "0px" ||
+			computed.paddingRight !== "0px" ||
+			computed.paddingBottom !== "0px" ||
+			computed.paddingLeft !== "0px"
+				? computed.padding
+				: "";
+
+		wrapper.style.setProperty("padding", "0", "important");
+		wrapper.style.setProperty("background-color", "transparent", "important");
+
+		surfaces.forEach(function (node) {
+			if (bg) {
+				node.style.setProperty("background-color", bg, "important");
+			} else {
+				node.style.removeProperty("background-color");
+			}
+			if (pad) {
+				node.style.setProperty("padding", pad, "important");
+			} else {
+				node.style.removeProperty("padding");
+			}
+			if (computed.color) {
+				node.style.setProperty("color", computed.color, "important");
+			}
+			if (computed.fontFamily) {
+				node.style.setProperty("font-family", computed.fontFamily, "important");
+			}
+			if (computed.fontSize) {
+				node.style.setProperty("font-size", computed.fontSize, "important");
+			}
+			if (computed.fontWeight) {
+				node.style.setProperty("font-weight", computed.fontWeight, "important");
+			}
+			if (computed.lineHeight) {
+				node.style.setProperty("line-height", computed.lineHeight, "important");
+			}
+			if (computed.letterSpacing) {
+				node.style.setProperty("letter-spacing", computed.letterSpacing, "important");
+			}
+			if (computed.textTransform && computed.textTransform !== "none") {
+				node.style.setProperty("text-transform", computed.textTransform, "important");
+			}
+		});
+	}
+
+	var actionBtnSyncTimer = null;
+	function scheduleActionButtonRepeaterStyleSync(repeaterItem) {
+		if (!repeaterItem || !isActionButtonPart(repeaterItem)) {
+			return;
+		}
+		if (actionBtnSyncTimer) {
+			clearTimeout(actionBtnSyncTimer);
+		}
+		actionBtnSyncTimer = setTimeout(function () {
+			actionBtnSyncTimer = null;
+			syncActionButtonRepeaterStyle(repeaterItem);
+		}, 60);
+	}
+
+	function syncAllActionButtonRepeaterStyles() {
+		document
+			.querySelectorAll(".ecbb-parts-repeater-item")
+			.forEach(function (item) {
+				if (isActionButtonPart(item)) {
+					syncActionButtonRepeaterStyle(item);
+				}
 			});
 	}
 
-	/** Style 1 categories: Bricks paints the wrapper; chips need the background. */
+	function onActionButtonStyleInteraction(e) {
+		var item = e.target.closest(".ecbb-parts-repeater-item");
+		if (!item || !isActionButtonPart(item)) {
+			return;
+		}
+		if (
+			e.target.closest(
+				'.repeater-item-inner[data-control-key="ecbb_background"]'
+			) ||
+			e.target.closest(
+				'.repeater-item-inner[data-control-key="ecbb_padding"]'
+			) ||
+			e.target.closest(
+				'.repeater-item-inner[data-control-key="ecbb_typography"]'
+			) ||
+			e.target.closest(
+				'.repeater-item-inner[data-control-key="ecbb_text_align"]'
+			)
+		) {
+			scheduleActionButtonRepeaterStyleSync(item);
+		}
+	}
+
+	/** Categories (Style 1 chips + Style 2 pills): Bricks paints the wrapper; paint each button. */
 	function syncCategoryChipBackground(repeaterItem) {
 		if (!repeaterItem || readPartValue(repeaterItem) !== "categories") {
 			return;
 		}
 
 		var preview = getPreviewDocument();
-		if (!preview) {
+		if (!preview || !preview.defaultView) {
 			return;
 		}
 
@@ -412,14 +604,41 @@
 				'.repeater-item-inner[data-control-key="ecbb_background"]'
 			)
 		);
+		if (
+			!bg &&
+			preview.defaultView.getComputedStyle(wrapper).backgroundColor &&
+			preview.defaultView.getComputedStyle(wrapper).backgroundColor !== "rgba(0, 0, 0, 0)" &&
+			preview.defaultView.getComputedStyle(wrapper).backgroundColor !== "transparent"
+		) {
+			bg = preview.defaultView.getComputedStyle(wrapper).backgroundColor;
+		}
 
-		wrapper.querySelectorAll(".ecbb-event__term-chip").forEach(function (chip) {
-			if (bg) {
-				chip.style.setProperty("background-color", bg, "important");
-			} else {
-				chip.style.removeProperty("background-color");
-			}
-		});
+		var computed = preview.defaultView.getComputedStyle(wrapper);
+		var pad =
+			computed.paddingTop !== "0px" ||
+			computed.paddingRight !== "0px" ||
+			computed.paddingBottom !== "0px" ||
+			computed.paddingLeft !== "0px"
+				? computed.padding
+				: "";
+
+		wrapper.style.setProperty("background-color", "transparent", "important");
+		if (pad) {
+			wrapper.style.setProperty("padding", "0", "important");
+		}
+
+		wrapper
+			.querySelectorAll(".ecbb-event__term-chip, .ecbb-event-card__category")
+			.forEach(function (chip) {
+				if (bg) {
+					chip.style.setProperty("background-color", bg, "important");
+				} else {
+					chip.style.removeProperty("background-color");
+				}
+				if (pad) {
+					chip.style.setProperty("padding", pad, "important");
+				}
+			});
 	}
 
 	var categoryChipBgTimer = null;
@@ -454,6 +673,9 @@
 		if (
 			e.target.closest(
 				'.repeater-item-inner[data-control-key="ecbb_background"]'
+			) ||
+			e.target.closest(
+				'.repeater-item-inner[data-control-key="ecbb_padding"]'
 			)
 		) {
 			scheduleCategoryChipBackgroundSync(item);
@@ -549,6 +771,7 @@
 		typoSyncTimer = setTimeout(function () {
 			typoSyncTimer = null;
 			syncTypographyColorFromWrapper(repeaterItem);
+			scheduleActionButtonRepeaterStyleSync(repeaterItem);
 		}, 60);
 	}
 
@@ -801,7 +1024,9 @@
 		if (!wrapper) {
 			return null;
 		}
-		var link = wrapper.querySelector(".ecbb-event__link");
+		var link = wrapper.querySelector(
+			".ecbb-event__link, a.event-button, a.ecbb-event-card__button"
+		);
 		if (link) {
 			return link;
 		}
@@ -836,9 +1061,13 @@
 			wrapper.style[prop] = "";
 		});
 
-		wrapper.querySelectorAll(".ecbb-event__link, .ecbb-event__plain").forEach(function (node) {
-			node.removeAttribute("style");
-		});
+		wrapper
+			.querySelectorAll(
+				".ecbb-event__link, .ecbb-event__plain, a.event-button, a.ecbb-event-card__button"
+			)
+			.forEach(function (node) {
+				node.removeAttribute("style");
+			});
 	}
 
 	/**
@@ -860,17 +1089,13 @@
 			return;
 		}
 
-		var btnStyleInner = repeaterItem.querySelector(
-			'.repeater-item-inner[data-control-key="btn_style"]'
-		);
-		var btnStyleOn = false;
-		if (btnStyleInner) {
-			var btnCb = btnStyleInner.querySelector('input[type="checkbox"]');
-			if (btnCb) {
-				btnStyleOn = btnCb.checked;
-			}
-		}
+		var btnStyleOn = readBtnStyleEnabled(repeaterItem);
 		if (!btnStyleOn) {
+			wrapper.classList.remove("ecbb-has-btn");
+			if (isActionButtonPart(repeaterItem)) {
+				syncActionButtonRepeaterStyle(repeaterItem);
+				return;
+			}
 			clearButtonPaintFromWrapper(wrapper);
 			return;
 		}
@@ -1009,6 +1234,8 @@
 	document.addEventListener("input", onTypographyControlInteraction, true);
 	document.addEventListener("input", onButtonControlInteraction, true);
 	document.addEventListener("change", onButtonControlInteraction, true);
+	document.addEventListener("input", onActionButtonStyleInteraction, true);
+	document.addEventListener("change", onActionButtonStyleInteraction, true);
 	document.addEventListener("input", onTitleInnerBackgroundInteraction, true);
 	document.addEventListener("change", onTitleInnerBackgroundInteraction, true);
 	document.addEventListener("input", onCategoryChipBackgroundInteraction, true);

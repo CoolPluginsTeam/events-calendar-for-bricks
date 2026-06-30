@@ -135,18 +135,6 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 		}
 
 		/**
-		 * Bricks `required` rule: List template + Style 1 chrome.
-		 *
-		 * @return array<int,array{0:string,1:string,2:string}>
-		 */
-		public static function ecbb_req_list_style1() {
-			return [
-				[ 'layout_template', '=', 'list' ],
-				[ 'list_item_style', '=', 'style-1' ],
-			];
-		}
-
-		/**
 		 * Bricks `css` rule for a repeater sub-field (live builder preview + frontend).
 		 *
 		 * @param string $css_property CSS property or Bricks shorthand (e.g. font, typography).
@@ -185,6 +173,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 				'type'     => 'select',
 				'options'  => [
 					'day_time_range' => esc_html__( 'Time range', 'events-calendar-for-bricks' ),
+					'range'          => esc_html__( 'Date range', 'events-calendar-for-bricks' ),
 					'date'           => esc_html__( 'Date only', 'events-calendar-for-bricks' ),
 					'time'           => esc_html__( 'Time only', 'events-calendar-for-bricks' ),
 					'day'            => esc_html__( 'Day name', 'events-calendar-for-bricks' ),
@@ -197,6 +186,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 				'type'     => 'select',
 				'options'  => [
 					'full_details'   => esc_html__( 'Full venue details', 'events-calendar-for-bricks' ),
+					'name_and_city'  => esc_html__( 'Venue name and city', 'events-calendar-for-bricks' ),
 					'name_and_state' => esc_html__( 'Venue name and state', 'events-calendar-for-bricks' ),
 					'name'           => esc_html__( 'Venue name only', 'events-calendar-for-bricks' ),
 					'full_address' => esc_html__( 'Full address only', 'events-calendar-for-bricks' ),
@@ -272,16 +262,16 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 				'placeholder' => esc_html__( 'Default', 'events-calendar-for-bricks' ),
 				'required'    => [
 					[ 'part', '=', 'date' ],
-					[ 'date_display', '=', [ 'date', 'time' ] ],
+					[ 'date_display', '=', [ 'date', 'range' ] ],
 				],
 			],
 			'date_format_custom' => [
 				'label'       => esc_html__( 'Custom PHP format', 'events-calendar-for-bricks' ),
 				'type'        => 'text',
-				'placeholder' => 'F j, Y g:i a',
+				'placeholder' => 'F j, Y',
 				'required'    => [
 					[ 'part', '=', 'date' ],
-					[ 'date_display', '=', [ 'date', 'time' ] ],
+					[ 'date_display', '=', [ 'date', 'range' ] ],
 					[ 'date_format_preset', '=', 'custom' ],
 				],
 			],
@@ -396,7 +386,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			'read_more_text' => [
 				'label'       => esc_html__( 'Read more text', 'events-calendar-for-bricks' ),
 				'type'        => 'text',
-				'placeholder' => esc_html__( 'More Details', 'events-calendar-for-bricks' ),
+				'placeholder' => esc_html__( 'View Details', 'events-calendar-for-bricks' ),
 				'required'    => [
 					[ 'part', '=', 'read_more' ],
 				],
@@ -540,14 +530,14 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			'ecbb_background' => [
 				'label'       => esc_html__( 'Background', 'events-calendar-for-bricks' ),
 				'type'        => 'color',
-				'placeholder' => '#666666',
+				'placeholder' => 'transparent',
 				'responsive'  => true,
 				'css'         => self::ecbb_field_css( 'background-color', '&' ),
 			],
 			'ecbb_background_inner' => [
 				'label'       => esc_html__( 'Inner background', 'events-calendar-for-bricks' ),
 				'type'        => 'color',
-				'placeholder' => '#666666',
+				'placeholder' => 'transparent',
 				'responsive'  => true,
 				'required'    => self::ecbb_req_title_inner_bg(),
 				// No Bricks `css` rule: child selectors are ignored on repeater fieldId targets.
@@ -564,7 +554,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 				'css'   => self::ecbb_field_css( 'padding' ),
 			],
 			'ecbb_use_hover' => [
-				'label'    => esc_html__( 'Enable hover effects', 'events-calendar-for-bricks' ),
+				'label'    => esc_html__( 'Enable hover Styling', 'events-calendar-for-bricks' ),
 				'type'     => 'select',
 				'options'  => [
 					'yes' => esc_html__( 'Yes', 'events-calendar-for-bricks' ),
@@ -694,16 +684,91 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			'required' => [ 'layout_template', '=', 'list' ],
 		];
 
-		$element->controls['style2_show_month_headings'] = [
+		$element->controls['show_event_image'] = [
 			'tab'      => 'content',
 			'group'    => 'layouts',
-			'label'    => esc_html__( 'Show month header', 'events-calendar-for-bricks' ),
-			'type'     => 'checkbox',
+			'label'    => esc_html__( 'Show featured image', 'events-calendar-for-bricks' ),
+			'type'     => 'select',
+			'options'  => [
+				'show' => esc_html__( 'Show', 'events-calendar-for-bricks' ),
+				'hide' => esc_html__( 'Hide', 'events-calendar-for-bricks' ),
+			],
+			'default'  => 'show',
 			'inline'   => true,
-			'default'  => false,
+			'rerender' => true,
+		];
+
+		$element->controls['list1_show_category_badge'] = [
+			'tab'         => 'content',
+			'group'       => 'layouts',
+			'label'       => esc_html__( 'Show category on image', 'events-calendar-for-bricks' ),
+			'type'        => 'select',
+			'options'     => [
+				'show' => esc_html__( 'Show', 'events-calendar-for-bricks' ),
+				'hide' => esc_html__( 'Hide', 'events-calendar-for-bricks' ),
+			],
+			'default'     => 'show',
+			'inline'      => true,
+			'rerender'    => true,
+			'description' => esc_html__( 'List Style 1 only. Overlays the featured image.', 'events-calendar-for-bricks' ),
+			'required'    => [
+				[ 'show_event_image', '=', 'show' ],
+				[ 'layout_template', '=', 'list' ],
+				[ 'list_item_style', '=', 'style-1' ],
+			],
+		];
+
+		$element->controls['grid_show_category_badge'] = [
+			'tab'         => 'content',
+			'group'       => 'layouts',
+			'label'       => esc_html__( 'Show category on image', 'events-calendar-for-bricks' ),
+			'type'        => 'select',
+			'options'     => [
+				'show' => esc_html__( 'Show', 'events-calendar-for-bricks' ),
+				'hide' => esc_html__( 'Hide', 'events-calendar-for-bricks' ),
+			],
+			'default'     => 'show',
+			'inline'      => true,
+			'rerender'    => true,
+			'description' => esc_html__( 'Grid only. Overlays the featured image.', 'events-calendar-for-bricks' ),
+			'required'    => [
+				[ 'show_event_image', '=', 'show' ],
+				[ 'layout_template', '=', 'grid' ],
+			],
+		];
+
+		$element->controls['style2_show_date_badge'] = [
+			'tab'         => 'content',
+			'group'       => 'layouts',
+			'label'       => esc_html__( 'Show date badge on image', 'events-calendar-for-bricks' ),
+			'type'        => 'checkbox',
+			'inline'      => true,
+			'default'     => true,
+			'rerender'    => true,
+			'description' => esc_html__( 'List Style 2 only. Overlays the featured image.', 'events-calendar-for-bricks' ),
+			'required'    => [
+				[ 'show_event_image', '=', 'show' ],
+				[ 'layout_template', '=', 'list' ],
+				[ 'list_item_style', '=', 'style-2' ],
+			],
+		];
+
+		$element->controls['style2_date_badge_order'] = [
+			'tab'      => 'content',
+			'group'    => 'layouts',
+			'label'    => esc_html__( 'Date column order', 'events-calendar-for-bricks' ),
+			'type'     => 'select',
+			'options'  => [
+				'month_day' => esc_html__( 'Month above, day below', 'events-calendar-for-bricks' ),
+				'day_month' => esc_html__( 'Day above, month below', 'events-calendar-for-bricks' ),
+			],
+			'default'  => 'month_day',
+			'inline'   => true,
+			'rerender' => true,
 			'required' => [
 				[ 'layout_template', '=', 'list' ],
 				[ 'list_item_style', '=', 'style-2' ],
+				[ 'show_event_image', '=', 'show' ],
 			],
 		];
 
@@ -752,21 +817,6 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 					'selector' => '.ecbb-ev__list',
 				],
 			],
-		];
-
-		$element->controls['date_format'] = [
-			'tab'      => 'content',
-			'group'    => 'layouts',
-			'label'    => esc_html__( 'List Style 1 — date column format', 'events-calendar-for-bricks' ),
-			'type'     => 'select',
-			'default'  => 'default',
-			'required' => [
-				[ 'layout_template', '=', 'list' ],
-				[ 'list_item_style', '=', 'style-1' ],
-			],
-			'options'  => class_exists( 'ECBB_Styles', false )
-				? \ECBB_Styles::ecbb_date_options()
-				: [ 'default' => esc_html__( 'Default', 'events-calendar-for-bricks' ) ],
 		];
 
 		// ── Events Query ──
@@ -876,256 +926,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			'inline'  => true,
 		];
 
-		$style1_required = self::ecbb_req_list_style1();
-
-		// ── List Style 1 (style) — static columns outside the Event parts repeater ──
-		$element->controls['style1_sep_date'] = [
-			'tab'      => 'style',
-			'group'    => 'list_style1',
-			'type'     => 'separator',
-			'label'    => esc_html__( 'Date column', 'events-calendar-for-bricks' ),
-			'required' => $style1_required,
-		];
-
-		$element->controls['style1_date_bg'] = [
-			'tab'         => 'style',
-			'group'       => 'list_style1',
-			'label'       => esc_html__( 'Background', 'events-calendar-for-bricks' ),
-			'type'        => 'color',
-			'placeholder' => '#1d9aee',
-			'required'    => $style1_required,
-			'css'         => [
-				[
-					'property' => 'background-color',
-					'selector' => '& .ecbb-ev__style1-date',
-				],
-			],
-		];
-
-		$element->controls['style1_date_color'] = [
-			'tab'         => 'style',
-			'group'       => 'list_style1',
-			'label'       => esc_html__( 'Text color', 'events-calendar-for-bricks' ),
-			'type'        => 'color',
-			'placeholder' => '#ffffff',
-			'required'    => $style1_required,
-			'css'         => [
-				[
-					'property' => 'color',
-					'selector' => '& .ecbb-ev__style1-date',
-				],
-			],
-		];
-
-		$element->controls['style1_date_typography'] = [
-			'tab'      => 'style',
-			'group'    => 'list_style1',
-			'label'    => esc_html__( 'Typography', 'events-calendar-for-bricks' ),
-			'type'     => 'typography',
-			'required' => $style1_required,
-			'css'      => [
-				[
-					'property' => 'font',
-					'selector' => '& .ecbb-ev__style1-date',
-				],
-			],
-		];
-
-		$element->controls['style1_date_padding'] = [
-			'tab'      => 'style',
-			'group'    => 'list_style1',
-			'label'    => esc_html__( 'Padding', 'events-calendar-for-bricks' ),
-			'type'     => 'spacing',
-			'required' => $style1_required,
-			'css'      => [
-				[
-					'property' => 'padding',
-					'selector' => '& .ecbb-ev__style1-date',
-				],
-			],
-		];
-
-		$element->controls['style1_date_width'] = [
-			'tab'         => 'style',
-			'group'       => 'list_style1',
-			'label'       => esc_html__( 'Column width', 'events-calendar-for-bricks' ),
-			'type'        => 'number',
-			'units'       => true,
-			'placeholder' => '18rem',
-			'required'    => $style1_required,
-			'css'         => [
-				[
-					'property' => '--ecbb-s1-date-width',
-					'selector' => '& .ecbb-ev__item-inner--style1',
-				],
-			],
-		];
-
-		$element->controls['style1_sep_body'] = [
-			'tab'      => 'style',
-			'group'    => 'list_style1',
-			'type'     => 'separator',
-			'label'    => esc_html__( 'Body column', 'events-calendar-for-bricks' ),
-			'required' => $style1_required,
-		];
-
-		$element->controls['style1_body_bg'] = [
-			'tab'         => 'style',
-			'group'       => 'list_style1',
-			'label'       => esc_html__( 'Background', 'events-calendar-for-bricks' ),
-			'type'        => 'color',
-			'placeholder' => '#e7f6fa',
-			'required'    => $style1_required,
-			'css'         => [
-				[
-					'property' => 'background-color',
-					'selector' => '& .ecbb-ev__style1-body',
-				],
-			],
-		];
-
-		$element->controls['style1_body_color'] = [
-			'tab'         => 'style',
-			'group'       => 'list_style1',
-			'label'       => esc_html__( 'Text color', 'events-calendar-for-bricks' ),
-			'type'        => 'color',
-			'placeholder' => '#4b5563',
-			'required'    => $style1_required,
-			'css'         => [
-				[
-					'property' => 'color',
-					'selector' => '& .ecbb-ev__style1-body',
-				],
-			],
-		];
-
-		$element->controls['style1_body_padding'] = [
-			'tab'      => 'style',
-			'group'    => 'list_style1',
-			'label'    => esc_html__( 'Padding', 'events-calendar-for-bricks' ),
-			'type'     => 'spacing',
-			'required' => $style1_required,
-			'css'      => [
-				[
-					'property' => 'padding',
-					'selector' => '& .ecbb-ev__style1-body',
-				],
-			],
-		];
-
-		$element->controls['style1_sep_cta'] = [
-			'tab'      => 'style',
-			'group'    => 'list_style1',
-			'type'     => 'separator',
-			'label'    => esc_html__( 'CTA column', 'events-calendar-for-bricks' ),
-			'required' => $style1_required,
-		];
-
-		$element->controls['style1_cta_bg'] = [
-			'tab'         => 'style',
-			'group'       => 'list_style1',
-			'label'       => esc_html__( 'Background', 'events-calendar-for-bricks' ),
-			'type'        => 'color',
-			'placeholder' => '#e7f6fa',
-			'required'    => $style1_required,
-			'css'         => [
-				[
-					'property' => 'background-color',
-					'selector' => '& .ecbb-ev__style1-cta',
-				],
-			],
-		];
-
-		$element->controls['style1_cta_bg_hover'] = [
-			'tab'         => 'style',
-			'group'       => 'list_style1',
-			'label'       => esc_html__( 'Background (hover)', 'events-calendar-for-bricks' ),
-			'type'        => 'color',
-			'placeholder' => '#1d9aee',
-			'required'    => $style1_required,
-			'css'         => [
-				[
-					'property' => 'background-color',
-					'selector' => '& .ecbb-ev__style1-cta:hover',
-				],
-			],
-		];
-
-		$element->controls['style1_cta_color'] = [
-			'tab'         => 'style',
-			'group'       => 'list_style1',
-			'label'       => esc_html__( 'Text color', 'events-calendar-for-bricks' ),
-			'type'        => 'color',
-			'placeholder' => '#111827',
-			'required'    => $style1_required,
-			'css'         => [
-				[
-					'property' => 'color',
-					'selector' => '& .ecbb-ev__style1-cta .ecbb-event__link',
-				],
-			],
-		];
-
-		$element->controls['style1_cta_color_hover'] = [
-			'tab'         => 'style',
-			'group'       => 'list_style1',
-			'label'       => esc_html__( 'Text color (hover)', 'events-calendar-for-bricks' ),
-			'type'        => 'color',
-			'placeholder' => '#ffffff',
-			'required'    => $style1_required,
-			'css'         => [
-				[
-					'property' => 'color',
-					'selector' => '& .ecbb-ev__style1-cta:hover .ecbb-event__link',
-				],
-			],
-		];
-
-		$element->controls['style1_cta_typography'] = [
-			'tab'      => 'style',
-			'group'    => 'list_style1',
-			'label'    => esc_html__( 'Typography', 'events-calendar-for-bricks' ),
-			'type'     => 'typography',
-			'required' => $style1_required,
-			'css'      => [
-				[
-					'property' => 'font',
-					'selector' => '& .ecbb-ev__style1-cta .ecbb-event__link',
-				],
-			],
-		];
-
-		$element->controls['style1_cta_padding'] = [
-			'tab'      => 'style',
-			'group'    => 'list_style1',
-			'label'    => esc_html__( 'Link padding', 'events-calendar-for-bricks' ),
-			'type'     => 'spacing',
-			'required' => $style1_required,
-			'css'      => [
-				[
-					'property' => 'padding',
-					'selector' => '& .ecbb-ev__style1-cta .ecbb-event__link',
-				],
-			],
-		];
-
-		$element->controls['style1_cta_width'] = [
-			'tab'         => 'style',
-			'group'       => 'list_style1',
-			'label'       => esc_html__( 'Column width', 'events-calendar-for-bricks' ),
-			'type'        => 'number',
-			'units'       => true,
-			'placeholder' => '18rem',
-			'required'    => $style1_required,
-			'css'         => [
-				[
-					'property' => '--ecbb-s1-cta-width',
-					'selector' => '& .ecbb-ev__item-inner--style1',
-				],
-			],
-		];
-
-			$part_repeater_fields = self::ecbb_part_fields();
+		$part_repeater_fields = self::ecbb_part_fields();
 
 		$element->controls['parts_style1'] = [
 			'tab'           => 'content',
@@ -1136,6 +937,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			'description'   => esc_html__( 'Drag rows to reorder. Expand a row to edit content and style.', 'events-calendar-for-bricks' ),
 			'titleProperty' => 'part',
 			'placeholder'   => esc_html__( 'Add event part', 'events-calendar-for-bricks' ),
+			'rerender'      => true,
 			'required'      => [
 				[ 'layout_template', '=', 'list' ],
 				[ 'list_item_style', '=', 'style-1' ],
@@ -1155,6 +957,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			'description'   => esc_html__( 'Drag rows to reorder. Expand a row to edit content and style.', 'events-calendar-for-bricks' ),
 			'titleProperty' => 'part',
 			'placeholder'   => esc_html__( 'Add event part', 'events-calendar-for-bricks' ),
+			'rerender'      => true,
 			'required'      => [
 				[ 'layout_template', '=', 'list' ],
 				[ 'list_item_style', '=', 'style-2' ],
@@ -1171,9 +974,10 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			'type'          => 'repeater',
 			'selector'      => 'fieldId',
 			'label'         => esc_html__( 'Event parts — Grid', 'events-calendar-for-bricks' ),
-			'description'   => esc_html__( 'Card image and framed date are fixed; this repeater drives the body column.', 'events-calendar-for-bricks' ),
+			'description'   => esc_html__( 'Drag rows to reorder. Expand a row to edit content and style.', 'events-calendar-for-bricks' ),
 			'titleProperty' => 'part',
 			'placeholder'   => esc_html__( 'Add event part', 'events-calendar-for-bricks' ),
+			'rerender'      => true,
 			'required'      => [ 'layout_template', '=', 'grid' ],
 			'default'       => class_exists( 'ECBB_Grid', false )
 				? \ECBB_Grid::ecbb_default_parts()

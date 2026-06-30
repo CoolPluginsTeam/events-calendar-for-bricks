@@ -1,314 +1,198 @@
 /**
- * Events Widget — Grid template
- *
- * Layout: `.ecbb-ev__grid-media` | `.ecbb-ev__grid-meta` ( `.ecbb-ev__grid-date-col` | `.ecbb-ev__grid-body` )
- *
- * File: `assets/css/events-widget/ecbb-events-widget-grid.css`.
- *
- * Default part typography uses :where() so Bricks repeater Style controls can override.
+ * Events Widget — Grid template (event-grid-card)
  */
 
-/* ── Design tokens (grid card shell) ── */
-
-.ecbb-ev__item-inner--grid {
-	--ecbb-grid-bg: #fff;
-	--ecbb-grid-border: rgba( 15, 23, 42, 0.06 );
-	--ecbb-grid-shadow: 0 4px 20px rgba( 15, 23, 42, 0.07 );
-	--ecbb-grid-radius: 10px;
-	--ecbb-grid-muted: #6b7280;
-	--ecbb-grid-title: #111827;
-	--ecbb-grid-cost: #666666;
-	--ecbb-grid-accent: #2563eb;
-	--ecbb-grid-date-frame-border: #d8dde3;
-	--ecbb-grid-media-bg: #e5e7eb;
-	--ecbb-grid-media-ratio: 16 / 10;
-	--ecbb-grid-font: "Open Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-	--ecbb-grid-font-alt: "Rubik", Sans-serif;
-	--ecbb-grid-icon-clock: url( "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' d='M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2zm4.2 14.2L11 13V7h1.5v5.2l4.5 2.7l-.8 1.3z'/%3E%3C/svg%3E" );
-
+.ecbb-ev .event-grid-card {
+	overflow: hidden;
 	display: flex;
 	flex-direction: column;
-	width: 100%;
-	min-width: 0;
-	overflow: hidden;
-	border-radius: inherit;
-}
-
-/* ── Card chrome ── */
-
-.ecbb-ev__list--grid .ecbb-ev__item--grid {
-	display: flex;
-	flex-direction: column;
-	min-width: 0;
-	overflow: hidden;
-	background: var(--ecbb-grid-bg);
-	border: 1px solid var(--ecbb-grid-border);
-	border-radius: var(--ecbb-grid-radius);
-	box-shadow: var(--ecbb-grid-shadow);
-}
-
-/* ── Featured image (static shell; not repeater-driven) ── */
-
-.ecbb-ev__item--grid .ecbb-ev__grid-media {
-	position: relative;
-	width: 100%;
-	overflow: hidden;
-	line-height: 0;
-	background: var(--ecbb-grid-media-bg);
-	aspect-ratio: var(--ecbb-grid-media-ratio);
-}
-
-.ecbb-ev__item--grid .ecbb-ev__grid-media-link {
-	display: block;
-	position: relative;
-	width: 100%;
 	height: 100%;
-	overflow: hidden;
-}
-
-.ecbb-ev__item--grid .ecbb-ev__grid-media-inner {
+	background: var(--color-card-bg);
+	border: 1px solid var(--color-border);
+	border-radius: 15px;
+	box-shadow: var(--shadow-card);
+	transition: transform var(--transition-base), box-shadow var(--transition-base), border-color var(--transition-base);
 	width: 100%;
-	height: 100%;
-	overflow: hidden;
 }
 
-.ecbb-ev__item--grid .ecbb-ev__grid-thumb-img {
-	display: block;
+.ecbb-ev .event-grid-card:hover {
+	transform: none;
+	border-color: rgba(33, 71, 199, 0.18);
+	box-shadow: var(--shadow-card-hover);
+}
+
+.ecbb-ev .event-grid-card__image-wrap {
+	position: relative;
+	height: 178px;
+	overflow: hidden;
+	background: #d9e0ea;
+}
+
+.ecbb-ev .event-grid-card__image-wrap .event-badge {
+	z-index: 3;
+}
+
+.ecbb-ev .event-grid-card__image-link {
+	position: relative;
+	z-index: 1;
+}
+
+.ecbb-ev .event-grid-card__image {
 	width: 100%;
 	height: 100%;
 	object-fit: cover;
-	transform-origin: center center;
-	transition: transform 0.45s ease;
-	will-change: transform;
-	backface-visibility: hidden;
+	transition: transform var(--transition-base);
 }
 
-.ecbb-ev__item--grid .ecbb-ev__grid-media-link:hover .ecbb-ev__grid-thumb-img,
-.ecbb-ev__item--grid .ecbb-ev__grid-media-link:focus-visible .ecbb-ev__grid-thumb-img {
-	transform: scale( 1.06 );
+.ecbb-ev .event-grid-card:hover .event-grid-card__image {
+	transform: none;
 }
 
-.ecbb-ev__item--grid .ecbb-ev__grid-media--placeholder {
-	min-height: 160px;
-	background: linear-gradient( 145deg, #e5e7eb 0%, #f3f4f6 55%, #e8ecf0 100% );
-}
-
-/* ── Meta row: framed date + repeater body ── */
-
-.ecbb-ev__item--grid .ecbb-ev__grid-meta {
-	display: flex;
-	flex-direction: row;
-	align-items: flex-start;
-	gap: 0.75rem 1rem;
-	box-sizing: border-box;
-	min-width: 0;
-	padding: 1rem 1rem 1.2rem;
-	font-family: var(--ecbb-grid-font);
-}
-
-/* Date badge column (fixed; not repeater-driven) */
-
-.ecbb-ev__item--grid .ecbb-ev__grid-date-col {
-	flex: 0 0 auto;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 0.35rem;
-	min-width: 4rem;
-	text-align: center;
-}
-
-.ecbb-ev__item--grid .ecbb-ev__grid-date-frame {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	box-sizing: border-box;
-	padding: 5px;
-	line-height: 0;
-	background: var(--ecbb-grid-bg);
-	border: 1px solid var(--ecbb-grid-date-frame-border);
-	border-radius: 6px;
-}
-
-.ecbb-ev__item--grid .ecbb-ev__grid-date-badge {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	box-sizing: border-box;
-	min-width: 4rem;
-	padding: 0.7rem 1.5rem 1rem;
-	line-height: 1;
-	color: #fff;
-	background-color: var(--ecbb-grid-accent);
-}
-
-.ecbb-ev__item--grid .ecbb-ev__grid-date-badge-day {
-	font-family: var(--ecbb-grid-font-alt);
-	font-size: 18px;
-	font-weight: 700;
-	line-height: 1;
-	letter-spacing: -0.02em;
-}
-
-.ecbb-ev__item--grid .ecbb-ev__grid-date-badge-month {
-	margin-top: 0.18rem;
-	font-family: var(--ecbb-grid-font-alt);
-	font-size: 14px;
-	font-weight: 500;
-	line-height: 1.1;
-	letter-spacing: 0.02em;
-	text-transform: capitalize;
-}
-
-.ecbb-ev__item--grid .ecbb-ev__grid-date-dow {
-	font-family: var(--ecbb-grid-font);
-	font-size: 1.125rem;
-	font-weight: 600;
-	line-height: 1.2;
-	color: var(--ecbb-grid-muted);
-	letter-spacing: 0.06em;
-	text-transform: uppercase;
-}
-
-/* Repeater body stack */
-
-.ecbb-ev__item--grid .ecbb-ev__grid-body {
+.ecbb-ev .event-grid-card__content {
 	display: flex;
 	flex: 1 1 auto;
 	flex-direction: column;
-	justify-content: flex-start;
-	gap: 3px;
-	min-width: 0;
+	min-height: 235px;
+	padding: 18px;
 }
 
-/* ── Event parts: structure (layout, icons, visibility) ── */
-
-.ecbb-ev__item--grid .ecbb-ev__grid-body :is( .ecbb-event-part--date, .ecbb-event-part--event-time ) {
-	display: flex;
-	align-items: center;
-	margin: 0;
-}
-
-.ecbb-ev__item--grid .ecbb-ev__grid-body :is( .ecbb-event-part--date, .ecbb-event-part--event-time ).ecbb-has-row-icon::before {
-	content: "";
-	flex: 0 0 auto;
-	width: 16px;
-	height: 16px;
-	margin-right: 0.45rem;
-	background-color: var(--ecbb-grid-accent);
-	-webkit-mask: var(--ecbb-grid-icon-clock) center / contain no-repeat;
-	mask: var(--ecbb-grid-icon-clock) center / contain no-repeat;
-}
-
-.ecbb-ev__item--grid .ecbb-ev__grid-body .ecbb-event-part--date :is( .ecbb-event__date-day, .ecbb-event__date-sep ) {
-	display: none;
-}
-
-.ecbb-ev__item--grid .ecbb-ev__grid-body [class*="ecbb-event-part--venue"] {
-	position: relative;
-	padding-left: 0;
-}
-
-.ecbb-ev__item--grid .ecbb-ev__grid-body [class*="ecbb-event-part--venue"]::before {
-	display: none;
-}
-
-/* ── Event parts: default typography (:where = repeater Style can override) ── */
-
-:where( .ecbb-ev__item--grid .ecbb-ev__grid-body ) :is( .ecbb-event-part--date, .ecbb-event-part--event-time ) {
-	font-family: var(--ecbb-grid-font-alt);
-	font-size: 15px;
-	font-weight: 400;
-	line-height: 1.4;
-	color: var(--ecbb-grid-muted);
-	letter-spacing: 0.01em;
-}
-
-:where( .ecbb-ev__item--grid .ecbb-ev__grid-body ) .ecbb-event-part--title {
-	margin: 0.1rem 0 0.2rem;
-	font-family: inherit;
-	font-size: clamp( 1.0625rem, 1rem + 0.35vw, 1.625rem );
+.ecbb-ev .event-grid-card__date {
+	margin-bottom: 7px;
+	color: var(--color-muted);
+	font-size: 12px;
 	font-weight: 500;
-	line-height: 1.28;
-	color: var(--ecbb-grid-title);
-	letter-spacing: -0.01em;
+	line-height: 1.3;
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
 }
 
-:where( .ecbb-ev__item--grid .ecbb-ev__grid-body ) .ecbb-event-part--title .ecbb-event__link,
-:where( .ecbb-ev__item--grid .ecbb-ev__grid-body ) .ecbb-event-part--title .ecbb-event__title-text {
-	display: inline-block;
-	width: fit-content;
-	max-width: 100%;
-	color: inherit;
-	text-underline-offset: 3px;
-	text-decoration-thickness: 1px;
-	transition: color 0.18s ease;
+.ecbb-ev .event-grid-card__title {
+	margin: 0;
+	color: var(--color-heading);
+	font-size: 17px;
+	font-weight: 700;
+	line-height: 1.25;
+	letter-spacing: -0.02em;
 }
 
-:where( .ecbb-ev__item--grid .ecbb-ev__grid-body ) .ecbb-event-part--title:not( .ecbb-no-hover ) .ecbb-event__link:hover,
-:where( .ecbb-ev__item--grid .ecbb-ev__grid-body ) .ecbb-event-part--title:not( .ecbb-no-hover ) .ecbb-event__link:focus-visible {
-	color: var(--ecbb-grid-accent);
+.ecbb-ev .event-grid-card__description {
+	margin: 9px 0 13px;
+	color: var(--color-text);
+	font-size: 15px;
+	line-height: 1.6;
+}
+
+.ecbb-ev .event-grid-card__desc-more {
+	display: inline;
+	margin-left: 0.2em;
+	color: var(--color-primary);
+	font-size: inherit;
+	font-weight: 600;
+	text-decoration: none;
+	white-space: nowrap;
+}
+
+.ecbb-ev .event-grid-card__desc-more:hover {
 	text-decoration: underline;
 }
 
-:where( .ecbb-ev__item--grid .ecbb-ev__grid-body ) .ecbb-event-part--title.ecbb-no-hover,
-:where( .ecbb-ev__item--grid .ecbb-ev__grid-body ) .ecbb-event-part--title.ecbb-no-hover .ecbb-event__link {
-	text-decoration: none;
-}
-
-:where( .ecbb-ev__item--grid .ecbb-ev__grid-body ) [class*="ecbb-event-part--venue"] {
-	margin: 0;
+.ecbb-ev .event-meta--grid {
+	flex: 0 0 auto;
+	flex-direction: column;
+	gap: 13px;
+	margin-bottom: 15px;
 	font-size: 14px;
-	font-weight: 400;
-	line-height: 1.45;
-	color: var(--ecbb-grid-muted);
-}
-
-:where( .ecbb-ev__item--grid .ecbb-ev__grid-body ) .ecbb-event-part--event-cost {
-	margin: 0.2rem 0 0;
-	font-family: var(--ecbb-grid-font-alt);
-	font-size: 14px;
-	font-weight: 700;
 	line-height: 1.35;
-	color: var(--ecbb-grid-cost);
 }
 
-:where( .ecbb-ev__item--grid .ecbb-ev__grid-body ) .ecbb-event-part--description {
-	font-size: 14px;
-	line-height: 1.5;
-	color: var(--ecbb-grid-muted);
+.ecbb-ev .event-grid-card__content > .event-button--filled,
+.ecbb-ev .event-grid-card__content > .ecbb-event-part--read-more {
+	flex-shrink: 0;
+	margin-top: auto;
 }
 
-:where( .ecbb-ev__item--grid .ecbb-ev__grid-body ) .ecbb-event-part--description p {
-	margin: 0 0 0.5rem;
+.ecbb-ev .event-grid-card__content > .ecbb-event-part--read-more .ecbb-event__link,
+.ecbb-ev .event-grid-card__content > .ecbb-event-part--read-more > a.event-button {
+	width: 100%;
 }
 
-:where( .ecbb-ev__item--grid .ecbb-ev__grid-body ) .ecbb-event-part--description p:last-child {
-	margin-bottom: 0;
+@media (max-width: 1024px) {
+	.ecbb-ev .event-grid-card__image-wrap {
+		height: 200px;
+	}
+
+	.ecbb-ev .event-grid-card__content {
+		min-height: 220px;
+		padding: 16px;
+	}
 }
 
-:where( .ecbb-ev__item--grid .ecbb-ev__grid-body ) .ecbb-event-part--categories {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 0.35rem;
-	max-width: 100%;
-	font-size: 12px;
-	font-weight: 500;
-	line-height: 1.5;
-	color: var(--ecbb-grid-accent);
+@media (max-width: 860px) {
+	.ecbb-ev .event-grid-card__image-wrap {
+		height: 210px;
+	}
 }
 
-:where( .ecbb-ev__item--grid .ecbb-ev__grid-body ) .ecbb-event-part--categories .ecbb-event__term-chip {
-	display: inline-flex;
-	align-items: center;
-	padding: 0 8px;
-	border: 1px solid currentColor;
-	border-radius: 4px;
+@media (max-width: 767px) {
+	.ecbb-ev .event-grid-card__image-wrap {
+		height: auto;
+		aspect-ratio: 16 / 10;
+	}
+
+	.ecbb-ev .event-grid-card__content {
+		min-height: auto;
+		padding: 16px 18px 18px;
+	}
+
+	.ecbb-ev .event-grid-card__title {
+		font-size: 16px;
+	}
+
+	.ecbb-ev .event-grid-card__description {
+		min-height: 0;
+		margin: 8px 0 12px;
+		font-size: 14px;
+		line-height: 1.55;
+	}
+
+	.ecbb-ev .event-meta--grid {
+		gap: 10px;
+		margin-bottom: 12px;
+		font-size: 13px;
+	}
+
+	.ecbb-ev .event-grid-card__content > .event-button--filled,
+	.ecbb-ev .event-grid-card__content > .ecbb-event-part--read-more .ecbb-event__link,
+	.ecbb-ev .event-grid-card__content > .ecbb-event-part--read-more > a.event-button {
+		min-height: 38px;
+		font-size: 13px;
+	}
 }
 
-:where( .ecbb-ev__item--grid .ecbb-ev__grid-body ) .ecbb-event-part--categories .ecbb-event__term-chip :is( .ecbb-event__link, .ecbb-event__term ) {
-	color: inherit;
-	text-decoration: none;
+@media (max-width: 480px) {
+	.ecbb-ev .event-grid-card__image-wrap {
+		aspect-ratio: 16 / 11;
+	}
+
+	.ecbb-ev .event-grid-card__content {
+		padding: 14px 16px 16px;
+	}
+
+	.ecbb-ev .event-grid-card__date {
+		font-size: 11px;
+	}
+
+	.ecbb-ev .event-grid-card__title {
+		font-size: 15px;
+	}
+}
+
+@media (hover: hover) and (pointer: fine) {
+	.ecbb-ev .event-grid-card:hover {
+		transform: translateY(-6px);
+	}
+
+	.ecbb-ev .event-grid-card:hover .event-grid-card__image {
+		transform: scale(1.06);
+	}
 }

@@ -1,362 +1,239 @@
 /**
- * Events Widget — List template / Style 1
- * Layout: `.ecbb-ev__style1-date` | `.ecbb-ev__style1-body` | `.ecbb-ev__style1-cta`
+ * Events Widget — List template / Style 1 (event-list-card)
  */
 
-/* ── Design tokens (scoped to Style 1 shell) ── */
-
-.ecbb-ev__item-inner--style1 {
-	--ecbb-s1-cyan: #1d9aee;
-	--ecbb-s1-body-bg: #e7f6fa;
-	--ecbb-s1-muted: #4b5563;
-	--ecbb-s1-title: #222222;
-	--ecbb-s1-chip: #0693e3;
-	--ecbb-s1-accent: #1ac8e8;
-	--ecbb-s1-cta-text: #111827;
-	--ecbb-s1-date-width: 18rem;
-	--ecbb-s1-cta-width: 18rem;
-	--ecbb-s1-font: "Open Sans", sans-serif;
-	--ecbb-s1-font-alt: "Inter", sans-serif;
-	--ecbb-s1-icon-clock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' d='M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2zm4.2 14.2L11 13V7h1.5v5.2l4.5 2.7l-.8 1.3z'/%3E%3C/svg%3E");
-	--ecbb-s1-icon-pin: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' d='M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z'/%3E%3C/svg%3E");
-
+.ecbb-ev .event-list-card {
 	display: grid;
-	grid-template-columns: var(--ecbb-s1-date-width) minmax(0, 1fr);
+	grid-template-columns: 420px 1fr;
+	gap: 0;
 	align-items: stretch;
-	overflow: hidden;
-	border-radius: 6px;
+	background: var(--color-card-bg);
+	border: 1px solid var(--color-border);
+	border-radius: 20px;
+	transition: transform var(--transition-base);
 	width: 100%;
 }
 
-.ecbb-ev__item-inner--style1-has-cta {
-	grid-template-columns: var(--ecbb-s1-date-width) minmax(0, 1fr) var(--ecbb-s1-cta-width);
+.ecbb-ev .event-list-card:hover {
+	transform: none;
 }
 
-/* ── Item chrome (flat card; inner grid carries layout) ── */
-
-.ecbb-ev__list--grid .ecbb-ev__item--style-1,
-.ecbb-ev__list--list .ecbb-ev__item--style-1 {
-	padding: 0;
-	border: none;
-	border-radius: 0;
-	background: transparent;
-	box-shadow: none;
-}
-
-/* ── Left date column ── */
-
-.ecbb-ev__style1-date {
-	background-color: var(--ecbb-s1-cyan);
-	color: #fff;
-	padding: 1.75rem 0.75rem;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	gap: 0.4rem;
-	text-align: center;
-	box-sizing: border-box;
-	font-family: var(--ecbb-s1-font);
-}
-
-.ecbb-ev__style1-date-day {
-	font-size: 20px;
-	font-weight: 700;
-	line-height: 1.5;
-	letter-spacing: -0.01em;
-}
-
-.ecbb-ev__style1-date-month,
-.ecbb-ev__style1-date-year {
-	font-size: 18px;
-	font-weight: 500;
-	line-height: 1.5;
-	letter-spacing: 0.01em;
-}
-
-.ecbb-ev__style1-date--multiline {
-	gap: 0.35rem;
-}
-
-.ecbb-ev__style1-date-line {
-	display: block;
-	width: 100%;
-	line-height: 1.25;
-	word-break: break-word;
-}
-
-.ecbb-ev__style1-date-line--single {
-	font-size: 15px;
-	font-weight: 600;
-	letter-spacing: 0.01em;
-}
-
-.ecbb-ev__style1-date-line--1 {
-	font-size: 24px;
-	font-weight: 700;
-	line-height: 1.1;
-	letter-spacing: -0.01em;
-}
-
-.ecbb-ev__style1-date-line--2,
-.ecbb-ev__style1-date-line--3 {
-	font-size: 15px;
-	font-weight: 500;
-	line-height: 1.2;
-	letter-spacing: 0.01em;
-}
-
-.ecbb-ev__style1-date-line--3 {
-	font-size: 14px;
-}
-
-/* ── Middle body ── */
-
-.ecbb-ev__style1-body {
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
-	background-color: var(--ecbb-s1-body-bg);
-	padding: 1.5rem 1.75rem;
-	min-width: 0;
-	box-sizing: border-box;
-	font-family: var(--ecbb-s1-font);
-	color: var(--ecbb-s1-muted);
-}
-
-/* Title — :where() keeps Bricks controls able to override defaults. */
-:where(.ecbb-ev__item--style-1 .ecbb-ev__style1-body) .ecbb-event-part--title {
-	font-family: var(--ecbb-s1-font-alt);
-	font-size: 21px;
-	font-weight: 600;
-	text-decoration: underline;
-	color: var(--ecbb-s1-title);
-	line-height: 1.25;
-	margin: 0 0 0.35rem;
-}
-
-:where(.ecbb-ev__item--style-1 .ecbb-ev__style1-body) .ecbb-event-part--title:not(.ecbb-no-hover) .ecbb-event__link {
-	color: inherit;
-	text-decoration: underline;
-	text-underline-offset: 3px;
-	text-decoration-thickness: 1px;
-	transition: color 0.18s ease;
-}
-
-:where(.ecbb-ev__item--style-1 .ecbb-ev__style1-body) .ecbb-event-part--title .ecbb-event__link,
-:where(.ecbb-ev__item--style-1 .ecbb-ev__style1-body) .ecbb-event-part--title .ecbb-event__title-text {
-	display: inline-block;
-	width: fit-content;
-	max-width: 100%;
-}
-
-:where(.ecbb-ev__item--style-1 .ecbb-ev__style1-body) .ecbb-event-part--title.ecbb-no-hover,
-:where(.ecbb-ev__item--style-1 .ecbb-ev__style1-body) .ecbb-event-part--title.ecbb-no-hover .ecbb-event__link {
-	text-decoration: none;
-}
-
-/* Category chips */
-:where(.ecbb-ev__item--style-1 .ecbb-ev__style1-body) .ecbb-event-part--categories {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 0.35rem;
-	align-self: flex-start;
-	max-width: 100%;
-	color: var(--ecbb-s1-chip);
-	font-size: 12px;
-	font-weight: 500;
-	line-height: 1.5;
-	letter-spacing: 0.01em;
-}
-
-:where(.ecbb-ev__item--style-1 .ecbb-ev__style1-body) .ecbb-event-part--categories .ecbb-event__term-chip {
-	display: inline-flex;
-	align-items: center;
-	padding: 0 8px;
-	border: 1px solid var(--ecbb-s1-chip);
-	border-radius: 4px;
-}
-
-:where(.ecbb-ev__item--style-1 .ecbb-ev__style1-body) .ecbb-event-part--categories .ecbb-event__term-chip :is(.ecbb-event__link, .ecbb-event__term) {
-	color: inherit;
-	text-decoration: none;
-}
-
-/* Date / time rows — clock icon when `.ecbb-has-row-icon` is set */
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body :is(.ecbb-event-part--date, .ecbb-event-part--event-time) {
-	display: flex;
-	align-items: center;
-	font-family: var(--ecbb-s1-font-alt);
-	font-size: 14px;
-	font-weight: 500;
-	line-height: 1.45;
-	letter-spacing: 0.01em;
-}
-
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body :is(.ecbb-event-part--date, .ecbb-event-part--event-time).ecbb-has-row-icon::before {
-	content: "";
-	flex: 0 0 auto;
-	width: 14px;
-	height: 14px;
-	margin-right: 0.5rem;
-	background-color: currentColor;
-	-webkit-mask: var(--ecbb-s1-icon-clock) center / contain no-repeat;
-	mask: var(--ecbb-s1-icon-clock) center / contain no-repeat;
-}
-
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--date :is(.ecbb-event__date-day, .ecbb-event__date-sep) {
-	display: none;
-}
-
-/* Venue rows — pin icon when `.ecbb-has-row-icon` is set */
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body [class*="ecbb-event-part--venue"] {
+.ecbb-ev .event-list-card__image-wrap {
 	position: relative;
-	padding-left: 0;
-	font-size: 15px;
-	font-weight: 400;
-	line-height: 1.5;
+	min-height: 268px;
+	overflow: hidden;
+	border-radius: 20px 0 0 20px;
+	background: #d9e0ea;
 }
 
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body [class*="ecbb-event-part--venue"].ecbb-has-row-icon {
-	padding-left: 1.4rem;
-}
-
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body [class*="ecbb-event-part--venue"].ecbb-has-row-icon::before {
-	content: "";
-	position: absolute;
-	left: -2px;
-	top: 0.15em;
-	width: 16px;
-	height: 18px;
-	background-color: currentColor;
-	-webkit-mask: var(--ecbb-s1-icon-pin) center / contain no-repeat;
-	mask: var(--ecbb-s1-icon-pin) center / contain no-repeat;
-}
-
-/* Description */
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--description {
-	font-size: 16px;
-	line-height: 1.5em;
-	margin-top: 0.25rem;
-}
-
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--description p {
-	margin: 0 0 0.5rem;
-}
-
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--description p:last-child {
-	margin-bottom: 0;
-}
-
-/* ── Right CTA column ── */
-
-.ecbb-ev__style1-cta {
-	background-color: var(--ecbb-s1-body-bg);
-	display: flex;
-	align-items: center;
-	justify-content: stretch;
-	min-width: 0;
-	font-family: var(--ecbb-s1-font);
-}
-
-.ecbb-ev__style1-cta:hover {
-	background-color: var(--ecbb-s1-cyan);
-}
-
-.ecbb-ev__style1-cta .ecbb-event-part--read-more {
-	margin: 0;
+.ecbb-ev .event-list-card__image {
 	width: 100%;
-	display: flex;
-	align-items: stretch;
+	height: 100%;
+	object-fit: cover;
+	transition: transform var(--transition-base);
 }
 
-.ecbb-ev__style1-cta .ecbb-event-part--read-more .ecbb-event__link {
-	flex: 1 1 auto;
+.ecbb-ev .event-list-card:hover .event-list-card__image {
+	transform: none;
+}
+
+.ecbb-ev .event-list-card__content {
+	display: grid;
+	grid-template-columns: 58px 1fr;
+	gap: 18px;
+	min-height: 268px;
+	padding: 30px 34px 28px 28px;
+	border-radius: 0 20px 20px;
+}
+
+.ecbb-ev .event-list-card:hover .event-list-card__content {
+	box-shadow: var(--shadow-card-hover);
+}
+
+.ecbb-ev .event-list-card__date {
 	display: flex;
+	flex-direction: column;
 	align-items: center;
-	justify-content: center;
-	min-height: 100%;
-	padding: 1.25rem 1rem;
-	background-color: transparent;
-	text-align: center;
-	text-decoration: underline;
-	text-underline-offset: 3px;
+	padding-top: 2px;
+	padding-right: 15px;
+	color: var(--color-primary);
+	border-right: 1px solid var(--color-border);
+	gap: 5px;
+}
+
+.ecbb-ev .event-list-card__day {
+	display: block;
+	font-size: 35px;
+	font-weight: 700;
+	line-height: 0.95;
+	letter-spacing: -0.04em;
+}
+
+.ecbb-ev .event-list-card__month {
+	display: block;
+	margin-top: 5px;
+	font-size: 11px;
+	font-weight: 500;
+	line-height: 1;
+	text-transform: uppercase;
+}
+
+.ecbb-ev .event-list-card__date--month_day .event-list-card__month {
+	margin-top: 0;
+}
+
+.ecbb-ev .event-list-card__date--month_day .event-list-card__day {
+	margin-top: 5px;
+}
+
+.ecbb-ev .event-list-card__body {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+}
+
+.ecbb-ev .event-list-card__title {
+	margin: 0;
+	color: var(--color-heading);
+	font-size: 21px;
+	font-weight: 700;
+	line-height: 1.28;
+}
+
+.ecbb-ev .event-list-card__description {
+	margin: 10px 0 17px;
+	color: var(--color-text);
+	font-size: 15px;
+	line-height: 1.65;
+}
+
+.ecbb-ev .event-meta--list {
+	gap: 12px 18px;
+	margin-bottom: 22px;
 	font-size: 14px;
-	font-weight: 600;
-	letter-spacing: 0.01em;
 	line-height: 1.4;
-	transition: background-color 0.18s ease, color 0.18s ease, text-decoration-color 0.18s ease;
 }
 
-/* Fallback when read_more lands in the body instead of the CTA column */
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--read-more .ecbb-event__link {
-	color: var(--ecbb-s1-cta-text);
-	text-decoration: underline;
-	text-underline-offset: 3px;
+.ecbb-ev .event-meta--list .price {
 	font-size: 14px;
-	font-weight: 600;
+	font-weight: 500;
+	color: var(--badge-blue);
 }
 
-.ecbb-ev__item--style-1 .ecbb-ev__style1-body .ecbb-event-part--read-more:not(.ecbb-no-hover) .ecbb-event__link:hover {
-	color: var(--ecbb-s1-accent);
+.ecbb-ev .event-meta--list .price .ecbb-event-card__meta-icon {
+	color: var(--badge-blue);
 }
 
-/* ── Responsive ── */
+@media (max-width: 1024px) {
+	.ecbb-ev .event-list-card {
+		grid-template-columns: minmax(260px, 360px) minmax(0, 1fr);
+	}
 
-@media (max-width: 640px) {
-	.ecbb-ev__item-inner--style1,
-	.ecbb-ev__item-inner--style1-has-cta {
+	.ecbb-ev .event-list-card__image-wrap,
+	.ecbb-ev .event-list-card__content {
+		min-height: 250px;
+	}
+
+	.ecbb-ev .event-list-card__content {
+		padding: 26px 26px 24px;
+	}
+}
+
+@media (max-width: 860px) {
+	.ecbb-ev .event-list-card {
 		grid-template-columns: 1fr;
+		gap: 0;
+		box-shadow: var(--shadow-card);
 	}
 
-	.ecbb-ev__style1-date {
-		flex-direction: row;
-		justify-content: flex-start;
-		padding: 0.85rem 1rem;
-		gap: 0.5rem;
+	.ecbb-ev .event-list-card__image-wrap {
+		min-height: 220px;
+		height: 220px;
+		border-radius: 20px 20px 0 0;
 	}
 
-	.ecbb-ev__style1-date-day {
-		font-size: 20px;
-	}
-
-	.ecbb-ev__style1-date-month,
-	.ecbb-ev__style1-date-year {
-		font-size: 15px;
-		font-weight: 600;
-	}
-
-	.ecbb-ev__style1-date--multiline {
-		flex-direction: row;
-		flex-wrap: wrap;
-		align-items: center;
-		justify-content: flex-start;
-		gap: 0.35rem 0.65rem;
-	}
-
-	.ecbb-ev__style1-date--multiline .ecbb-ev__style1-date-line {
-		display: inline;
-		width: auto;
-		font-size: 15px;
-		font-weight: 600;
-	}
-
-	.ecbb-ev__style1-date--multiline .ecbb-ev__style1-date-line--1 {
-		font-size: 20px;
-		font-weight: 700;
-	}
-
-	.ecbb-ev__style1-date--multiline .ecbb-ev__style1-date-line--single {
-		font-size: 15px;
-	}
-
-	.ecbb-ev__style1-body {
-		padding: 1.25rem;
-	}
-
-	.ecbb-ev__style1-cta .ecbb-event-part--read-more .ecbb-event__link {
-		padding: 0.9rem 1rem;
+	.ecbb-ev .event-list-card__content {
 		min-height: auto;
+		box-shadow: none;
+		border-radius: 0 0 20px 20px;
+	}
+
+	.ecbb-ev .event-list-card:hover .event-list-card__content {
+		box-shadow: none;
+	}
+}
+
+@media (max-width: 767px) {
+	.ecbb-ev .event-list-card__image-wrap {
+		min-height: 220px;
+		height: auto;
+		aspect-ratio: 16 / 10;
+	}
+
+	.ecbb-ev .event-list-card__content {
+		grid-template-columns: 1fr;
+		gap: 13px;
+		padding: 22px;
+	}
+
+	.ecbb-ev .event-list-card__date {
+		flex-direction: row;
+		align-items: baseline;
+		gap: 7px;
+		padding-right: 0;
+		border-right: none;
+	}
+
+	.ecbb-ev .event-list-card__day {
+		font-size: 28px;
+	}
+
+	.ecbb-ev .event-list-card__month {
+		margin-top: 0;
+	}
+
+	.ecbb-ev .event-list-card__title {
+		font-size: 18px;
+	}
+
+	.ecbb-ev .event-list-card__description {
+		margin: 8px 0 14px;
+		font-size: 14px;
+		line-height: 1.6;
+	}
+
+	.ecbb-ev .event-meta--list {
+		flex-direction: column;
+		gap: 8px;
+		margin-bottom: 18px;
+	}
+
+	.ecbb-ev .event-list-card .event-button--outline {
+		width: 100%;
+	}
+}
+
+@media (max-width: 480px) {
+	.ecbb-ev .event-list-card__image-wrap {
+		aspect-ratio: 16 / 11;
+		min-height: auto;
+	}
+
+	.ecbb-ev .event-list-card__content {
+		padding: 18px;
+	}
+
+	.ecbb-ev .event-list-card__title {
+		font-size: 17px;
+	}
+}
+
+@media (hover: hover) and (pointer: fine) {
+	.ecbb-ev .event-list-card:hover {
+		transform: translateY(-4px);
+	}
+
+	.ecbb-ev .event-list-card:hover .event-list-card__image {
+		transform: scale(1.055);
 	}
 }

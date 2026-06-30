@@ -46,11 +46,6 @@ class ECBB_Widget extends \Bricks\Element
 			'title' => esc_html__('Dynamic Messages', 'events-calendar-for-bricks'),
 			'tab'   => 'content',
 		];
-
-		$this->control_groups['list_style1'] = [
-			'title' => esc_html__('List Style 1', 'events-calendar-for-bricks'),
-			'tab'   => 'style',
-		];
 	}
 
 	/**
@@ -148,6 +143,17 @@ class ECBB_Widget extends \Bricks\Element
 	 * @param string   $style
 	 * @return string
 	 */
+	private function ecbb_part_surface_class( $part, $skin ) {
+		if ( ! class_exists( 'ECBB_Markup', false ) ) {
+			return '';
+		}
+		$layout_skin = (string) $skin;
+		if ( $layout_skin === '' ) {
+			$layout_skin = 'grid';
+		}
+		return \ECBB_Markup::ecbb_layout_surface_class( $part, $layout_skin );
+	}
+
 	private function ecbb_part_wrap_attrs( array $item, $idx, $style = '' ) {
 		return class_exists( 'ECBB_Markup', false )
 			? \ECBB_Markup::ecbb_part_wrap_attrs( $item, $idx, $style )
@@ -165,7 +171,7 @@ class ECBB_Widget extends \Bricks\Element
 	 * @return void
 	 */
 	private function ecbb_print_part_open_tag( $tag, $class, array $item, $idx, $style = '' ) {
-		$tag = in_array( $tag, [ 'div', 'h3' ], true ) ? $tag : 'div';
+		$tag = in_array( $tag, [ 'div', 'h3', 'p' ], true ) ? $tag : 'div';
 
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- tag is allow-listed; ecbb_part_wrap_attrs() returns escaped attribute fragments.
 		echo '<' . tag_escape( $tag ) . ' class="' . esc_attr( $class ) . '"' . $this->ecbb_part_wrap_attrs( $item, $idx, $style ) . '>';
@@ -205,6 +211,46 @@ class ECBB_Widget extends \Bricks\Element
 	 * @param string   $skin '' or 'style2' (list style 2 shell).
 	 * @return void
 	 */
+	/**
+	 * Meta row inside layout shells (list / grid reference markup).
+	 *
+	 * @param \WP_Post            $post
+	 * @param array<string,mixed> $item
+	 * @param int                 $idx
+	 * @param string              $skin
+	 * @param string              $layout style1|style2|grid
+	 * @param bool                $price  List 1 price row modifier.
+	 * @return void
+	 */
+	private function ecbb_render_layout_meta_li( $post, array $item, $idx, $skin, $layout, $price = false ) {
+		if ( ! $post instanceof \WP_Post ) {
+			return;
+		}
+
+		ob_start();
+		$this->ecbb_render_part( $post, $item, $idx, $skin );
+		$inner = trim( (string) ob_get_clean() );
+		if ( $inner === '' ) {
+			return;
+		}
+
+		$row_clean = class_exists( 'ECBB_Styles', false ) ? \ECBB_Styles::ecbb_clean_part( $item ) : $item;
+		$part      = isset( $row_clean['part'] ) ? (string) $row_clean['part'] : '';
+		$icon      = class_exists( 'ECBB_Markup', false )
+			? \ECBB_Markup::ecbb_meta_icon_for_part( $part )
+			: '';
+
+		if ( $layout === 'style2' ) {
+			echo '<li class="ecbb-event-card__meta-item">' . $icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		} else {
+			$li_class = $price ? ' class="price"' : '';
+			echo '<li' . $li_class . '>' . $icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		}
+
+		echo $inner; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo '</li>';
+	}
+
 	private function ecbb_render_part( $post, $item, $idx = 0, $skin = '' ) {
 		$ctx = $this->ecbb_prepare_part( $item, $idx, $skin );
 
@@ -233,13 +279,13 @@ class ECBB_Widget extends \Bricks\Element
 				$this->ecbb_render_part_tags( $post, $ctx['item'], $ctx['idx'], $ctx['wrap'], $ctx['skin'] );
 				break;
 			case 'description':
-				$this->ecbb_render_part_description( $post, $ctx['item'], $ctx['idx'], $ctx['wrap'] );
+				$this->ecbb_render_part_description( $post, $ctx['item'], $ctx['idx'], $ctx['wrap'], $ctx['skin'] );
 				break;
 			case 'date':
 				$this->ecbb_render_part_date( $post, $ctx['item'], $ctx['idx'], $ctx['wrap'] );
 				break;
 			default:
-				$this->ecbb_render_part_title( $post, $ctx['item'], $ctx['idx'], $ctx['wrap'] );
+				$this->ecbb_render_part_title( $post, $ctx['item'], $ctx['idx'], $ctx['wrap'], $ctx['skin'] );
 				break;
 		}
 	}
@@ -252,7 +298,9 @@ class ECBB_Widget extends \Bricks\Element
 	 * @return void
 	 */
 	private function ecbb_render_part_image( $post, array $item, $idx, $wrap ) {
-		$thumb_id = (int) get_post_thumbnail_id( $post->ID );
+		$thumb_id = class_exists( 'ECBB_Markup', false )
+			? \ECBB_Markup::ecbb_event_thumbnail_id( $post->ID )
+			: (int) get_post_thumbnail_id( $post->ID );
 		if ( ! $thumb_id ) {
 			return;
 		}
@@ -336,7 +384,9 @@ class ECBB_Widget extends \Bricks\Element
 	 * @return void
 	 */
 	private function ecbb_render_part_taxonomy( $post, array $item, $idx, $wrap, $skin, $taxonomy, $part_key ) {
-		$terms = get_the_terms( $post->ID, $taxonomy );
+		$terms = ( $taxonomy === 'tribe_events_cat' && class_exists( 'ECBB_Markup', false ) )
+			? \ECBB_Markup::ecbb_event_category_terms( $post->ID )
+			: get_the_terms( $post->ID, $taxonomy );
 		if ( empty( $terms ) || is_wp_error( $terms ) ) {
 			return;
 		}
@@ -361,7 +411,27 @@ class ECBB_Widget extends \Bricks\Element
 	 * @param string              $wrap
 	 * @return void
 	 */
-	private function ecbb_render_part_description( $post, array $item, $idx, $wrap ) {
+	private function ecbb_render_part_description( $post, array $item, $idx, $wrap, $skin = '' ) {
+		$layout_skin = (string) $skin;
+		if ( $layout_skin === '' ) {
+			$layout_skin = 'grid';
+		}
+
+		if ( $layout_skin === 'grid' && class_exists( 'ECBB_Markup', false ) ) {
+			$content = \ECBB_Markup::ecbb_grid_description_html( $post, $item );
+			if ( $content === '' ) {
+				return;
+			}
+
+			$style   = $this->ecbb_inline_style_attr( $item );
+			$surface = trim( $this->ecbb_part_surface_class( 'description', $skin ) );
+			$classes = trim( $wrap . ( $surface !== '' ? ' ' . $surface : '' ) );
+			$this->ecbb_print_part_open_tag( 'div', $classes, $item, $idx, $style );
+			echo wp_kses_post( $content );
+			echo '</div>';
+			return;
+		}
+
 		$source = $item['desc_source'] ?? 'auto';
 		$source = in_array( $source, [ 'auto', 'excerpt', 'content' ], true ) ? $source : 'auto';
 		$len_mode = isset( $item['desc_length'] ) ? (string) $item['desc_length'] : 'short';
@@ -384,9 +454,12 @@ class ECBB_Widget extends \Bricks\Element
 		}
 
 		$style = $this->ecbb_inline_style_attr( $item );
-		$this->ecbb_print_part_open_tag( 'div', $wrap, $item, $idx, $style );
+		$surface = trim( $this->ecbb_part_surface_class( 'description', $skin ) );
+		$tag     = $surface !== '' ? 'div' : 'p';
+		$classes = trim( $wrap . ( $surface !== '' ? ' ' . $surface : '' ) );
+		$this->ecbb_print_part_open_tag( $tag, $classes, $item, $idx, $style );
 		echo wp_kses_post( $content );
-		echo '</div>';
+		echo '</' . tag_escape( $tag ) . '>';
 	}
 
 	/**
@@ -438,14 +511,14 @@ class ECBB_Widget extends \Bricks\Element
 	 * @param string              $wrap
 	 * @return void
 	 */
-	private function ecbb_render_part_title( $post, array $item, $idx, $wrap ) {
+	private function ecbb_render_part_title( $post, array $item, $idx, $wrap, $skin = '' ) {
 		$hover = ! class_exists( 'ECBB_Markup', false ) || \ECBB_Markup::ecbb_hover_style_active( $item );
 		$link  = class_exists( 'ECBB_Markup', false )
 			? ( \ECBB_Markup::ecbb_title_link_active( $item ) && $hover )
 			: ( ! empty( $item['link'] ) && $hover );
 		$style = $this->ecbb_inline_style_attr( $item );
 
-		$this->ecbb_print_part_open_tag( 'h3', $wrap, $item, $idx, $style );
+		$this->ecbb_print_part_open_tag( 'h3', trim( $wrap . ' ' . $this->ecbb_part_surface_class( 'title', $skin ) ), $item, $idx, $style );
 		if ( $link ) {
 			echo '<a class="ecbb-event__link" href="' . esc_url( get_permalink( $post->ID ) ) . '">';
 			echo esc_html( get_the_title( $post->ID ) );
@@ -483,7 +556,6 @@ class ECBB_Widget extends \Bricks\Element
 	 *     use_style1_shell:bool,
 	 *     use_style2_shell:bool,
 	 *     use_grid_shell:bool,
-	 *     style1_date_format:string,
 	 *     item_classes:string
 	 * }
 	 */
@@ -497,14 +569,15 @@ class ECBB_Widget extends \Bricks\Element
 		$use_style2_shell = ( $template === 'list' && $item_chrome === 'style-2' );
 		$use_grid_shell   = ( $template === 'grid' );
 
-		$style1_date_format = 'default';
-		if ( $use_style1_shell && class_exists( 'ECBB_List_1', false ) ) {
-			$style1_date_format = \ECBB_List_1::ecbb_sanitize_date_fmt( $settings['date_format'] ?? 'default' );
+		if ( $use_style1_shell ) {
+			$item_classes = 'ecbb-ev__item ecbb-ev__item--style-1 repeater-item';
+		} elseif ( $use_style2_shell ) {
+			$item_classes = 'ecbb-ev__item ecbb-ev__item--style-2 repeater-item';
+		} elseif ( $use_grid_shell ) {
+			$item_classes = 'ecbb-ev__item ecbb-ev__item--grid repeater-item';
+		} else {
+			$item_classes = 'ecbb-ev__item ecbb-ev__item--' . $item_chrome . ' repeater-item';
 		}
-
-		$item_classes = $use_grid_shell
-			? 'ecbb-ev__item ecbb-ev__item--grid repeater-item'
-			: 'ecbb-ev__item ecbb-ev__item--' . $item_chrome . ' repeater-item';
 
 		return [
 			'template'           => $template,
@@ -512,7 +585,6 @@ class ECBB_Widget extends \Bricks\Element
 			'use_style1_shell'   => $use_style1_shell,
 			'use_style2_shell'   => $use_style2_shell,
 			'use_grid_shell'     => $use_grid_shell,
-			'style1_date_format' => $style1_date_format,
 			'item_classes'       => $item_classes,
 		];
 	}
@@ -550,13 +622,15 @@ class ECBB_Widget extends \Bricks\Element
 	}
 
 	/**
+	 * Build scoped CSS for one widget instance (gap, grid cols, repeater part styles).
+	 *
 	 * @param string              $scope_class
 	 * @param array<string,mixed> $settings
 	 * @param array<int,array<string,mixed>> $parts_effective
 	 * @param array<string,mixed> $layout
-	 * @return void
+	 * @return string Sanitized CSS or empty string.
 	 */
-	private function ecbb_print_widget_css( $scope_class, array $settings, array $parts_effective, array $layout ) {
+	private function ecbb_build_widget_css( $scope_class, array $settings, array $parts_effective, array $layout ) {
 		$style_css = [];
 		$hover_css = [];
 		if ( class_exists( 'ECBB_Styles', false ) ) {
@@ -588,36 +662,31 @@ class ECBB_Widget extends \Bricks\Element
 		);
 
 		if ( empty( $all_css ) ) {
-			return;
+			return '';
 		}
 
-		$css = wp_strip_all_tags( str_replace( '</style', '<\/style', implode( "\n", $all_css ) ) );
-
-		if ( wp_style_is( 'ecbb-events-widget-base', 'enqueued' ) || wp_style_is( 'ecbb-events-widget-base', 'done' ) ) {
-			wp_add_inline_style( 'ecbb-events-widget-base', $css );
-			return;
-		}
-
-		wp_add_inline_style( $this->ecbb_ensure_inline_style_handle(), $css );
+		return wp_strip_all_tags( str_replace( '</style', '<\/style', implode( "\n", $all_css ) ) );
 	}
 
 	/**
-	 * Register/enqueue an inline-only stylesheet handle so dynamic CSS can be attached
-	 * via wp_add_inline_style() when the base stylesheet is not available.
+	 * Output scoped CSS inline with the element (Bricks renders after wp_head, so
+	 * wp_add_inline_style() on enqueued handles is often too late).
 	 *
-	 * @return string Style handle ready for wp_add_inline_style().
+	 * @param string              $scope_class
+	 * @param array<string,mixed> $settings
+	 * @param array<int,array<string,mixed>> $parts_effective
+	 * @param array<string,mixed> $layout
+	 * @return void
 	 */
-	private function ecbb_ensure_inline_style_handle() {
-		$handle = 'ecbb-events-widget-inline';
-
-		if ( ! wp_style_is( $handle, 'registered' ) ) {
-			wp_register_style( $handle, false, [], ECBB_VERSION );
-		}
-		if ( ! wp_style_is( $handle, 'enqueued' ) ) {
-			wp_enqueue_style( $handle );
+	private function ecbb_print_widget_css( $scope_class, array $settings, array $parts_effective, array $layout ) {
+		$css = $this->ecbb_build_widget_css( $scope_class, $settings, $parts_effective, $layout );
+		if ( $css === '' ) {
+			return;
 		}
 
-		return $handle;
+		$style_id = sanitize_html_class( $scope_class . '-css' );
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CSS is stripped; id is sanitized.
+		echo '<style id="' . esc_attr( $style_id ) . '">' . $css . '</style>';
 	}
 
 	/**
@@ -630,14 +699,19 @@ class ECBB_Widget extends \Bricks\Element
 		global $post;
 		$original_post = $post ?? null;
 
-		$list_class        = 'ecbb-ev__list ecbb-ev__list--' . $layout['template'];
-		$style2_last_month = null;
-		$style2_show_month = class_exists( 'ECBB_List_2', false )
-			? \ECBB_List_2::ecbb_month_headings_on( $this->settings )
-			: false;
+		$list_class = 'ecbb-ev__list ecbb-ev__list--' . $layout['template'];
+		if ( $layout['use_style1_shell'] ) {
+			$list_class .= ' event-list';
+		} elseif ( $layout['use_style2_shell'] ) {
+			$list_class .= ' ecbb-list';
+		} elseif ( $layout['use_grid_shell'] ) {
+			$list_class .= ' event-grid';
+		}
 
+		$settings = is_array( $this->settings ) ? $this->settings : [];
 		if ( class_exists( 'ECBB_Markup', false ) ) {
-			\ECBB_Markup::ecbb_active_widget_settings( is_array( $this->settings ) ? $this->settings : [] );
+			$settings = \ECBB_Markup::ecbb_norm_layout_shell_settings( $settings );
+			\ECBB_Markup::ecbb_active_widget_settings( $settings );
 		}
 
 		echo '<div class="' . esc_attr( $list_class ) . '">';
@@ -650,13 +724,8 @@ class ECBB_Widget extends \Bricks\Element
 			$post = $event_post;
 			setup_postdata( $post );
 
-			if ( $layout['use_style2_shell'] && class_exists( 'ECBB_List_2', false ) ) {
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- ECBB_List_2::ecbb_month_heading() returns fixed markup with dynamic fields escaped internally.
-				echo \ECBB_List_2::ecbb_month_heading( $post->ID, $style2_last_month, $style2_show_month );
-			}
-
 			echo '<div class="' . esc_attr( $layout['item_classes'] ) . '">';
-			$this->ecbb_render_event_item_inner( $post, $parts_effective, $layout );
+			$this->ecbb_render_event_item_inner( $post, $parts_effective, $layout, $settings );
 			echo '</div>';
 		}
 
@@ -676,14 +745,24 @@ class ECBB_Widget extends \Bricks\Element
 	 * @param array<string,mixed> $layout
 	 * @return void
 	 */
-	private function ecbb_render_event_item_inner( $post, array $parts_effective, array $layout ) {
+	private function ecbb_render_event_item_inner( $post, array $parts_effective, array $layout, array $settings = [] ) {
+		if ( $settings === [] ) {
+			$settings = is_array( $this->settings ) ? $this->settings : [];
+			if ( class_exists( 'ECBB_Markup', false ) ) {
+				$settings = \ECBB_Markup::ecbb_norm_layout_shell_settings( $settings );
+			}
+		}
+
 		if ( $layout['use_style1_shell'] && class_exists( 'ECBB_List_1', false ) ) {
 			$widget = $this;
 			$emit   = static function ( $ev, $item, $idx ) use ( $widget ) {
 				$widget->ecbb_render_part( $ev, $item, $idx, 'style1' );
 			};
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- ECBB_List_1::ecbb_item_inner() composes fixed layout markup and escaped part output.
-			echo \ECBB_List_1::ecbb_item_inner( $post, $parts_effective, $emit, $layout['style1_date_format'] );
+			$emit_meta = static function ( $ev, $item, $idx, $price = false ) use ( $widget ) {
+				$widget->ecbb_render_layout_meta_li( $ev, $item, $idx, 'style1', 'style1', (bool) $price );
+			};
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			echo \ECBB_List_1::ecbb_item_inner( $post, $parts_effective, $emit, $settings, $emit_meta );
 			return;
 		}
 
@@ -692,8 +771,11 @@ class ECBB_Widget extends \Bricks\Element
 			$emit   = static function ( $ev, $item, $idx ) use ( $widget ) {
 				$widget->ecbb_render_part( $ev, $item, $idx, 'style2' );
 			};
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- ECBB_List_2::ecbb_item_inner() composes fixed layout markup and escaped part output.
-			echo \ECBB_List_2::ecbb_item_inner( $post, $parts_effective, $emit );
+			$emit_meta = static function ( $ev, $item, $idx, $price = false ) use ( $widget ) {
+				$widget->ecbb_render_layout_meta_li( $ev, $item, $idx, 'style2', 'style2', (bool) $price );
+			};
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			echo \ECBB_List_2::ecbb_item_inner( $post, $parts_effective, $emit, $settings, $emit_meta );
 			return;
 		}
 
@@ -702,8 +784,11 @@ class ECBB_Widget extends \Bricks\Element
 			$emit   = static function ( $ev, $item, $idx ) use ( $widget ) {
 				$widget->ecbb_render_part( $ev, $item, $idx );
 			};
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- ECBB_Grid::ecbb_item_inner() composes fixed layout markup and escaped part output.
-			echo \ECBB_Grid::ecbb_item_inner( $post, $parts_effective, $emit );
+			$emit_meta = static function ( $ev, $item, $idx, $price = false ) use ( $widget ) {
+				$widget->ecbb_render_layout_meta_li( $ev, $item, $idx, '', 'grid', (bool) $price );
+			};
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			echo \ECBB_Grid::ecbb_item_inner( $post, $parts_effective, $emit, $settings, $emit_meta );
 			return;
 		}
 
@@ -719,6 +804,11 @@ class ECBB_Widget extends \Bricks\Element
 
 	public function render() {
 		$this->ecbb_ensure_widget_dependencies();
+
+		if ( class_exists( 'ECBB_Markup', false ) ) {
+			$this->settings = \ECBB_Markup::ecbb_norm_layout_shell_settings( is_array( $this->settings ) ? $this->settings : [] );
+			\ECBB_Markup::ecbb_active_widget_settings( $this->settings );
+		}
 
 		$scope_class = $this->ecbb_get_instance_scope_class();
 		$this->set_attribute( '_root', 'class', 'ecbb-ev' );
@@ -738,6 +828,7 @@ class ECBB_Widget extends \Bricks\Element
 				echo '<div class="ecbb-event-placeholder">' . esc_html__( 'The Events Calendar is required to render Events Widget.', 'events-calendar-for-bricks' ) . '</div>';
 			}
 			echo '</div>';
+			$this->ecbb_reset_active_widget_settings();
 			return;
 		}
 
@@ -748,12 +839,26 @@ class ECBB_Widget extends \Bricks\Element
 		if ( empty( $events ) ) {
 			$this->ecbb_render_no_events_message();
 			echo '</div>';
+			$this->ecbb_reset_active_widget_settings();
 			return;
 		}
 
 		$this->ecbb_render_event_items( $events, $parts, $layout );
 
 		echo '</div>';
+
+		$this->ecbb_reset_active_widget_settings();
+	}
+
+	/**
+	 * Clear per-render active settings snapshot.
+	 *
+	 * @return void
+	 */
+	private function ecbb_reset_active_widget_settings() {
+		if ( class_exists( 'ECBB_Markup', false ) ) {
+			\ECBB_Markup::ecbb_active_widget_settings( [] );
+		}
 	}
 }
 
