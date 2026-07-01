@@ -13,10 +13,6 @@
 	gap: var(--ecbb-gap, 22px);
 }
 
-.ecbb-ev__list--list.ecbb-list {
-	gap: var(--ecbb-gap, 24px);
-}
-
 .ecbb-ev__list--grid {
 	display: grid;
 	gap: var(--ecbb-gap, 24px);
@@ -24,8 +20,6 @@
 }
 
 .ecbb-ev__list--grid.event-grid {
-	gap: var(--ecbb-gap, 24px);
-	grid-template-columns: repeat(var(--ecbb-grid-cols, 3), minmax(0, 1fr));
 	align-items: stretch;
 }
 
@@ -55,6 +49,8 @@
 	--shadow-card: 0 8px 24px rgba(15, 23, 42, 0.06);
 	--shadow-card-hover: 0 16px 40px rgba(15, 23, 42, 0.12);
 	--transition-base: 280ms ease;
+	font-family: var(--font-family-base);
+	color: var(--color-text);
 }
 
 .ecbb-ev .ecbb-ev__item {
@@ -280,12 +276,46 @@
 	transition: opacity 0.2s ease, transform 0.2s ease, background-color 0.2s ease, color 0.2s ease, text-decoration-color 0.2s ease;
 }
 
+/* Repeater hover colors (--ecbb-hover-fg/bg on wrapper; only when Style tab hover colors are set). */
+.ecbb-event-part.ecbb-has-hover-fg:not(.ecbb-no-hover) .ecbb-event__link:hover,
+.ecbb-event-part.ecbb-has-hover-fg:not(.ecbb-no-hover) > .ecbb-event__link:hover,
+.ecbb-event-part.ecbb-has-hover-fg:not(.ecbb-no-hover) a.event-button:hover,
+.ecbb-event-part.ecbb-has-hover-fg:not(.ecbb-no-hover) > a.event-button:hover,
+.ecbb-event-part.ecbb-has-hover-fg:not(.ecbb-no-hover) a.ecbb-event-card__button:hover,
+.ecbb-event-part.ecbb-has-hover-fg:not(.ecbb-no-hover) > a.ecbb-event-card__button:hover,
+.ecbb-event-part.ecbb-has-hover-fg:not(.ecbb-no-hover) .ecbb-event__term-chip:hover,
+.ecbb-event-part.ecbb-has-hover-fg:not(.ecbb-no-hover) .ecbb-event__term:hover,
+.ecbb-event-part.ecbb-has-hover-fg:not(.ecbb-no-hover) .ecbb-event__title-text:hover,
+.ecbb-event-part.ecbb-has-hover-fg:not(.ecbb-no-hover) .ecbb-event-card__category:hover {
+	color: var(--ecbb-hover-fg) !important;
+}
+
+.ecbb-event-part.ecbb-has-hover-bg:not(.ecbb-no-hover) .ecbb-event__link:hover,
+.ecbb-event-part.ecbb-has-hover-bg:not(.ecbb-no-hover) > .ecbb-event__link:hover,
+.ecbb-event-part.ecbb-has-hover-bg:not(.ecbb-no-hover) a.event-button:hover,
+.ecbb-event-part.ecbb-has-hover-bg:not(.ecbb-no-hover) > a.event-button:hover,
+.ecbb-event-part.ecbb-has-hover-bg:not(.ecbb-no-hover) a.ecbb-event-card__button:hover,
+.ecbb-event-part.ecbb-has-hover-bg:not(.ecbb-no-hover) > a.ecbb-event-card__button:hover,
+.ecbb-event-part.ecbb-has-hover-bg:not(.ecbb-no-hover) .ecbb-event__term-chip:hover,
+.ecbb-event-part.ecbb-has-hover-bg:not(.ecbb-no-hover) .ecbb-event__term:hover,
+.ecbb-event-part.ecbb-has-hover-bg:not(.ecbb-no-hover) .ecbb-event__title-text:hover,
+.ecbb-event-part.ecbb-has-hover-bg:not(.ecbb-no-hover) .ecbb-event-card__category:hover {
+	background-color: var(--ecbb-hover-bg) !important;
+}
+
+/* Keep row wrappers transparent; hover background belongs on the inner control only. */
+.ecbb-event-part.ecbb-has-hover-bg:not(.ecbb-no-hover):hover {
+	background-color: transparent !important;
+}
+
 /* Smooth hover transitions for interactive event parts (when hover is enabled per row). */
 .ecbb-event-part:not(.ecbb-no-hover) .ecbb-event__link,
 .ecbb-event-part:not(.ecbb-no-hover) .ecbb-event__term,
 .ecbb-event-part:not(.ecbb-no-hover) .ecbb-event__term-chip,
+.ecbb-event-part:not(.ecbb-no-hover) .ecbb-event-card__category,
 .ecbb-event-part--title:not(.ecbb-no-hover),
 .ecbb-event-part--categories:not(.ecbb-no-hover),
+.ecbb-style2-categories:not(.ecbb-no-hover),
 .ecbb-event-part--tags:not(.ecbb-no-hover),
 .ecbb-event-part--read-more:not(.ecbb-no-hover),
 .ecbb-style2-read-more:not(.ecbb-no-hover),
@@ -330,18 +360,26 @@
 	transition: none !important;
 }
 
-.ecbb-no-hover:not(.ecbb-has-btn):hover,
-.ecbb-no-hover:not(.ecbb-has-btn):focus-within,
-.ecbb-no-hover:not(.ecbb-has-btn) .ecbb-event__link:hover,
-.ecbb-no-hover:not(.ecbb-has-btn) a:hover,
-.ecbb-no-hover:not(.ecbb-has-btn) .ecbb-event__term:hover,
-.ecbb-no-hover:not(.ecbb-has-btn) .ecbb-event__term-chip:hover {
+.ecbb-no-hover:not(.ecbb-has-btn):not(.ecbb-event-part--title):hover,
+.ecbb-no-hover:not(.ecbb-has-btn):not(.ecbb-event-part--title):focus-within,
+.ecbb-no-hover:not(.ecbb-has-btn):not(.ecbb-event-part--title) .ecbb-event__link:hover,
+.ecbb-no-hover:not(.ecbb-has-btn):not(.ecbb-event-part--title) a:hover,
+.ecbb-no-hover:not(.ecbb-has-btn):not(.ecbb-event-part--title) .ecbb-event-card__category:hover,
+.ecbb-no-hover:not(.ecbb-has-btn):not(.ecbb-event-part--title) .ecbb-event__term:hover,
+.ecbb-no-hover:not(.ecbb-has-btn):not(.ecbb-event-part--title) .ecbb-event__term-chip:hover {
 	color: inherit !important;
 	background-color: inherit !important;
 	text-decoration: inherit !important;
 	text-decoration-color: inherit !important;
 	transform: none !important;
 	opacity: inherit !important;
+}
+
+/* Unlinked title: no link affordance; keep Style tab background and heading color. */
+.ecbb-event-part--title.ecbb-no-hover .ecbb-event__title-text,
+.ecbb-event-part--title.ecbb-no-hover .ecbb-event__title-text:hover {
+	text-decoration: none !important;
+	cursor: default;
 }
 
 /* Empty state — layout defaults. */
@@ -413,12 +451,7 @@
 	opacity: 0;
 }
 
-/* Layout shells: base typography + neutral ecbb wrappers (layout CSS files own colors). */
-
-.ecbb-ev {
-	font-family: var(--font-family-base);
-	color: var(--color-text);
-}
+/* Layout shells: neutral ecbb wrappers (layout CSS files own colors). */
 
 .ecbb-ev .event-list-card .ecbb-event-part:not(.ecbb-has-btn),
 .ecbb-ev .ecbb-event-card .ecbb-event-part:not(.ecbb-has-btn),

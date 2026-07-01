@@ -134,6 +134,36 @@ if (! class_exists('ECBB_Markup', false)) {
 		return '';
 		}
 
+		/**
+		 * Normalize a hover paint color (excludes transparent / inherit / currentColor).
+		 *
+		 * @param mixed $value Saved hover color control value.
+		 * @return string CSS color or empty when not a visible hover paint.
+		 */
+		public static function ecbb_norm_hover_paint_color( $value ) {
+			$color = self::ecbb_norm_color( $value );
+			if ( $color === '' ) {
+				return '';
+			}
+			$lower = strtolower( trim( $color ) );
+			if ( in_array( $lower, [ 'transparent', 'currentcolor', 'inherit', 'initial', 'unset' ], true ) ) {
+				return '';
+			}
+			if ( preg_match( '/^rgba?\(([^)]+)\)$/i', $color, $m ) ) {
+				$parts = array_map( 'trim', explode( ',', $m[1] ) );
+				if ( count( $parts ) >= 4 && (float) $parts[3] <= 0 ) {
+					return '';
+				}
+			}
+			if ( preg_match( '/^hsla?\(([^)]+)\)$/i', $color, $m ) ) {
+				$parts = array_map( 'trim', explode( ',', $m[1] ) );
+				if ( count( $parts ) >= 4 && (float) $parts[3] <= 0 ) {
+					return '';
+				}
+			}
+			return $color;
+		}
+
 		// --- Layout template & parts (settings / save / templates) ---
 
 		public static function ecbb_sanitize_template( $template ) {
@@ -559,7 +589,7 @@ if (! class_exists('ECBB_Markup', false)) {
 			return false;
 		}
 		if ($value === null || $value === '') {
-			return false;
+			return true;
 		}
 		return self::ecbb_is_truthy($value, true);
 		}
@@ -576,6 +606,14 @@ if (! class_exists('ECBB_Markup', false)) {
 			if (! array_key_exists('ecbb_use_hover', $row)) {
 				return $row;
 			}
+		if ($row['ecbb_use_hover'] === null || $row['ecbb_use_hover'] === '') {
+			$row['ecbb_use_hover'] = 'yes';
+			return $row;
+		}
+		if ( self::ecbb_hover_has_custom_styles( $row ) ) {
+			$row['ecbb_use_hover'] = 'yes';
+			return $row;
+		}
 		$row['ecbb_use_hover'] = self::ecbb_hover_is_on($row['ecbb_use_hover']) ? 'yes' : 'no';
 		return $row;
 		}
@@ -789,14 +827,9 @@ if (! class_exists('ECBB_Markup', false)) {
 			if ($code === '') {
 				return 'default';
 			}
-		if ('DEFAULT' === $code) {
-			return 'default';
-		}
-		if ('NONE' === $code) {
-			return 'none';
-		}
-		if ('SYMBOL' === $code) {
-			return 'default';
+		$aliases = [ 'DEFAULT' => 'default', 'SYMBOL' => 'default', 'NONE' => 'none' ];
+		if ( isset( $aliases[ $code ] ) ) {
+			return $aliases[ $code ];
 		}
 		return array_key_exists($code, self::ecbb_cost_currency_opts()) ? $code : 'default';
 		}
@@ -1689,9 +1722,6 @@ if (! class_exists('ECBB_Markup', false)) {
 						return $mapped;
 					}
 				}
-				if ($preset === 'site_time') {
-					return (string) get_option('time_format');
-				}
 				return (string) get_option('time_format');
 			}
 
@@ -1706,12 +1736,12 @@ if (! class_exists('ECBB_Markup', false)) {
 			}
 		}
 
-		if ($preset === 'site_date') {
-			return (string) get_option('date_format');
-		}
-
-		if ($preset === 'site_time') {
-			return (string) get_option('time_format');
+		$site_formats = [
+			'site_date' => 'date_format',
+			'site_time' => 'time_format',
+		];
+		if ( isset( $site_formats[ $preset ] ) ) {
+			return (string) get_option( $site_formats[ $preset ] );
 		}
 
 		if ($preset === 'site_date_time') {
@@ -1896,6 +1926,11 @@ if (! class_exists('ECBB_Markup', false)) {
 		public static function ecbb_part_wrap_attrs(array $item, $idx, $style = '')
 		{
 			$attrs = self::ecbb_part_dom_id_attr($item, $idx);
+			$hover = self::ecbb_hover_inline_vars( $item );
+			if ( $hover !== '' ) {
+				$style = trim( (string) $style );
+				$style = $style !== '' ? $style . ';' . $hover : $hover;
+			}
 			if ($style !== '') {
 				$attrs .= ' style="' . esc_attr($style) . '"';
 			}
@@ -2011,7 +2046,7 @@ if (! class_exists('ECBB_Markup', false)) {
 				$classes .= ' ecbb-no-hover';
 			} elseif (
 		self::ecbb_part_has_hover($ui_part)
-		&& ! self::ecbb_hover_style_active($row)
+		&& ! self::ecbb_hover_style_active($item)
 		) {
 			$classes .= ' ecbb-no-hover';
 		}
@@ -2021,6 +2056,16 @@ if (! class_exists('ECBB_Markup', false)) {
 		&& in_array($ui_part, \ECBB_Styles::ecbb_button_parts(), true)
 		) {
 			$classes .= ' ecbb-has-btn';
+		}
+		if ( self::ecbb_hover_style_active( $item ) ) {
+			$hover_fg = self::ecbb_norm_hover_paint_color( $item['ecbb_hover_color'] ?? ( $item['hover_color'] ?? '' ) );
+			if ( $hover_fg !== '' ) {
+				$classes .= ' ecbb-has-hover-fg';
+			}
+			$hover_bg = self::ecbb_norm_hover_paint_color( $item['ecbb_hover_background'] ?? '' );
+			if ( $hover_bg !== '' ) {
+				$classes .= ' ecbb-has-hover-bg';
+			}
 		}
 		}
 		return $classes;
@@ -2036,6 +2081,55 @@ if (! class_exists('ECBB_Markup', false)) {
 
 		// --- Hover runtime (classes & CSS) ---
 
+		/**
+		 * Whether a repeater row has saved hover styling (colors, decoration, animation).
+		 *
+		 * @param array<string,mixed> $item Repeater row.
+		 * @return bool
+		 */
+		public static function ecbb_hover_has_custom_styles( array $item ) {
+			foreach ( [ 'ecbb_hover_color', 'ecbb_hover_background' ] as $key ) {
+				if ( ! array_key_exists( $key, $item ) || $item[ $key ] === '' || $item[ $key ] === null ) {
+					continue;
+				}
+				if ( self::ecbb_norm_hover_paint_color( $item[ $key ] ) !== '' ) {
+					return true;
+				}
+			}
+
+			$hover_td = isset( $item['ecbb_hover_text_decoration'] ) ? (string) $item['ecbb_hover_text_decoration'] : '';
+			if ( $hover_td !== '' ) {
+				return true;
+			}
+
+			$hover_anim = isset( $item['ecbb_hover_animation'] ) ? (string) $item['ecbb_hover_animation'] : '';
+			return $hover_anim !== '';
+		}
+
+		/**
+		 * Inline CSS custom properties for repeater hover paint on the part wrapper.
+		 *
+		 * @param array<string,mixed> $item Repeater row.
+		 * @return string Declaration string (no style="" wrapper), or empty.
+		 */
+		public static function ecbb_hover_inline_vars( array $item ) {
+			if ( ! self::ecbb_hover_style_active( $item ) ) {
+				return '';
+			}
+
+			$decls = [];
+			$fg    = self::ecbb_norm_hover_paint_color( $item['ecbb_hover_color'] ?? ( $item['hover_color'] ?? '' ) );
+			if ( $fg !== '' ) {
+				$decls[] = '--ecbb-hover-fg:' . $fg;
+			}
+			$bg = self::ecbb_norm_hover_paint_color( $item['ecbb_hover_background'] ?? '' );
+			if ( $bg !== '' ) {
+				$decls[] = '--ecbb-hover-bg:' . $bg;
+			}
+
+			return $decls !== [] ? implode( ';', $decls ) . ';' : '';
+		}
+
 		public static function ecbb_hover_style_active(array $item)
 		{
 			$ui_part = isset($item['part']) ? (string) $item['part'] : '';
@@ -2048,7 +2142,13 @@ if (! class_exists('ECBB_Markup', false)) {
 		) {
 			return false;
 		}
+		if ( self::ecbb_hover_has_custom_styles( $item ) ) {
+			return true;
+		}
 		if (! array_key_exists('ecbb_use_hover', $item)) {
+			return true;
+		}
+		if ($item['ecbb_use_hover'] === null || $item['ecbb_use_hover'] === '') {
 			return true;
 		}
 		return self::ecbb_hover_is_on($item['ecbb_use_hover']);
@@ -2099,8 +2199,15 @@ if (! class_exists('ECBB_Markup', false)) {
 			$anim = is_string($anim) ? $anim : '';
 			$dur  = '0.38s';
 			$ease = 'ease';
-			$allowed = ['fade_in_up', 'fade_in_right', 'fade_in_down', 'fade_in_left', 'zoom_in', 'zoom_out'];
-			if (! in_array($anim, $allowed, true)) {
+			$transforms = [
+				'fade_in_up'    => 'translateY(-8px)',
+				'fade_in_right' => 'translateX(8px)',
+				'fade_in_down'  => 'translateY(8px)',
+				'fade_in_left'  => 'translateX(-8px)',
+				'zoom_in'       => 'scale(1.06)',
+				'zoom_out'      => 'scale(0.94)',
+			];
+			if ( ! isset( $transforms[ $anim ] ) ) {
 				return ['base' => '', 'hover' => ''];
 			}
 
@@ -2108,40 +2215,10 @@ if (! class_exists('ECBB_Markup', false)) {
 		$base      = "{$scope_sel}{transition:transform {$dur} {$ease};transform:none;transform-origin:center center;}";
 		$hover     = self::ecbb_hover_state_selectors($scope_sel);
 
-		switch ($anim) {
-			case 'fade_in_up':
-			return [
+		return [
 			'base'  => $base,
-			'hover' => $hover . '{transform:translateY(-8px);}',
-			];
-			case 'fade_in_right':
-			return [
-			'base'  => $base,
-			'hover' => $hover . '{transform:translateX(8px);}',
-			];
-			case 'fade_in_down':
-			return [
-			'base'  => $base,
-			'hover' => $hover . '{transform:translateY(8px);}',
-			];
-			case 'fade_in_left':
-			return [
-			'base'  => $base,
-			'hover' => $hover . '{transform:translateX(-8px);}',
-			];
-			case 'zoom_in':
-			return [
-			'base'  => $base,
-			'hover' => $hover . '{transform:scale(1.06);}',
-			];
-			case 'zoom_out':
-			return [
-			'base'  => $base,
-			'hover' => $hover . '{transform:scale(0.94);}',
-			];
-			default:
-			return ['base' => '', 'hover' => ''];
-		}
+			'hover' => $hover . '{transform:' . $transforms[ $anim ] . ';}',
+		];
 		}
 
 		/**
@@ -2800,13 +2877,7 @@ if (! class_exists('ECBB_Markup', false)) {
 				if ( $raw === 'show' || $raw === 'hide' ) {
 					continue;
 				}
-				if ( in_array( $key, [ 'list1_show_category_badge', 'grid_show_category_badge' ], true ) ) {
-					if ( is_bool( $raw ) || $raw === 'yes' || $raw === 'no' || $raw === 'on' || $raw === 'off' || $raw === '1' || $raw === '0' ) {
-						$settings[ $key ] = self::ecbb_parse_bricks_checkbox( $raw ) ? 'show' : 'hide';
-						continue;
-					}
-				}
-				$settings[ $key ] = self::ecbb_parse_bricks_checkbox( $raw );
+				$settings[ $key ] = self::ecbb_parse_bricks_checkbox( $raw ) ? 'show' : 'hide';
 			}
 
 			return $settings;
@@ -2889,10 +2960,7 @@ if (! class_exists('ECBB_Markup', false)) {
 			if ( $layout['template'] !== 'list' || $layout['item_chrome'] !== 'style-2' ) {
 				return false;
 			}
-			if ( ! array_key_exists( 'style2_show_date_badge', $settings ) ) {
-				return true;
-			}
-			return self::ecbb_bricks_checkbox_on( $settings, 'style2_show_date_badge' );
+			return self::ecbb_shell_select_on( $settings, 'style2_show_date_badge', 'show' );
 		}
 
 		public static function ecbb_style2_date_badge_order( $settings ) {
@@ -3052,7 +3120,10 @@ if (! class_exists('ECBB_Markup', false)) {
 				'pin'   => '<path d="M12 21s6-5.1 6-11a6 6 0 0 0-12 0c0 5.9 6 11 6 11Z" /><circle cx="12" cy="10" r="2.4" />',
 				'cost'  => '<path d="M2 9a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3v1.2a2.5 2.5 0 0 0-.9 4.8V15a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3v-1.2a2.5 2.5 0 0 0-.9-4.8V9Z" /><path d="M13 5v14" />',
 			];
-			$inner = isset( $svgs[ $type ] ) ? $svgs[ $type ] : $svgs['clock'];
+			if ( ! in_array( $type, [ 'clock', 'pin', 'cost' ], true ) ) {
+				$type = 'clock';
+			}
+			$inner = $svgs[ $type ];
 			return '<span class="ecbb-event-card__meta-icon" aria-hidden="true"><svg viewBox="0 0 24 24">' . $inner . '</svg></span>';
 		}
 
@@ -3072,12 +3143,7 @@ if (! class_exists('ECBB_Markup', false)) {
 				return '';
 			}
 
-			$style = '';
-			if ( class_exists( 'ECBB_Styles', false ) ) {
-				$style = \ECBB_Styles::ecbb_inline_style_attr( $item );
-			}
-
-			$html = self::ecbb_render_part_ext( $post, $item, $idx, $style, $skin );
+			$html = self::ecbb_render_part_ext( $post, $item, $idx, '', $skin );
 			if ( $html === '' || $html === false ) {
 				return '';
 			}
@@ -3207,7 +3273,7 @@ if (! class_exists('ECBB_Markup', false)) {
 			}
 			$thumb_id = self::ecbb_event_thumbnail_id( $post->ID );
 			$url      = get_permalink( $post->ID );
-			$title    = wp_strip_all_tags( get_the_title( $post->ID ) );
+			$title    = esc_attr( wp_strip_all_tags( get_the_title( $post->ID ) ) );
 
 			static $map = [
 				'style1' => [
@@ -3342,11 +3408,10 @@ if (! class_exists('ECBB_Markup', false)) {
 			if ( $text === '' ) {
 				return '';
 			}
-			$style = class_exists( 'ECBB_Styles', false ) ? \ECBB_Styles::ecbb_inline_style_attr( $item ) : '';
 			$wrap  = esc_attr(
 				self::ecbb_part_classes( 'date', $idx, $skin, $item ) . ' event-grid-card__date'
 			);
-			$attr  = self::ecbb_part_wrap_attrs( $item, $idx, $style );
+			$attr  = self::ecbb_part_wrap_attrs( $item, $idx );
 			return '<span class="' . $wrap . '"' . $attr . '>' . esc_html( strtoupper( $text ) ) . '</span>';
 		}
 
@@ -3360,8 +3425,7 @@ if (! class_exists('ECBB_Markup', false)) {
 			}
 
 			$skin  = (string) $skin;
-			$style = class_exists( 'ECBB_Styles', false ) ? \ECBB_Styles::ecbb_inline_style_attr( $item ) : '';
-			$attr  = self::ecbb_part_wrap_attrs( $item, $idx, $style );
+			$attr  = self::ecbb_part_wrap_attrs( $item, $idx );
 			$wrap  = esc_attr(
 				trim(
 					'ecbb-event-card__top '
@@ -3375,7 +3439,7 @@ if (! class_exists('ECBB_Markup', false)) {
 				if ( is_wp_error( $url ) ) {
 					continue;
 				}
-				$links[] = '<a href="' . esc_url( $url ) . '" class="ecbb-event-card__category ecbb-event__link">'
+				$links[] = '<a href="' . esc_url( $url ) . '" class="ecbb-event-card__category">'
 					. esc_html( $term->name ) . '</a>';
 			}
 			if ( $links === [] ) {
@@ -3398,9 +3462,8 @@ if (! class_exists('ECBB_Markup', false)) {
 
 			$skin      = (string) $skin;
 			$skin_wrap = ( $skin === 'grid' ) ? '' : $skin;
-			$style     = class_exists( 'ECBB_Styles', false ) ? \ECBB_Styles::ecbb_inline_style_attr( $item ) : '';
 			$wrap      = esc_attr( self::ecbb_part_classes( 'read_more', $idx, $skin_wrap, $item ) );
-			$part_attr = self::ecbb_part_wrap_attrs( $item, $idx, $style );
+			$part_attr = self::ecbb_part_wrap_attrs( $item, $idx );
 			$url       = get_permalink( $post->ID );
 			$link_cls  = esc_attr( trim( 'ecbb-event__link ' . self::ecbb_layout_read_more_btn_class( $skin ) ) );
 			$link      = '<a href="' . esc_url( $url ) . '" class="' . $link_cls . '">' . esc_html( $label ) . '</a>';

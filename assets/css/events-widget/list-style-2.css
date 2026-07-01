@@ -110,12 +110,7 @@
 	line-height: 1.2;
 	text-transform: uppercase;
 	text-decoration: none;
-}
-
-.ecbb-ev a.ecbb-event-card__category:hover,
-.ecbb-ev a.ecbb-event-card__category:focus-visible {
-	color: #1e3356;
-	background: #eaf2ff;
+	transition: color var(--transition-base), background-color var(--transition-base);
 }
 
 .ecbb-ev .ecbb-event-card__title {
@@ -181,13 +176,6 @@
 	font-size: 15px;
 	font-weight: 500;
 	transition: transform var(--transition-base), background-color var(--transition-base), border-color var(--transition-base), box-shadow var(--transition-base);
-}
-
-.ecbb-ev .ecbb-event-card__button:hover {
-	transform: translateY(-2px);
-	background: #0847bb;
-	border-color: #0847bb;
-	box-shadow: 0 12px 24px rgba(13, 85, 216, 0.26);
 }
 
 @media (max-width: 1024px) {
@@ -317,4 +305,37 @@
 	.ecbb-ev .ecbb-event-card:hover .ecbb-event-card__image {
 		transform: scale(1.055);
 	}
+}
+
+/*
+ * Layout default hovers (Style 2) — only when Style tab hover colors are not set.
+ * Scoped to style-2 items so Style 1 layout hovers stay independent.
+ */
+.ecbb-ev__item--style-2 .ecbb-event-part:not(.ecbb-has-hover-fg):not(.ecbb-no-hover) a.ecbb-event-card__button:hover,
+.ecbb-ev__item--style-2 .ecbb-event-part:not(.ecbb-has-hover-fg):not(.ecbb-no-hover) > a.ecbb-event-card__button:hover,
+.ecbb-ev__item--style-2 .ecbb-event-part:not(.ecbb-has-hover-fg):not(.ecbb-no-hover) a.ecbb-event__link.ecbb-event-card__button:hover {
+	color: #ffffff !important;
+}
+
+.ecbb-ev__item--style-2 .ecbb-event-part:not(.ecbb-has-hover-bg):not(.ecbb-no-hover) a.ecbb-event-card__button:hover,
+.ecbb-ev__item--style-2 .ecbb-event-part:not(.ecbb-has-hover-bg):not(.ecbb-no-hover) > a.ecbb-event-card__button:hover,
+.ecbb-ev__item--style-2 .ecbb-event-part:not(.ecbb-has-hover-bg):not(.ecbb-no-hover) a.ecbb-event__link.ecbb-event-card__button:hover {
+	background-color: #0847bb !important;
+	border-color: #0847bb !important;
+	box-shadow: 0 12px 24px rgba(13, 85, 216, 0.26) !important;
+	transform: translateY(-2px) !important;
+}
+
+.ecbb-ev .ecbb-style2-categories:not(.ecbb-no-hover):not(.ecbb-has-hover-fg) a.ecbb-event-card__category:hover,
+.ecbb-ev .ecbb-style2-categories:not(.ecbb-no-hover):not(.ecbb-has-hover-fg) a.ecbb-event-card__category:focus-visible,
+.ecbb-ev .ecbb-event-card__top:not(.ecbb-no-hover):not(.ecbb-has-hover-fg) a.ecbb-event-card__category:hover,
+.ecbb-ev .ecbb-event-card__top:not(.ecbb-no-hover):not(.ecbb-has-hover-fg) a.ecbb-event-card__category:focus-visible {
+	color: #0d55d8 !important;
+}
+
+.ecbb-ev .ecbb-style2-categories:not(.ecbb-no-hover):not(.ecbb-has-hover-bg) a.ecbb-event-card__category:hover,
+.ecbb-ev .ecbb-style2-categories:not(.ecbb-no-hover):not(.ecbb-has-hover-bg) a.ecbb-event-card__category:focus-visible,
+.ecbb-ev .ecbb-event-card__top:not(.ecbb-no-hover):not(.ecbb-has-hover-bg) a.ecbb-event-card__category:hover,
+.ecbb-ev .ecbb-event-card__top:not(.ecbb-no-hover):not(.ecbb-has-hover-bg) a.ecbb-event-card__category:focus-visible {
+	background-color: #d4e4ff !important;
 }
