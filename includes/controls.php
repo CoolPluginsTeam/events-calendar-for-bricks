@@ -135,6 +135,47 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 		}
 
 		/**
+		 * Style tab — category badge on image (List Style 1).
+		 *
+		 * @return array<int,array{0:string,1:string,2:mixed}>
+		 */
+		public static function ecbb_req_shell_category_style_list1() {
+			return [
+				[ 'show_event_image', '!=', 'hide' ],
+				[ 'layout_template', '!=', 'grid' ],
+				[ 'list_item_style', '!=', 'style-2' ],
+				[ 'list1_show_category_badge', '!=', 'hide' ],
+			];
+		}
+
+		/**
+		 * Style tab — category badge on image (Grid).
+		 *
+		 * @return array<int,array{0:string,1:string,2:mixed}>
+		 */
+		public static function ecbb_req_shell_category_style_grid() {
+			return [
+				[ 'show_event_image', '!=', 'hide' ],
+				[ 'layout_template', '=', 'grid' ],
+				[ 'grid_show_category_badge', '!=', 'hide' ],
+			];
+		}
+
+		/**
+		 * Style tab — date badge on image (List Style 2).
+		 *
+		 * @return array<int,array{0:string,1:string,2:mixed}>
+		 */
+		public static function ecbb_req_shell_date_badge_style() {
+			return [
+				[ 'show_event_image', '!=', 'hide' ],
+				[ 'layout_template', '!=', 'grid' ],
+				[ 'list_item_style', '=', 'style-2' ],
+				[ 'style2_show_date_badge', '!=', false ],
+			];
+		}
+
+		/**
 		 * Bricks `css` rule for a repeater sub-field (live builder preview + frontend).
 		 *
 		 * @param string $css_property CSS property or Bricks shorthand (e.g. font, typography).
@@ -730,7 +771,6 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			'default'     => 'show',
 			'inline'      => true,
 			'rerender'    => true,
-			'description' => esc_html__( 'Grid only. Overlays the featured image.', 'events-calendar-for-bricks' ),
 			'required'    => [
 				[ 'show_event_image', '=', 'show' ],
 				[ 'layout_template', '=', 'grid' ],
@@ -745,7 +785,6 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			'inline'      => true,
 			'default'     => true,
 			'rerender'    => true,
-			'description' => esc_html__( 'List Style 2 only. Overlays the featured image.', 'events-calendar-for-bricks' ),
 			'required'    => [
 				[ 'show_event_image', '=', 'show' ],
 				[ 'layout_template', '=', 'list' ],
@@ -924,6 +963,199 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			],
 			'default' => 'h2',
 			'inline'  => true,
+		];
+
+		// ── Style tab: event card + featured image overlay chrome ──
+		$element->controls['ecbb_card_background'] = [
+			'tab'         => 'style',
+			'group'       => 'layout_appearance',
+			'label'       => esc_html__( 'Event card background', 'events-calendar-for-bricks' ),
+			'type'        => 'color',
+			'responsive'  => true,
+			'description' => esc_html__( 'Background for each event card in the active template (List Style 1, List Style 2, or Grid).', 'events-calendar-for-bricks' ),
+			'css'         => [
+				[
+					'property' => '--ecbb-card-bg',
+					'selector' => '&',
+				],
+			],
+		];
+
+		$element->controls['ecbb_sep_style_overlays'] = [
+			'tab'      => 'style',
+			'group'    => 'image_overlays',
+			'label'    => esc_html__( 'Category badge (on image)', 'events-calendar-for-bricks' ),
+			'type'     => 'separator',
+			'required' => self::ecbb_req_shell_category_style_list1(),
+		];
+
+		$element->controls['ecbb_shell_category_background'] = [
+			'tab'         => 'style',
+			'group'       => 'image_overlays',
+			'label'       => esc_html__( 'Category background', 'events-calendar-for-bricks' ),
+			'type'        => 'color',
+			'responsive'  => true,
+			'description' => esc_html__( 'List Style 1 — category pill over the featured image.', 'events-calendar-for-bricks' ),
+			'required'    => self::ecbb_req_shell_category_style_list1(),
+			'css'         => [
+				[
+					'property' => '--ecbb-shell-cat-bg',
+					'selector' => '&',
+				],
+			],
+		];
+
+		$element->controls['ecbb_shell_category_color'] = [
+			'tab'        => 'style',
+			'group'      => 'image_overlays',
+			'label'      => esc_html__( 'Category text color', 'events-calendar-for-bricks' ),
+			'type'       => 'color',
+			'responsive' => true,
+			'required'   => self::ecbb_req_shell_category_style_list1(),
+			'css'        => [
+				[
+					'property' => '--ecbb-shell-cat-color',
+					'selector' => '&',
+				],
+			],
+		];
+
+		$element->controls['ecbb_shell_category_typography'] = [
+			'tab'        => 'style',
+			'group'      => 'image_overlays',
+			'label'      => esc_html__( 'Category typography', 'events-calendar-for-bricks' ),
+			'type'       => 'typography',
+			'exclude'    => [ 'text-align' ], // phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude
+			'responsive' => true,
+			'required'   => self::ecbb_req_shell_category_style_list1(),
+			'css'        => [
+				[
+					'property' => 'typography',
+					'selector' => '& .event-badge--blue',
+				],
+				[
+					'property' => 'color',
+					'selector' => '& .event-badge--blue',
+				],
+			],
+		];
+
+		$element->controls['ecbb_sep_style_overlays_grid'] = [
+			'tab'      => 'style',
+			'group'    => 'image_overlays',
+			'label'    => esc_html__( 'Category badge (on image)', 'events-calendar-for-bricks' ),
+			'type'     => 'separator',
+			'required' => self::ecbb_req_shell_category_style_grid(),
+		];
+
+		$element->controls['ecbb_shell_category_background_grid'] = [
+			'tab'         => 'style',
+			'group'       => 'image_overlays',
+			'label'       => esc_html__( 'Category background', 'events-calendar-for-bricks' ),
+			'type'        => 'color',
+			'responsive'  => true,
+			'description' => esc_html__( 'Grid — category pill over the featured image.', 'events-calendar-for-bricks' ),
+			'required'    => self::ecbb_req_shell_category_style_grid(),
+			'css'         => [
+				[
+					'property' => '--ecbb-shell-cat-bg',
+					'selector' => '&',
+				],
+			],
+		];
+
+		$element->controls['ecbb_shell_category_color_grid'] = [
+			'tab'        => 'style',
+			'group'      => 'image_overlays',
+			'label'      => esc_html__( 'Category text color', 'events-calendar-for-bricks' ),
+			'type'       => 'color',
+			'responsive' => true,
+			'required'   => self::ecbb_req_shell_category_style_grid(),
+			'css'        => [
+				[
+					'property' => '--ecbb-shell-cat-color',
+					'selector' => '&',
+				],
+			],
+		];
+
+		$element->controls['ecbb_shell_category_typography_grid'] = [
+			'tab'        => 'style',
+			'group'      => 'image_overlays',
+			'label'      => esc_html__( 'Category typography', 'events-calendar-for-bricks' ),
+			'type'       => 'typography',
+			'exclude'    => [ 'text-align' ], // phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude
+			'responsive' => true,
+			'required'   => self::ecbb_req_shell_category_style_grid(),
+			'css'        => [
+				[
+					'property' => 'typography',
+					'selector' => '& .event-badge--blue',
+				],
+				[
+					'property' => 'color',
+					'selector' => '& .event-badge--blue',
+				],
+			],
+		];
+
+		$element->controls['ecbb_sep_style_date_badge'] = [
+			'tab'      => 'style',
+			'group'    => 'image_overlays',
+			'label'    => esc_html__( 'Date badge (on image)', 'events-calendar-for-bricks' ),
+			'type'     => 'separator',
+			'required' => self::ecbb_req_shell_date_badge_style(),
+		];
+
+		$element->controls['ecbb_shell_date_background'] = [
+			'tab'         => 'style',
+			'group'       => 'image_overlays',
+			'label'       => esc_html__( 'Date badge background', 'events-calendar-for-bricks' ),
+			'type'        => 'color',
+			'responsive'  => true,
+			'description' => esc_html__( 'List Style 2 — date badge over the featured image.', 'events-calendar-for-bricks' ),
+			'required'    => self::ecbb_req_shell_date_badge_style(),
+			'css'         => [
+				[
+					'property' => '--ecbb-shell-date-bg',
+					'selector' => '&',
+				],
+			],
+		];
+
+		$element->controls['ecbb_shell_date_color'] = [
+			'tab'        => 'style',
+			'group'      => 'image_overlays',
+			'label'      => esc_html__( 'Date badge text color', 'events-calendar-for-bricks' ),
+			'type'       => 'color',
+			'responsive' => true,
+			'required'   => self::ecbb_req_shell_date_badge_style(),
+			'css'        => [
+				[
+					'property' => '--ecbb-shell-date-color',
+					'selector' => '&',
+				],
+			],
+		];
+
+		$element->controls['ecbb_shell_date_typography'] = [
+			'tab'        => 'style',
+			'group'      => 'image_overlays',
+			'label'      => esc_html__( 'Date badge typography', 'events-calendar-for-bricks' ),
+			'type'       => 'typography',
+			'exclude'    => [ 'text-align' ], // phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude
+			'responsive' => true,
+			'required'   => self::ecbb_req_shell_date_badge_style(),
+			'css'        => [
+				[
+					'property' => 'typography',
+					'selector' => '& .ecbb-event-card__date-badge, & .ecbb-event-card__date-badge span, & .ecbb-event-card__date-badge strong',
+				],
+				[
+					'property' => 'color',
+					'selector' => '& .ecbb-event-card__date-badge, & .ecbb-event-card__date-badge span, & .ecbb-event-card__date-badge strong',
+				],
+			],
 		];
 
 		$part_repeater_fields = self::ecbb_part_fields();

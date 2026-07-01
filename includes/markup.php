@@ -2849,8 +2849,7 @@ if (! class_exists('ECBB_Markup', false)) {
 			$settings = self::ecbb_layout_settings( is_array( $settings ) ? $settings : [] );
 
 			if ( ! array_key_exists( 'show_event_image', $settings ) ) {
-				// Legacy Bricks checkbox off removes the key entirely.
-				return false;
+				return true;
 			}
 
 			$raw = $settings['show_event_image'];
@@ -2889,6 +2888,9 @@ if (! class_exists('ECBB_Markup', false)) {
 			$layout   = self::ecbb_sanitize_layout_template( $settings );
 			if ( $layout['template'] !== 'list' || $layout['item_chrome'] !== 'style-2' ) {
 				return false;
+			}
+			if ( ! array_key_exists( 'style2_show_date_badge', $settings ) ) {
+				return true;
 			}
 			return self::ecbb_bricks_checkbox_on( $settings, 'style2_show_date_badge' );
 		}

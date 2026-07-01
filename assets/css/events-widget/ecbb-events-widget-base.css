@@ -113,10 +113,10 @@
 }
 
 .ecbb-ev .event-badge--blue {
-	background: var(--badge-blue);
+	background: var(--ecbb-shell-cat-bg, var(--badge-blue));
 	padding: 5px 9px;
 	border-radius: 50px;
-	color: #ffffff;
+	color: var(--ecbb-shell-cat-color, #ffffff);
 	font-size: 10px;
 	font-weight: 700;
 	text-transform: uppercase;
@@ -124,8 +124,8 @@
 }
 
 .ecbb-ev a.event-badge--blue:hover {
-	color: #ffffff;
-	background: var(--badge-blue);
+	color: var(--ecbb-shell-cat-color, #ffffff);
+	background: var(--ecbb-shell-cat-bg, var(--badge-blue));
 }
 
 .ecbb-ev a.event-button,

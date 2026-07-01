@@ -1668,7 +1668,79 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 		return implode( "\n", $rules );
 		}
 
+		/**
+		 * Scoped CSS variables for Style tab layout chrome (card bg, image badges).
+		 *
+		 * Mirrors Bricks element Style controls so values apply on the frontend
+		 * even when Bricks inline CSS order differs from template stylesheets.
+		 *
+		 * @param array<string,mixed> $settings   Element settings.
+		 * @param string              $scope_class Instance scope class (without dot).
+		 * @param callable            $color_fn    function( $value ): string
+		 * @return string Raw CSS or empty.
+		 */
+		public static function ecbb_layout_shell_css( array $settings, $scope_class, callable $color_fn ) {
+			$scope_class = preg_replace( '/[^a-zA-Z0-9\-_]/', '', (string) $scope_class );
+			if ( $scope_class === '' ) {
+				return '';
+			}
+
+			$show_category_shell = class_exists( 'ECBB_Markup', false )
+				&& \ECBB_Markup::ecbb_show_shell_category_badge( $settings );
+			$show_date_shell     = class_exists( 'ECBB_Markup', false )
+				&& \ECBB_Markup::ecbb_show_style2_date_badge( $settings );
+
+			$var_keys = [
+				'ecbb_card_background' => '--ecbb-card-bg',
+			];
+			if ( $show_category_shell ) {
+				$layout = \ECBB_Markup::ecbb_sanitize_layout_template( $settings );
+				if ( $layout['template'] === 'grid' ) {
+					$var_keys['ecbb_shell_category_background_grid'] = '--ecbb-shell-cat-bg';
+					$var_keys['ecbb_shell_category_color_grid']      = '--ecbb-shell-cat-color';
+				} else {
+					$var_keys['ecbb_shell_category_background'] = '--ecbb-shell-cat-bg';
+					$var_keys['ecbb_shell_category_color']      = '--ecbb-shell-cat-color';
+				}
+			}
+			if ( $show_date_shell ) {
+				$var_keys['ecbb_shell_date_background'] = '--ecbb-shell-date-bg';
+				$var_keys['ecbb_shell_date_color']      = '--ecbb-shell-date-color';
+			}
+
+			$root       = '.' . $scope_class;
+			$rules      = [];
+			$var_values = [];
+
+			foreach ( self::ecbb_breakpoints() as $device => $mq ) {
+				$decls = [];
+				foreach ( $var_keys as $setting_key => $css_var ) {
+					$raw = self::ecbb_device_value( $settings[ $setting_key ] ?? '', $device );
+					if ( $raw === '' || $raw === null ) {
+						continue;
+					}
+					$color = $color_fn( $raw );
+					if ( $color === '' ) {
+						continue;
+					}
+					$var_values[ $device ][ $css_var ] = $color;
+				}
+				if ( empty( $var_values[ $device ] ) ) {
+					continue;
+				}
+				foreach ( $var_values[ $device ] as $css_var => $color ) {
+					$decls[] = $css_var . ':' . $color;
+				}
+				if ( $decls === [] ) {
+					continue;
+				}
+				$rule    = $root . '{' . implode( ';', $decls ) . '}';
+				$rules[] = $mq !== '' ? $mq . '{' . $rule . '}' : $rule;
+			}
+
+			return implode( "\n", $rules );
+		}
+
 	}
 
 }
-

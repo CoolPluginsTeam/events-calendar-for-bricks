@@ -46,6 +46,16 @@ class ECBB_Widget extends \Bricks\Element
 			'title' => esc_html__('Dynamic Messages', 'events-calendar-for-bricks'),
 			'tab'   => 'content',
 		];
+
+		$this->control_groups['layout_appearance'] = [
+			'title' => esc_html__( 'Event cards', 'events-calendar-for-bricks' ),
+			'tab'   => 'style',
+		];
+
+		$this->control_groups['image_overlays'] = [
+			'title' => esc_html__( 'Featured image overlays', 'events-calendar-for-bricks' ),
+			'tab'   => 'style',
+		];
 	}
 
 	/**
@@ -652,10 +662,21 @@ class ECBB_Widget extends \Bricks\Element
 			? \ECBB_Styles::ecbb_grid_cols_css( $settings, '.' . $scope_class )
 			: '';
 
+		$shell_css = class_exists( 'ECBB_Styles', false )
+			? \ECBB_Styles::ecbb_layout_shell_css(
+				$settings,
+				$scope_class,
+				function ( $value ) {
+					return $this->ecbb_normalize_color_value( $value );
+				}
+			)
+			: '';
+
 		$all_css = array_filter(
 			array_merge(
 				$gap_css !== '' ? [ $gap_css ] : [],
 				$grid_css !== '' ? [ $grid_css ] : [],
+				$shell_css !== '' ? [ $shell_css ] : [],
 				$style_css,
 				$hover_css
 			)

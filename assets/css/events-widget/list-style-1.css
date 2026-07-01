@@ -7,7 +7,7 @@
 	grid-template-columns: 420px 1fr;
 	gap: 0;
 	align-items: stretch;
-	background: var(--color-card-bg);
+	background: var(--ecbb-card-bg, var(--color-card-bg));
 	border: 1px solid var(--color-border);
 	border-radius: 20px;
 	transition: transform var(--transition-base);
