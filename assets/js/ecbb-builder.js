@@ -1488,10 +1488,6 @@
 		surface.style.setProperty("box-sizing", "border-box");
 	}
 
-	function applyButtonBorderColor(repeaterItem, link) {
-		applyButtonBorderChrome(repeaterItem, link);
-	}
-
 	/**
 	 * Button paint target: link when hover is on, plain span when hover is off + button styles.
 	 */

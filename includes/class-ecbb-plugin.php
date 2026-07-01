@@ -24,8 +24,8 @@ if ( ! class_exists( 'ECBB_WidgetClass', false ) ) {
 		public function __construct() {
 			add_action( 'init', [ $this, 'ecbb_register_elements' ], 11 );
 			add_action( 'wp_enqueue_scripts', [ $this, 'ecbb_enqueue_scripts' ], 25 );
-			add_filter('bricks/element/settings', [$this, 'ecbb_filter_events_loop_element_settings'], 10, 2);
-			add_action('wp_ajax_bricks_save_post', [$this, 'ecbb_preflight_merge_events_loop_repeaters_on_bricks_save'], 0);
+			add_filter( 'bricks/element/settings', [ $this, 'ecbb_filter_events_loop_element_settings' ], 10, 2 );
+			add_action( 'wp_ajax_bricks_save_post', [ $this, 'ecbb_preflight_merge_events_loop_repeaters_on_bricks_save' ], 0 );
 		}
 
 		/**
@@ -115,7 +115,7 @@ if ( ! class_exists( 'ECBB_WidgetClass', false ) ) {
 		* @return void
 		*/
 		public function ecbb_preflight_merge_events_loop_repeaters_on_bricks_save() {
-			if ( empty( $_POST['postId'] ) || ! class_exists( '\Bricks\Ajax' ) || ! class_exists( '\Bricks\Database' ) ) {
+			if ( ! isset( $_POST['postId'] ) || ! class_exists( '\Bricks\Ajax' ) || ! class_exists( '\Bricks\Database' ) ) {
 				return;
 			}
 			$post_id = absint( wp_unslash( $_POST['postId'] ) );
@@ -132,10 +132,12 @@ if ( ! class_exists( 'ECBB_WidgetClass', false ) ) {
 			self::ecbb_load_markup_dependencies();
 
 			foreach ( [ 'content', 'header', 'footer' ] as $area ) {
-				if ( empty( $_POST[ $area ] ) || ! is_string( $_POST[ $area ] ) ) {
+				if ( ! isset( $_POST[ $area ] ) || ! is_string( $_POST[ $area ] ) || $_POST[ $area ] === '' ) {
 					continue;
 				}
-				$posted_json = wp_unslash( $_POST[ $area ] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+				// Bricks element-tree JSON; decoded via Bricks\Ajax::decode() below.
+				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+				$posted_json = wp_unslash( $_POST[ $area ] );
 				$merged      = $this->ecbb_merge_events_loop_repeaters_into_posted_area( $posted_json, $post_id, $area );
 				if ( is_string( $merged ) ) {
 					$_POST[ $area ] = $merged;
@@ -359,25 +361,17 @@ if ( ! class_exists( 'ECBB_WidgetClass', false ) ) {
 			wp_enqueue_script(
 				'ecbb-builder',
 				ECBB_URL . 'assets/js/ecbb-builder.js',
-				[],
+				[ 'bricks-builder' ],
 				file_exists( $builder_js_path ) ? (string) filemtime( $builder_js_path ) : ECBB_VERSION,
 				true
 			);
 
 			wp_localize_script( 'ecbb-builder', 'ECBBBuilder', [
-				'tabContent'            => esc_html__( 'CONTENT', 'events-calendar-for-bricks' ),
-				'tabStyle'              => esc_html__( 'STYLE', 'events-calendar-for-bricks' ),
-				'hoverParts'            => \ECBB_Controls::ecbb_hover_part_types(),
-				'interactiveHoverParts' => \ECBB_Controls::ecbb_hover_interactive_types(),
-				'interactiveHoverKeys'  => [
-					'ecbb_sep_hover',
-					'ecbb_hover_color',
-					'ecbb_hover_background',
-					'ecbb_hover_text_decoration',
-					'ecbb_hover_animation',
-				],
-				'hoverKeys'             => \ECBB_Controls::ecbb_hover_field_keys(),
-				'btnBorderKeys'         => \ECBB_Controls::ecbb_btn_border_keys(),
+				'tabContent'    => __( 'CONTENT', 'events-calendar-for-bricks' ),
+				'tabStyle'      => __( 'STYLE', 'events-calendar-for-bricks' ),
+				'hoverParts'    => \ECBB_Controls::ecbb_hover_part_types(),
+				'hoverKeys'     => \ECBB_Controls::ecbb_hover_field_keys(),
+				'btnBorderKeys' => \ECBB_Controls::ecbb_btn_border_keys(),
 			] );
 		}
 	}

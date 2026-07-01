@@ -1,14 +1,15 @@
 <?php
 /**
  * Plugin Name: Events Calendar for Bricks Builder
- *  Plugin URI: https://eventscalendaraddons.com/?utm_source=ectbe_plugin&utm_medium=inside&utm_campaign=get_pro&utm_content=plugin_uri
+ * Plugin URI: https://eventscalendaraddons.com/
  * Description: A custom addon for Bricks theme to add events-related widgets with typography. Requires The Events Calendar plugin and Bricks theme.
  * Version: 1.0.0
  * Author: Cool Plugins
+ * Author URI: https://coolplugins.net/?utm_source=ccew_plugin&utm_medium=inside&utm_campaign=author_page&utm_content=plugins_list
+ * Requires Plugins: the-events-calendar
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: events-calendar-for-bricks
- * Requires Plugins: the-events-calendar
  */
 
 namespace EventsCalendarForBricks;
@@ -87,29 +88,19 @@ if ( ! class_exists( 'EventsCalendarForBricks' ) ) {
 
 		/** @param array<string,bool> $missing */
 		public static function ecbb_dependency_notice_html( array $missing ) {
-			$lines = array();
-
-			if ( ! empty( $missing['theme'] ) ) {
-				$lines[] = sprintf(
-					/* translators: %s: HTML link to the Themes screen for activating the Bricks theme. */
-					esc_html__( 'Bricks theme — %s', 'events-calendar-for-bricks' ),
-					'<a href="' . esc_url( admin_url( 'themes.php' ) ) . '">' . esc_html__( 'activate Bricks in Appearance → Themes', 'events-calendar-for-bricks' ) . '</a>'
-				);
-			}
-
-			if ( $lines === array() ) {
+			if ( empty( $missing['theme'] ) ) {
 				return '';
 			}
 
-			$html  = '<strong>' . esc_html__( 'Events Calendar for Bricks Builder is missing required dependencies.', 'events-calendar-for-bricks' ) . '</strong> ';
-			$html .= esc_html__( 'This plugin requires:', 'events-calendar-for-bricks' );
-			$html .= '<ul style="list-style:disc;margin:0.5em 0 0 1.5em;">';
-			foreach ( $lines as $line ) {
-				$html .= '<li>' . $line . '</li>';
-			}
-			$html .= '</ul>';
+			$theme_line = sprintf(
+				/* translators: %s: HTML link to the Themes screen for activating the Bricks theme. */
+				esc_html__( 'Bricks theme — %s', 'events-calendar-for-bricks' ),
+				'<a href="' . esc_url( admin_url( 'themes.php' ) ) . '">' . esc_html__( 'activate Bricks in Appearance → Themes', 'events-calendar-for-bricks' ) . '</a>'
+			);
 
-			return $html;
+			return '<strong>' . esc_html__( 'Events Calendar for Bricks Builder is missing required dependencies.', 'events-calendar-for-bricks' ) . '</strong> '
+				. esc_html__( 'This plugin requires:', 'events-calendar-for-bricks' )
+				. '<ul style="list-style:disc;margin:0.5em 0 0 1.5em;"><li>' . $theme_line . '</li></ul>';
 		}
 
 		public function ecbb_render_dependency_notice() {

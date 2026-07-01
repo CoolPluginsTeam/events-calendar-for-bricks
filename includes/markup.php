@@ -977,14 +977,14 @@ if (! class_exists('ECBB_Markup', false)) {
 			return __('Free', 'events-calendar-for-bricks');
 		}
 
-		if (preg_match('/^(.+?)([-â€“â€”])(.+)$/u', $cost_text, $m)) {
+		if (preg_match('/^(.+?)([-\x{2013}\x{2014}])(.+)$/u', $cost_text, $m)) {
 			$left  = self::ecbb_format_cost_token(trim($m[1]), $currency_code);
 			$right = self::ecbb_format_cost_token(trim($m[3]), $currency_code);
 			if ($left !== '' && $right !== '') {
 				if (strcasecmp($left, $right) === 0) {
 					return $left;
 				}
-			return $left . ' â€“ ' . $right;
+			return $left . ' - ' . $right;
 		}
 		}
 
@@ -1037,7 +1037,7 @@ if (! class_exists('ECBB_Markup', false)) {
 
 		$cost = $formatted !== '' ? $formatted : $raw;
 		if ($cost === '') {
-			// No cost set on the event â€” treat as free (matches TEC "no cost" behaviour).
+			// No cost set on the event; treat as free (matches TEC "no cost" behaviour).
 			return __('Free', 'events-calendar-for-bricks');
 		}
 
@@ -1045,7 +1045,7 @@ if (! class_exists('ECBB_Markup', false)) {
 			return __('Free', 'events-calendar-for-bricks');
 		}
 
-		if (preg_match('/^(.+?)([-â€“â€”])(.+)$/u', $cost, $m)) {
+		if (preg_match('/^(.+?)([-\x{2013}\x{2014}])(.+)$/u', $cost, $m)) {
 			$left  = trim($m[1]);
 			$right = trim($m[3]);
 			if ($left !== '' && $right !== '') {
@@ -1056,7 +1056,7 @@ if (! class_exists('ECBB_Markup', false)) {
 				} elseif (self::ecbb_cost_is_free($left) && self::ecbb_cost_is_free($right)) {
 				$cost = __('Free', 'events-calendar-for-bricks');
 			} else {
-			$cost = $left . ' â€“ ' . $right;
+			$cost = $left . ' - ' . $right;
 		}
 		}
 		}
@@ -1710,6 +1710,7 @@ if (! class_exists('ECBB_Markup', false)) {
 		{
 			$preset = isset($item['date_format_preset']) ? (string) $item['date_format_preset'] : '';
 			$custom = isset($item['date_format_custom']) ? trim((string) $item['date_format_custom']) : '';
+			$custom = preg_replace('/[\x00-\x1F\x7F<>]/', '', wp_strip_all_tags($custom));
 			$part   = (string) $part;
 
 			if ($part === 'event_time') {
@@ -2384,7 +2385,7 @@ if (! class_exists('ECBB_Markup', false)) {
 			$chip_each  = ('style1' === $skin && 'categories' === $part);
 			$link_terms = self::ecbb_hover_style_active($item);
 
-			$sep = isset($item['terms_separator']) ? (string) $item['terms_separator'] : ', ';
+			$sep = isset($item['terms_separator']) ? sanitize_text_field((string) $item['terms_separator']) : ', ';
 			$sep = $sep !== '' ? $sep : ', ';
 			if ($chip_each) {
 				$sep = '';
@@ -2759,7 +2760,7 @@ if (! class_exists('ECBB_Markup', false)) {
 			$url   = get_permalink($post->ID);
 			$label = isset($item['rsvp_link_text']) ? trim((string) $item['rsvp_link_text']) : '';
 			if ($label === '') {
-				$label = esc_html__('RSVP', 'events-calendar-for-bricks');
+				$label = __('RSVP', 'events-calendar-for-bricks');
 			} else {
 			$label = sanitize_text_field($label);
 		}
@@ -2774,7 +2775,7 @@ if (! class_exists('ECBB_Markup', false)) {
 		if ($part === 'read_more') {
 			$label = isset($item['read_more_text']) ? trim((string) $item['read_more_text']) : '';
 			if ($label === '') {
-				$label = esc_html__( 'View Details', 'events-calendar-for-bricks' );
+				$label = __( 'View Details', 'events-calendar-for-bricks' );
 			} else {
 				$label = sanitize_text_field($label);
 			}
@@ -2903,17 +2904,6 @@ if (! class_exists('ECBB_Markup', false)) {
 				return true;
 			}
 			return self::ecbb_parse_bricks_checkbox( $raw );
-		}
-
-		/**
-		 * Bricks checkbox is ON only when the setting key exists and is truthy.
-		 *
-		 * @param array<string,mixed> $settings Element settings.
-		 * @param string              $key      Setting key.
-		 * @return bool
-		 */
-		public static function ecbb_bricks_checkbox_on( array $settings, $key ) {
-			return isset( $settings[ $key ] ) && self::ecbb_parse_bricks_checkbox( $settings[ $key ] );
 		}
 
 		public static function ecbb_show_event_image( $settings ) {
@@ -3363,7 +3353,7 @@ if (! class_exists('ECBB_Markup', false)) {
 			$month = '<span>' . esc_html( strtoupper( date_i18n( 'M', $start_ts ) ) ) . '</span>';
 			$day   = '<strong>' . esc_html( date_i18n( 'd', $start_ts ) ) . '</strong>';
 			$inner = ( $order === 'day_month' ) ? $day . $month : $month . $day;
-			return '<time class="' . esc_attr( $cls ) . '" datetime="' . esc_attr( date( 'Y-m-d', $start_ts ) ) . '" aria-label="' . esc_attr( $label ) . '">'
+			return '<time class="' . esc_attr( $cls ) . '" datetime="' . esc_attr( wp_date( 'Y-m-d', $start_ts ) ) . '" aria-label="' . esc_attr( $label ) . '">'
 				. $inner
 				. '</time>';
 		}
@@ -3455,7 +3445,7 @@ if (! class_exists('ECBB_Markup', false)) {
 			}
 			$label = isset( $item['read_more_text'] ) ? trim( (string) $item['read_more_text'] ) : '';
 			if ( $label === '' ) {
-				$label = esc_html__( 'View Details', 'events-calendar-for-bricks' );
+				$label = __( 'View Details', 'events-calendar-for-bricks' );
 			} else {
 				$label = sanitize_text_field( $label );
 			}

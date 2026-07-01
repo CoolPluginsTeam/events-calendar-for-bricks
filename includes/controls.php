@@ -313,14 +313,14 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 				'label'       => esc_html__( 'Tickets link text', 'events-calendar-for-bricks' ),
 				'type'        => 'text',
 				'placeholder' => esc_html__( 'Tickets', 'events-calendar-for-bricks' ),
-				'default'     => esc_html__( 'Tickets', 'events-calendar-for-bricks' ),
+				'default'     => __( 'Tickets', 'events-calendar-for-bricks' ),
 				'required'    => [ 'part', '=', 'event_tickets' ],
 			],
 			'rsvp_link_text' => [
 				'label'       => esc_html__( 'RSVP link text', 'events-calendar-for-bricks' ),
 				'type'        => 'text',
 				'placeholder' => esc_html__( 'RSVP', 'events-calendar-for-bricks' ),
-				'default'     => esc_html__( 'RSVP', 'events-calendar-for-bricks' ),
+				'default'     => __( 'RSVP', 'events-calendar-for-bricks' ),
 				'required'    => [ 'part', '=', 'event_rsvp' ],
 			],
 			'terms_separator' => [
@@ -458,7 +458,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			'ecbb_typography' => [
 				'label'      => esc_html__( 'Typography', 'events-calendar-for-bricks' ),
 				'type'       => 'typography',
-				'exclude'    => [ 'text-align' ],//phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude
+				'exclude'    => [ 'text-align' ],
 				'responsive' => true,
 				'required'   => [ 'part', '!=', 'image' ],
 				'css'        => class_exists( 'ECBB_Styles', false )
@@ -676,7 +676,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 				if ( ! is_wp_error( $event_terms ) && is_array( $event_terms ) ) {
 					foreach ( $event_terms as $event_term ) {
 						if ( $event_term instanceof \WP_Term ) {
-							$event_category_options[ $event_term->slug ] = $event_term->name;
+							$event_category_options[ $event_term->slug ] = esc_html( $event_term->name );
 						}
 					}
 				}
@@ -785,8 +785,8 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			'label'    => esc_html__( 'Date column order', 'events-calendar-for-bricks' ),
 			'type'     => 'select',
 			'options'  => [
-				'month_day' => esc_html__( 'Month above, day below', 'events-calendar-for-bricks' ),
-				'day_month' => esc_html__( 'Day above, month below', 'events-calendar-for-bricks' ),
+				'month_day' => esc_html__( 'Month above, date below', 'events-calendar-for-bricks' ),
+				'day_month' => esc_html__( 'Date above, month below', 'events-calendar-for-bricks' ),
 			],
 			'default'  => 'month_day',
 			'inline'   => true,
@@ -905,7 +905,8 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			'group'       => 'event_query',
 			'label'       => esc_html__( 'Number of events', 'events-calendar-for-bricks' ),
 			'type'        => 'number',
-			'min'         => -1,
+			'min'         => 1,
+			'max'         => 100,
 			'step'        => 1,
 			'default'     => 10,
 			'placeholder' => '10',
@@ -931,7 +932,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			'label'       => esc_html__( 'No events found text', 'events-calendar-for-bricks' ),
 			'type'        => 'text',
 			'placeholder' => esc_html__( 'No events found', 'events-calendar-for-bricks' ),
-			'default'     => esc_html__( 'No events found', 'events-calendar-for-bricks' ),
+			'default'     => __( 'No events found', 'events-calendar-for-bricks' ),
 		];
 
 		$element->controls['no_events_tag'] = [
@@ -998,7 +999,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			'group'      => 'image_overlays',
 			'label'      => esc_html__( 'Category typography', 'events-calendar-for-bricks' ),
 			'type'       => 'typography',
-			'exclude'    => [ 'text-align' ], // phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude
+			'exclude'    => [ 'text-align' ],
 			'responsive' => true,
 			'required'   => self::ecbb_req_shell_category_style_list1(),
 			'css'        => [
@@ -1042,7 +1043,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			'group'      => 'image_overlays',
 			'label'      => esc_html__( 'Category typography', 'events-calendar-for-bricks' ),
 			'type'       => 'typography',
-			'exclude'    => [ 'text-align' ], // phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude
+			'exclude'    => [ 'text-align' ],
 			'responsive' => true,
 			'required'   => self::ecbb_req_shell_category_style_grid(),
 			'css'        => [
@@ -1086,7 +1087,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			'group'      => 'image_overlays',
 			'label'      => esc_html__( 'Date badge typography', 'events-calendar-for-bricks' ),
 			'type'       => 'typography',
-			'exclude'    => [ 'text-align' ], // phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude
+			'exclude'    => [ 'text-align' ],
 			'responsive' => true,
 			'required'   => self::ecbb_req_shell_date_badge_style(),
 			'css'        => [

@@ -26,6 +26,33 @@ if (! class_exists('ECBB_Query', false)) {
 		}
 
 		/**
+		 * @param array<string,mixed> $settings Element or AJAX settings.
+		 * @return string all|future|past
+		 */
+		public static function ecbb_event_type(array $settings)
+		{
+			$time_type = isset($settings['event_type']) ? sanitize_key((string) $settings['event_type']) : 'all';
+			return in_array($time_type, ['all', 'future', 'past'], true) ? $time_type : 'all';
+		}
+
+		/**
+		 * @param array<string,mixed> $settings Element settings.
+		 * @return int
+		 */
+		public static function ecbb_posts_per_page(array $settings)
+		{
+			$posts_per_page = array_key_exists('posts_per_page', $settings) ? (int) $settings['posts_per_page'] : 10;
+			if ($posts_per_page < 1) {
+				$posts_per_page = 10;
+			}
+
+			$max_posts = (int) apply_filters('ecbb_events_posts_per_page_max', 100);
+			$max_posts = max(1, $max_posts);
+
+			return min($posts_per_page, $max_posts);
+		}
+
+		/**
 		 * Inclusive calendar-day bounds from Bricks datepicker strings (site timezone).
 		 *
 		 * @param array<string,mixed> $settings Element or AJAX settings.
@@ -106,9 +133,7 @@ if (! class_exists('ECBB_Query', false)) {
 		{
 			$meta_clauses = [];
 			$time_mode    = self::ecbb_time_mode($settings);
-			$time_type    = isset($settings['event_type']) && (string) $settings['event_type'] !== ''
-				? (string) $settings['event_type']
-				: 'all';
+			$time_type    = self::ecbb_event_type($settings);
 
 			if ('between' === $time_mode) {
 				list($range_start, $range_end) = self::ecbb_range_bounds($settings);
@@ -179,7 +204,7 @@ if (! class_exists('ECBB_Query', false)) {
 		 */
 		public static function ecbb_tribe_args(array $settings)
 		{
-			$posts_per_page = array_key_exists('posts_per_page', $settings) ? (int) $settings['posts_per_page'] : 10;
+			$posts_per_page = self::ecbb_posts_per_page($settings);
 			$order          = ! empty($settings['order']) && strtoupper((string) $settings['order']) === 'DESC' ? 'DESC' : 'ASC';
 
 			$query_args = [

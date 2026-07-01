@@ -67,7 +67,7 @@ class ECBB_Widget extends \Bricks\Element
 	{
 		$text = isset($this->settings['no_events_text']) ? trim((string) $this->settings['no_events_text']) : '';
 		if ($text === '') {
-			return esc_html__('No events found', 'events-calendar-for-bricks');
+			return __('No events found', 'events-calendar-for-bricks');
 		}
 		return $text;
 	}

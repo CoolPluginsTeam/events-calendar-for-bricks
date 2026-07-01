@@ -43,7 +43,7 @@ if ( ! class_exists( 'ECBB_Grid', false ) ) {
 				],
 				[
 					'part'           => 'read_more',
-					'read_more_text' => esc_html__( 'View Details', 'events-calendar-for-bricks' ),
+					'read_more_text' => __( 'View Details', 'events-calendar-for-bricks' ),
 				],
 			];
 
