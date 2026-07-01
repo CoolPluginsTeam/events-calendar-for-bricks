@@ -168,9 +168,6 @@ if (! class_exists('ECBB_Markup', false)) {
 
 		public static function ecbb_sanitize_template( $template ) {
 			$template = is_string( $template ) ? trim( $template ) : 'list';
-			if ( $template === 'carousel' ) {
-				$template = 'list';
-			}
 			return in_array( $template, [ 'list', 'grid' ], true ) ? $template : 'list';
 		}
 
@@ -1096,196 +1093,266 @@ if (! class_exists('ECBB_Markup', false)) {
 
 		// --- Event field text (venue / organizer / link details) ---
 
-		public static function ecbb_part_detail_text($event_id, $part)
-		{
+		/**
+		 * Part slug => resolver for {@see ecbb_part_detail_text()}.
+		 *
+		 * @return array<string, callable(int):string>
+		 */
+		private static function ecbb_part_detail_resolver_map() {
+			static $map = null;
+			if ( is_array( $map ) ) {
+				return $map;
+			}
+
+			$map = [
+				'venue_full_address'  => [ self::class, 'ecbb_resolve_detail_venue_full_address' ],
+				'venue_street'        => [ self::class, 'ecbb_resolve_detail_venue_street' ],
+				'venue_city'          => [ self::class, 'ecbb_resolve_detail_venue_city' ],
+				'venue_state'         => [ self::class, 'ecbb_resolve_detail_venue_state' ],
+				'venue_zip'           => [ self::class, 'ecbb_resolve_detail_venue_zip' ],
+				'venue_country'       => [ self::class, 'ecbb_resolve_detail_venue_country' ],
+				'venue_phone'         => [ self::class, 'ecbb_resolve_detail_venue_phone' ],
+				'venue_website'       => [ self::class, 'ecbb_resolve_detail_venue_website' ],
+				'event_map_link'      => [ self::class, 'ecbb_resolve_detail_event_map_link' ],
+				'event_website'       => [ self::class, 'ecbb_resolve_detail_event_website' ],
+				'event_phone'         => [ self::class, 'ecbb_resolve_detail_event_phone' ],
+				'organizer_email'     => [ self::class, 'ecbb_resolve_detail_organizer_email' ],
+				'organizer_phone'     => [ self::class, 'ecbb_resolve_detail_organizer_phone' ],
+				'organizer_website'   => [ self::class, 'ecbb_resolve_detail_organizer_website' ],
+			];
+
+			return $map;
+		}
+
+		/** @param int $event_id Event post ID. @return string */
+		private static function ecbb_resolve_detail_venue_full_address( $event_id ) {
+			return self::ecbb_venue_full_address_text( $event_id );
+		}
+
+		/** @param int $event_id Event post ID. @return string */
+		private static function ecbb_resolve_detail_venue_street( $event_id ) {
+			if ( function_exists( 'tribe_get_address' ) ) {
+				$t = trim( (string) \tribe_get_address( $event_id ) );
+				if ( $t !== '' ) {
+					return $t;
+				}
+			}
+			$vid = self::ecbb_event_meta_venue_id( $event_id );
+			if ( $vid < 1 ) {
+				return '';
+			}
+			return trim( (string) get_post_meta( $vid, '_VenueAddress', true ) );
+		}
+
+		/** @param int $event_id Event post ID. @return string */
+		private static function ecbb_resolve_detail_venue_city( $event_id ) {
+			if ( function_exists( 'tribe_get_city' ) ) {
+				$t = trim( (string) \tribe_get_city( $event_id ) );
+				if ( $t !== '' ) {
+					return $t;
+				}
+			}
+			$vid = self::ecbb_event_meta_venue_id( $event_id );
+			if ( $vid < 1 ) {
+				return '';
+			}
+			return trim( (string) get_post_meta( $vid, '_VenueCity', true ) );
+		}
+
+		/** @param int $event_id Event post ID. @return string */
+		private static function ecbb_resolve_detail_venue_state( $event_id ) {
+			if ( function_exists( 'tribe_get_province' ) ) {
+				$t = trim( (string) \tribe_get_province( $event_id ) );
+				if ( $t !== '' ) {
+					return $t;
+				}
+			}
+			if ( function_exists( 'tribe_get_state' ) ) {
+				$t = trim( (string) \tribe_get_state( $event_id ) );
+				if ( $t !== '' ) {
+					return $t;
+				}
+			}
+			$vid = self::ecbb_event_meta_venue_id( $event_id );
+			if ( $vid < 1 ) {
+				return '';
+			}
+			$s = get_post_meta( $vid, '_VenueStateProvince', true );
+			if ( $s === '' || $s === null ) {
+				$s = get_post_meta( $vid, '_VenueState', true );
+			}
+			return trim( (string) $s );
+		}
+
+		/** @param int $event_id Event post ID. @return string */
+		private static function ecbb_resolve_detail_venue_zip( $event_id ) {
+			if ( function_exists( 'tribe_get_zip' ) ) {
+				$t = trim( (string) \tribe_get_zip( $event_id ) );
+				if ( $t !== '' ) {
+					return $t;
+				}
+			}
+			$vid = self::ecbb_event_meta_venue_id( $event_id );
+			if ( $vid < 1 ) {
+				return '';
+			}
+			return trim( (string) get_post_meta( $vid, '_VenueZip', true ) );
+		}
+
+		/** @param int $event_id Event post ID. @return string */
+		private static function ecbb_resolve_detail_venue_country( $event_id ) {
+			if ( function_exists( 'tribe_get_country' ) ) {
+				$t = trim( (string) \tribe_get_country( $event_id ) );
+				if ( $t !== '' ) {
+					return $t;
+				}
+			}
+			$vid = self::ecbb_event_meta_venue_id( $event_id );
+			if ( $vid < 1 ) {
+				return '';
+			}
+			return trim( (string) get_post_meta( $vid, '_VenueCountry', true ) );
+		}
+
+		/** @param int $event_id Event post ID. @return string */
+		private static function ecbb_resolve_detail_venue_phone( $event_id ) {
+			if ( function_exists( 'tribe_get_phone' ) ) {
+				$t = trim( (string) \tribe_get_phone( $event_id ) );
+				if ( $t !== '' ) {
+					return $t;
+				}
+			}
+			$vid = self::ecbb_event_meta_venue_id( $event_id );
+			if ( $vid < 1 ) {
+				return '';
+			}
+			return trim( (string) get_post_meta( $vid, '_VenuePhone', true ) );
+		}
+
+		/** @param int $event_id Event post ID. @return string */
+		private static function ecbb_resolve_detail_venue_website( $event_id ) {
+			if ( function_exists( 'tribe_get_venue_website_url' ) ) {
+				$t = trim( (string) \tribe_get_venue_website_url( $event_id ) );
+				if ( $t !== '' ) {
+					return $t;
+				}
+			}
+			$vid = self::ecbb_event_meta_venue_id( $event_id );
+			if ( $vid > 0 ) {
+				$t = trim( (string) get_post_meta( $vid, '_VenueURL', true ) );
+				if ( $t !== '' ) {
+					return $t;
+				}
+			}
+			return '';
+		}
+
+		/** @param int $event_id Event post ID. @return string */
+		private static function ecbb_resolve_detail_event_map_link( $event_id ) {
+			if ( function_exists( 'tribe_get_map_link_url' ) ) {
+				return trim( (string) \tribe_get_map_link_url( $event_id ) );
+			}
+			if ( function_exists( 'tribe_get_map_link' ) ) {
+				$raw = (string) \tribe_get_map_link( $event_id );
+				if ( preg_match( '/href=[\"\\\']([^\"\\\']+)[\"\\\']/', $raw, $m ) ) {
+					return trim( $m[1] );
+				}
+			}
+			return '';
+		}
+
+		/** @param int $event_id Event post ID. @return string */
+		private static function ecbb_resolve_detail_event_website( $event_id ) {
+			if ( function_exists( 'tribe_get_event_website_url' ) ) {
+				$t = trim( (string) \tribe_get_event_website_url( $event_id ) );
+				if ( $t !== '' ) {
+					return $t;
+				}
+			}
+			$m = get_post_meta( $event_id, '_EventUrl', true );
+			return $m ? trim( (string) $m ) : '';
+		}
+
+		/** @param int $event_id Event post ID. @return string */
+		private static function ecbb_resolve_detail_event_phone( $event_id ) {
+			$m = get_post_meta( $event_id, '_EventPhone', true );
+			return $m ? trim( wp_strip_all_tags( (string) $m ) ) : '';
+		}
+
+		/** @param int $event_id Event post ID. @return string */
+		private static function ecbb_resolve_detail_organizer_email( $event_id ) {
+			if ( function_exists( 'tribe_get_organizer_email' ) ) {
+				$t = trim( (string) \tribe_get_organizer_email( $event_id ) );
+				if ( $t !== '' ) {
+					return $t;
+				}
+			}
+			$oid = self::ecbb_event_meta_organizer_id( $event_id );
+			if ( $oid > 0 ) {
+				$t = trim( (string) get_post_meta( $oid, '_OrganizerEmail', true ) );
+				if ( $t !== '' ) {
+					return $t;
+				}
+			}
+			return '';
+		}
+
+		/** @param int $event_id Event post ID. @return string */
+		private static function ecbb_resolve_detail_organizer_phone( $event_id ) {
+			if ( function_exists( 'tribe_get_organizer_phone' ) ) {
+				$t = trim( (string) \tribe_get_organizer_phone( $event_id ) );
+				if ( $t !== '' ) {
+					return $t;
+				}
+			}
+			$oid = self::ecbb_event_meta_organizer_id( $event_id );
+			if ( $oid > 0 ) {
+				$t = trim( (string) get_post_meta( $oid, '_OrganizerPhone', true ) );
+				if ( $t !== '' ) {
+					return $t;
+				}
+			}
+			return '';
+		}
+
+		/** @param int $event_id Event post ID. @return string */
+		private static function ecbb_resolve_detail_organizer_website( $event_id ) {
+			if ( function_exists( 'tribe_get_organizer_website_url' ) ) {
+				$t = trim( (string) \tribe_get_organizer_website_url( $event_id ) );
+				if ( $t !== '' ) {
+					return $t;
+				}
+			}
+			$oid = self::ecbb_event_meta_organizer_id( $event_id );
+			if ( $oid > 0 ) {
+				$t = trim( (string) get_post_meta( $oid, '_OrganizerWebsite', true ) );
+				if ( $t !== '' ) {
+					return $t;
+				}
+			}
+			return '';
+		}
+
+		/**
+		 * Plain-text value for a venue/organizer/event detail part slug.
+		 *
+		 * @param int    $event_id Event post ID.
+		 * @param string $part     Detail part slug.
+		 * @return string Unescaped plain text; caller must escape for HTML.
+		 */
+		public static function ecbb_part_detail_text( $event_id, $part ) {
 			$event_id = (int) $event_id;
 			$part     = (string) $part;
-			if ($event_id < 1) {
+			if ( $event_id < 1 ) {
 				return '';
 			}
 
-		switch ($part) {
-			case 'venue_full_address':
-			return self::ecbb_venue_full_address_text( $event_id );
+			$resolvers = self::ecbb_part_detail_resolver_map();
+			if ( ! isset( $resolvers[ $part ] ) ) {
+				return '';
+			}
 
-		case 'venue_street':
-		if (function_exists('tribe_get_address')) {
-			$t = trim((string) \tribe_get_address($event_id));
-			if ($t !== '') {
-				return $t;
-			}
-		}
-		break;
-
-		case 'venue_city':
-		if (function_exists('tribe_get_city')) {
-			$t = trim((string) \tribe_get_city($event_id));
-			if ($t !== '') {
-				return $t;
-			}
-		}
-		break;
-
-		case 'venue_state':
-		if (function_exists('tribe_get_province')) {
-			$t = trim((string) \tribe_get_province($event_id));
-			if ($t !== '') {
-				return $t;
-			}
-		}
-		if (function_exists('tribe_get_state')) {
-			$t = trim((string) \tribe_get_state($event_id));
-			if ($t !== '') {
-				return $t;
-			}
-		}
-		break;
-
-		case 'venue_zip':
-		if (function_exists('tribe_get_zip')) {
-			$t = trim((string) \tribe_get_zip($event_id));
-			if ($t !== '') {
-				return $t;
-			}
-		}
-		break;
-
-		case 'venue_country':
-		if (function_exists('tribe_get_country')) {
-			$t = trim((string) \tribe_get_country($event_id));
-			if ($t !== '') {
-				return $t;
-			}
-		}
-		break;
-
-		case 'venue_phone':
-		if (function_exists('tribe_get_phone')) {
-			$t = trim((string) \tribe_get_phone($event_id));
-			if ($t !== '') {
-				return $t;
-			}
-		}
-		break;
-
-		case 'venue_website':
-		if (function_exists('tribe_get_venue_website_url')) {
-			$t = trim((string) \tribe_get_venue_website_url($event_id));
-			if ($t !== '') {
-				return $t;
-			}
-		}
-		$vid = (int) get_post_meta($event_id, '_EventVenueID', true);
-		if ($vid > 0) {
-			$t = trim((string) get_post_meta($vid, '_VenueURL', true));
-			if ($t !== '') {
-				return $t;
-			}
-		}
-		return '';
-
-		case 'event_map_link':
-		if (function_exists('tribe_get_map_link_url')) {
-			return trim((string) \tribe_get_map_link_url($event_id));
-		}
-		if (function_exists('tribe_get_map_link')) {
-			$raw = (string) \tribe_get_map_link($event_id);
-			if (preg_match('/href=[\"\']([^\"\']+)[\"\']/', $raw, $m)) {
-				return trim($m[1]);
-			}
-		}
-		return '';
-
-		case 'event_website':
-		if (function_exists('tribe_get_event_website_url')) {
-			$t = trim((string) \tribe_get_event_website_url($event_id));
-			if ($t !== '') {
-				return $t;
-			}
-		}
-		$m = get_post_meta($event_id, '_EventUrl', true);
-		return $m ? trim((string) $m) : '';
-
-		case 'event_phone':
-		$m = get_post_meta($event_id, '_EventPhone', true);
-		return $m ? trim(wp_strip_all_tags((string) $m)) : '';
-
-		case 'organizer_email':
-		if (function_exists('tribe_get_organizer_email')) {
-			$t = trim((string) \tribe_get_organizer_email($event_id));
-			if ($t !== '') {
-				return $t;
-			}
-		}
-		$oid = (int) get_post_meta($event_id, '_EventOrganizerID', true);
-		if ($oid > 0) {
-			$t = trim((string) get_post_meta($oid, '_OrganizerEmail', true));
-			if ($t !== '') {
-				return $t;
-			}
-		}
-		return '';
-
-		case 'organizer_phone':
-		if (function_exists('tribe_get_organizer_phone')) {
-			$t = trim((string) \tribe_get_organizer_phone($event_id));
-			if ($t !== '') {
-				return $t;
-			}
-		}
-		$oid = (int) get_post_meta($event_id, '_EventOrganizerID', true);
-		if ($oid > 0) {
-			$t = trim((string) get_post_meta($oid, '_OrganizerPhone', true));
-			if ($t !== '') {
-				return $t;
-			}
-		}
-		return '';
-
-		case 'organizer_website':
-		if (function_exists('tribe_get_organizer_website_url')) {
-			$t = trim((string) \tribe_get_organizer_website_url($event_id));
-			if ($t !== '') {
-				return $t;
-			}
-		}
-		$oid = (int) get_post_meta($event_id, '_EventOrganizerID', true);
-		if ($oid > 0) {
-			$t = trim((string) get_post_meta($oid, '_OrganizerWebsite', true));
-			if ($t !== '') {
-				return $t;
-			}
-		}
-		return '';
-
-		default:
-		return '';
-		}
-
-		$vid = (int) get_post_meta($event_id, '_EventVenueID', true);
-		if ($vid < 1) {
-			return '';
-		}
-		switch ($part) {
-			case 'venue_street':
-			return trim((string) get_post_meta($vid, '_VenueAddress', true));
-			case 'venue_city':
-			return trim((string) get_post_meta($vid, '_VenueCity', true));
-			case 'venue_state':
-			$s = get_post_meta($vid, '_VenueStateProvince', true);
-			if ($s === '' || $s === null) {
-				$s = get_post_meta($vid, '_VenueState', true);
-			}
-		return trim((string) $s);
-		case 'venue_zip':
-		return trim((string) get_post_meta($vid, '_VenueZip', true));
-		case 'venue_country':
-		return trim((string) get_post_meta($vid, '_VenueCountry', true));
-		case 'venue_phone':
-		return trim((string) get_post_meta($vid, '_VenuePhone', true));
-		default:
-		return '';
-		}
+			return (string) call_user_func( $resolvers[ $part ], $event_id );
 		}
 
 		/**
@@ -1296,6 +1363,46 @@ if (! class_exists('ECBB_Markup', false)) {
 		*/
 
 		// --- Venue ---
+
+		/** @var array<int,int> */
+		private static $ecbb_meta_venue_id_cache = array();
+
+		/** @var array<int,int> */
+		private static $ecbb_meta_organizer_id_cache = array();
+
+		/**
+		 * Cached `_EventVenueID` for an event (one meta read per event per request).
+		 *
+		 * @param int $event_id Event post ID.
+		 * @return int Venue post ID or 0.
+		 */
+		private static function ecbb_event_meta_venue_id( $event_id ) {
+			$event_id = (int) $event_id;
+			if ( $event_id < 1 ) {
+				return 0;
+			}
+			if ( ! array_key_exists( $event_id, self::$ecbb_meta_venue_id_cache ) ) {
+				self::$ecbb_meta_venue_id_cache[ $event_id ] = (int) get_post_meta( $event_id, '_EventVenueID', true );
+			}
+			return self::$ecbb_meta_venue_id_cache[ $event_id ];
+		}
+
+		/**
+		 * Cached `_EventOrganizerID` for an event (one meta read per event per request).
+		 *
+		 * @param int $event_id Event post ID.
+		 * @return int Organizer post ID or 0.
+		 */
+		private static function ecbb_event_meta_organizer_id( $event_id ) {
+			$event_id = (int) $event_id;
+			if ( $event_id < 1 ) {
+				return 0;
+			}
+			if ( ! array_key_exists( $event_id, self::$ecbb_meta_organizer_id_cache ) ) {
+				self::$ecbb_meta_organizer_id_cache[ $event_id ] = (int) get_post_meta( $event_id, '_EventOrganizerID', true );
+			}
+			return self::$ecbb_meta_organizer_id_cache[ $event_id ];
+		}
 
 		public static function ecbb_venue_id($event_id)
 		{
@@ -1309,7 +1416,7 @@ if (! class_exists('ECBB_Markup', false)) {
 				return $venue_id;
 			}
 		}
-		return (int) get_post_meta($event_id, '_EventVenueID', true);
+		return self::ecbb_event_meta_venue_id( $event_id );
 		}
 
 		/**
@@ -1331,7 +1438,7 @@ if (! class_exists('ECBB_Markup', false)) {
 			$venue = trim((string) \tribe_get_venue($event_id));
 		}
 		if ($venue === '') {
-			$venue_id = (int) get_post_meta($event_id, '_EventVenueID', true);
+			$venue_id = self::ecbb_event_meta_venue_id( $event_id );
 			if ($venue_id) {
 				$venue = trim((string) get_the_title($venue_id));
 			}
@@ -1620,7 +1727,7 @@ if (! class_exists('ECBB_Markup', false)) {
 			$organizer = trim((string) \tribe_get_organizer($event_id));
 		}
 		if ($organizer === '') {
-			$organizer_id = (int) get_post_meta($event_id, '_EventOrganizerID', true);
+			$organizer_id = self::ecbb_event_meta_organizer_id( $event_id );
 			if ($organizer_id) {
 				$organizer = trim((string) get_the_title($organizer_id));
 			}
@@ -2543,6 +2650,398 @@ if (! class_exists('ECBB_Markup', false)) {
 		}
 
 		/**
+		 * Detail-field part slugs routed through {@see ecbb_render_part_detail()}.
+		 *
+		 * @return string[]
+		 */
+		private static function ecbb_part_ext_detail_slugs() {
+			return [
+				'venue_full_address',
+				'venue_street',
+				'venue_city',
+				'venue_state',
+				'venue_zip',
+				'venue_country',
+				'venue_phone',
+				'venue_website',
+				'event_map_link',
+				'event_website',
+				'event_phone',
+				'organizer_email',
+				'organizer_phone',
+				'organizer_website',
+			];
+		}
+
+		/**
+		 * Part slug => render handler for {@see ecbb_render_part_ext()}.
+		 *
+		 * @return array<string, callable>
+		 */
+		private static function ecbb_part_ext_dispatch_map() {
+			static $map = null;
+			if ( is_array( $map ) ) {
+				return $map;
+			}
+
+			$map = [
+				'venue'         => [ self::class, 'ecbb_render_venue' ],
+				'organizer'     => [ self::class, 'ecbb_render_organizer' ],
+				'date'          => [ self::class, 'ecbb_render_part_date' ],
+				'event_date'    => [ self::class, 'ecbb_render_part_event_date' ],
+				'event_time'    => [ self::class, 'ecbb_render_part_event_time' ],
+				'event_day'     => [ self::class, 'ecbb_render_part_event_day' ],
+				'event_cost'    => [ self::class, 'ecbb_render_part_event_cost' ],
+				'event_tickets' => [ self::class, 'ecbb_render_part_event_tickets' ],
+				'event_rsvp'    => [ self::class, 'ecbb_render_part_event_rsvp' ],
+				'read_more'     => [ self::class, 'ecbb_render_part_read_more' ],
+			];
+
+			$detail_handler = [ self::class, 'ecbb_render_part_detail' ];
+			foreach ( self::ecbb_part_ext_detail_slugs() as $slug ) {
+				$map[ $slug ] = $detail_handler;
+			}
+
+			return $map;
+		}
+
+		/**
+		 * @param \WP_Post            $post  Event post.
+		 * @param array<string,mixed> $item  Repeater row.
+		 * @param int                 $idx   Row index.
+		 * @param string              $style Inline style attribute value (contents only), or empty.
+		 * @param string              $skin  Loop skin.
+		 * @return string
+		 */
+		public static function ecbb_render_part_date( $post, array $item, $idx, $style, $skin = '' ) {
+			$fmt = isset( $item['date_display'] ) ? (string) $item['date_display'] : 'day_time_range';
+			if ( $fmt === 'range' ) {
+				return self::ecbb_render_grid_date_flow( $post, $item, $idx, $skin );
+			}
+
+			$idx  = absint( $idx );
+			$skin = (string) $skin;
+			$attr = self::ecbb_part_wrap_attrs( $item, $idx, $style );
+			$wrap = esc_attr( self::ecbb_part_classes( 'date', $idx, $skin, $item ) );
+			$tp   = self::ecbb_build_day_time_parts( $post->ID, $item );
+			$html = '';
+
+			if ( $fmt === 'time' ) {
+				$html = isset( $tp['time'] ) ? trim( (string) $tp['time'] ) : '';
+			} elseif ( $fmt === 'day' ) {
+				$html = isset( $tp['day'] ) ? trim( (string) $tp['day'] ) : '';
+			} else {
+				$day  = isset( $tp['day'] ) ? trim( (string) $tp['day'] ) : '';
+				$time = isset( $tp['time'] ) ? trim( (string) $tp['time'] ) : '';
+				if ( $day !== '' && $time !== '' ) {
+					$html = $day . ', ' . $time;
+				} elseif ( $time !== '' ) {
+					$html = $time;
+				} else {
+					$html = $day;
+				}
+			}
+
+			if ( $html === '' ) {
+				return '';
+			}
+
+			return '<div class="' . $wrap . ( $html !== '' ? ' ecbb-has-row-icon' : '' ) . '"' . $attr . '>' . esc_html( $html ) . '</div>';
+		}
+
+		/**
+		 * @param \WP_Post            $post  Event post.
+		 * @param array<string,mixed> $item  Repeater row.
+		 * @param int                 $idx   Row index.
+		 * @param string              $style Inline style attribute value (contents only), or empty.
+		 * @param string              $skin  Loop skin.
+		 * @return string
+		 */
+		public static function ecbb_render_part_event_date( $post, array $item, $idx, $style, $skin = '' ) {
+			$idx    = absint( $idx );
+			$skin   = (string) $skin;
+			$attr   = self::ecbb_part_wrap_attrs( $item, $idx, $style );
+			$wrap   = esc_attr( self::ecbb_part_classes( 'event_date', $idx, $skin, $item ) );
+			$format = self::ecbb_part_date_php_fmt( 'event_date', $item );
+			$html   = '';
+
+			if ( function_exists( 'tribe_get_start_date' ) ) {
+				$php  = $format !== '' ? $format : get_option( 'date_format' );
+				$html = (string) \tribe_get_start_date( $post->ID, false, $php );
+			} else {
+				$raw  = (string) get_post_meta( $post->ID, '_EventStartDate', true );
+				$ts   = $raw ? strtotime( $raw ) : false;
+				$php  = $format !== '' ? $format : get_option( 'date_format' );
+				$html = $ts ? date_i18n( $php, $ts ) : '';
+			}
+
+			$html = trim( wp_strip_all_tags( $html ) );
+			if ( $html === '' ) {
+				return '';
+			}
+
+			return '<div class="' . $wrap . '"' . $attr . '>' . esc_html( $html ) . '</div>';
+		}
+
+		/**
+		 * @param \WP_Post            $post  Event post.
+		 * @param array<string,mixed> $item  Repeater row.
+		 * @param int                 $idx   Row index.
+		 * @param string              $style Inline style attribute value (contents only), or empty.
+		 * @param string              $skin  Loop skin.
+		 * @return string
+		 */
+		public static function ecbb_render_part_event_time( $post, array $item, $idx, $style, $skin = '' ) {
+			$idx    = absint( $idx );
+			$skin   = (string) $skin;
+			$attr   = self::ecbb_part_wrap_attrs( $item, $idx, $style );
+			$wrap   = esc_attr( self::ecbb_part_classes( 'event_time', $idx, $skin, $item ) );
+			$format = self::ecbb_part_date_php_fmt( 'event_time', $item );
+			$tp     = self::ecbb_build_day_time_parts( $post->ID, $item );
+			$html   = isset( $tp['time'] ) ? trim( (string) $tp['time'] ) : '';
+
+			if ( $html === '' ) {
+				$php = $format !== '' ? $format : get_option( 'time_format' );
+				$php = self::ecbb_time_fmt_lower( $php );
+				if ( function_exists( 'tribe_get_start_time' ) ) {
+					$html = (string) \tribe_get_start_time( $post->ID, $php );
+				} elseif ( function_exists( 'tribe_get_start_date' ) ) {
+					$html = (string) \tribe_get_start_date( $post->ID, true, $php );
+				} else {
+					$raw  = (string) get_post_meta( $post->ID, '_EventStartDate', true );
+					$ts   = $raw ? strtotime( $raw ) : false;
+					$html = $ts ? date_i18n( $php, $ts ) : '';
+				}
+				$html = self::ecbb_time_lower_am( trim( wp_strip_all_tags( $html ) ) );
+			}
+
+			if ( $html === '' ) {
+				return '';
+			}
+
+			return '<div class="' . $wrap . ( $skin !== 'style2' && $html !== '' ? ' ecbb-has-row-icon' : '' ) . '"' . $attr . '>' . esc_html( $html ) . '</div>';
+		}
+
+		/**
+		 * @param \WP_Post            $post  Event post.
+		 * @param array<string,mixed> $item  Repeater row.
+		 * @param int                 $idx   Row index.
+		 * @param string              $style Inline style attribute value (contents only), or empty.
+		 * @param string              $skin  Loop skin.
+		 * @return string
+		 */
+		public static function ecbb_render_part_event_day( $post, array $item, $idx, $style, $skin = '' ) {
+			$idx  = absint( $idx );
+			$skin = (string) $skin;
+			$attr = self::ecbb_part_wrap_attrs( $item, $idx, $style );
+			$wrap = esc_attr( self::ecbb_part_classes( 'event_day', $idx, $skin, $item ) );
+			$pr   = self::ecbb_build_day_time_parts( $post->ID, [] );
+			$html = isset( $pr['day'] ) ? trim( (string) $pr['day'] ) : '';
+
+			if ( $html === '' ) {
+				$raw  = (string) get_post_meta( $post->ID, '_EventStartDate', true );
+				$ts   = $raw ? strtotime( $raw ) : false;
+				$html = $ts ? trim( wp_strip_all_tags( date_i18n( 'l', $ts ) ) ) : '';
+			}
+
+			if ( $html === '' ) {
+				return '';
+			}
+
+			return '<div class="' . $wrap . '"' . $attr . '>' . esc_html( $html ) . '</div>';
+		}
+
+		/**
+		 * @param \WP_Post            $post  Event post.
+		 * @param array<string,mixed> $item  Repeater row.
+		 * @param int                 $idx   Row index.
+		 * @param string              $style Inline style attribute value (contents only), or empty.
+		 * @param string              $skin  Loop skin.
+		 * @return string
+		 */
+		public static function ecbb_render_part_detail( $post, array $item, $idx, $style, $skin = '' ) {
+			$part = isset( $item['part'] ) ? (string) $item['part'] : '';
+			if ( $part === '' || ! in_array( $part, self::ecbb_part_ext_detail_slugs(), true ) ) {
+				return '';
+			}
+
+			$idx       = absint( $idx );
+			$skin      = (string) $skin;
+			$attr      = self::ecbb_part_wrap_attrs( $item, $idx, $style );
+			$link_attr = '';
+			$wrap      = esc_attr( self::ecbb_part_classes( $part, $idx, $skin, $item ) );
+			$html      = self::ecbb_part_detail_text( $post->ID, $part );
+
+			if ( $html === '' ) {
+				return '';
+			}
+
+			$venue_physical = [ 'venue_full_address', 'venue_street', 'venue_city', 'venue_state', 'venue_zip', 'venue_country', 'venue_phone' ];
+			$loc_icon       = in_array( $part, $venue_physical, true ) ? ' ecbb-has-row-icon' : '';
+
+			if ( $part === 'organizer_email' && is_email( $html ) ) {
+				return '<div class="' . $wrap . '"' . $attr . '><a class="ecbb-event__link" href="' . esc_url( 'mailto:' . $html ) . '"' . $link_attr . '>' . esc_html( $html ) . '</a></div>';
+			}
+
+			$url_parts = [ 'venue_website', 'event_website', 'organizer_website', 'event_map_link' ];
+			if ( in_array( $part, $url_parts, true ) ) {
+				$safe = esc_url_raw( $html );
+				if ( ! $safe || ! preg_match( '#^https?://#i', $safe ) ) {
+					return '<div class="' . $wrap . '"' . $attr . '>' . esc_html( $html ) . '</div>';
+				}
+
+				$label = isset( $item['detail_link_text'] ) ? trim( (string) $item['detail_link_text'] ) : '';
+				if ( $label === '' ) {
+					$defaults = [
+						'event_map_link'    => __( 'Open map', 'events-calendar-for-bricks' ),
+						'event_website'     => __( 'Event website', 'events-calendar-for-bricks' ),
+						'venue_website'     => __( 'Venue website', 'events-calendar-for-bricks' ),
+						'organizer_website' => __( 'Organizer website', 'events-calendar-for-bricks' ),
+					];
+					$label = isset( $defaults[ $part ] ) ? $defaults[ $part ] : $safe;
+				} else {
+					$label = sanitize_text_field( $label );
+				}
+
+				return '<div class="' . $wrap . '"' . $attr . '><a class="ecbb-event__link" href="' . esc_url( $safe ) . '" rel="noopener noreferrer" target="_blank"' . $link_attr . '>' . esc_html( $label ) . '</a></div>';
+			}
+
+			return '<div class="' . $wrap . $loc_icon . '"' . $attr . '>' . esc_html( $html ) . '</div>';
+		}
+
+		/**
+		 * @param \WP_Post            $post  Event post.
+		 * @param array<string,mixed> $item  Repeater row.
+		 * @param int                 $idx   Row index.
+		 * @param string              $style Inline style attribute value (contents only), or empty.
+		 * @param string              $skin  Loop skin.
+		 * @return string
+		 */
+		public static function ecbb_render_part_event_cost( $post, array $item, $idx, $style, $skin = '' ) {
+			$cost = self::ecbb_layout_cost_label( $post->ID, $item );
+			if ( $cost === '' ) {
+				return '';
+			}
+
+			$idx  = absint( $idx );
+			$skin = (string) $skin;
+			$attr = self::ecbb_part_wrap_attrs( $item, $idx, $style );
+			$wrap = esc_attr( self::ecbb_part_classes( 'event_cost', $idx, $skin, $item ) );
+
+			return '<div class="' . $wrap . '"' . $attr . '>' . esc_html( $cost ) . '</div>';
+		}
+
+		/**
+		 * @param \WP_Post            $post  Event post.
+		 * @param array<string,mixed> $item  Repeater row.
+		 * @param int                 $idx   Row index.
+		 * @param string              $style Inline style attribute value (contents only), or empty.
+		 * @param string              $skin  Loop skin.
+		 * @return string
+		 */
+		public static function ecbb_render_part_event_tickets( $post, array $item, $idx, $style, $skin = '' ) {
+			$url = '';
+			if ( function_exists( 'tribe_get_event' ) ) {
+				$ev = tribe_get_event( $post->ID );
+				if ( $ev && ! empty( $ev->website ) ) {
+					$url = esc_url_raw( (string) $ev->website );
+				}
+			}
+			if ( $url === '' ) {
+				$m   = get_post_meta( $post->ID, '_EventUrl', true );
+				$url = $m ? esc_url_raw( (string) $m ) : '';
+			}
+			if ( $url === '' ) {
+				return '';
+			}
+
+			$label = isset( $item['tickets_link_text'] ) ? trim( (string) $item['tickets_link_text'] ) : '';
+			if ( $label === '' ) {
+				$label = esc_html__( 'Tickets', 'events-calendar-for-bricks' );
+			} else {
+				$label = sanitize_text_field( $label );
+			}
+
+			$idx       = absint( $idx );
+			$skin      = (string) $skin;
+			$attr      = self::ecbb_part_wrap_attrs( $item, $idx, $style );
+			$link_attr = '';
+			$wrap      = esc_attr( self::ecbb_part_classes( 'event_tickets', $idx, $skin, $item ) );
+			$inner_el  = self::ecbb_action_link_html(
+				$item,
+				$url,
+				$label,
+				$link_attr,
+				' rel="noopener noreferrer" target="_blank"'
+			);
+
+			return '<div class="' . $wrap . '"' . $attr . '>' . $inner_el . '</div>';
+		}
+
+		/**
+		 * @param \WP_Post            $post  Event post.
+		 * @param array<string,mixed> $item  Repeater row.
+		 * @param int                 $idx   Row index.
+		 * @param string              $style Inline style attribute value (contents only), or empty.
+		 * @param string              $skin  Loop skin.
+		 * @return string
+		 */
+		public static function ecbb_render_part_event_rsvp( $post, array $item, $idx, $style, $skin = '' ) {
+			$url   = get_permalink( $post->ID );
+			$label = isset( $item['rsvp_link_text'] ) ? trim( (string) $item['rsvp_link_text'] ) : '';
+			if ( $label === '' ) {
+				$label = __( 'RSVP', 'events-calendar-for-bricks' );
+			} else {
+				$label = sanitize_text_field( $label );
+			}
+
+			$frag = '#tribe-tickets__tickets-form';
+			if ( function_exists( 'tribe_events_has_tickets' ) && tribe_events_has_tickets( $post->ID ) ) {
+				$url = $url . $frag;
+			}
+
+			$idx       = absint( $idx );
+			$skin      = (string) $skin;
+			$attr      = self::ecbb_part_wrap_attrs( $item, $idx, $style );
+			$link_attr = '';
+			$wrap      = esc_attr( self::ecbb_part_classes( 'event_rsvp', $idx, $skin, $item ) );
+			$inner_el  = self::ecbb_action_link_html( $item, $url, $label, $link_attr );
+
+			return '<div class="' . $wrap . '"' . $attr . '>' . $inner_el . '</div>';
+		}
+
+		/**
+		 * @param \WP_Post            $post  Event post.
+		 * @param array<string,mixed> $item  Repeater row.
+		 * @param int                 $idx   Row index.
+		 * @param string              $style Inline style attribute value (contents only), or empty.
+		 * @param string              $skin  Loop skin.
+		 * @return string
+		 */
+		public static function ecbb_render_part_read_more( $post, array $item, $idx, $style, $skin = '' ) {
+			$label = isset( $item['read_more_text'] ) ? trim( (string) $item['read_more_text'] ) : '';
+			if ( $label === '' ) {
+				$label = __( 'View Details', 'events-calendar-for-bricks' );
+			} else {
+				$label = sanitize_text_field( $label );
+			}
+
+			$idx       = absint( $idx );
+			$skin      = (string) $skin;
+			$attr      = self::ecbb_part_wrap_attrs( $item, $idx, $style );
+			$link_attr = '';
+			$wrap      = esc_attr( self::ecbb_part_classes( 'read_more', $idx, $skin, $item ) );
+			$inner_el  = self::ecbb_action_link_html(
+				$item,
+				get_permalink( $post->ID ),
+				$label,
+				$link_attr
+			);
+
+			return '<div class="' . $wrap . '"' . $attr . '>' . $inner_el . '</div>';
+		}
+
+		/**
 		* @param \WP_Post $post      Event post.
 		* @param array    $item     Repeater row settings.
 		* @param int      $idx      Row index (for CSS class).
@@ -2555,240 +3054,18 @@ if (! class_exists('ECBB_Markup', false)) {
 			if ( class_exists( 'ECBB_Styles', false ) ) {
 				$item = \ECBB_Styles::ecbb_clean_part( $item );
 			}
-		$part = isset($item['part']) ? (string) $item['part'] : '';
-		$idx  = absint($idx);
-		$skin = (string) $skin;
-		$attr = self::ecbb_part_wrap_attrs($item, $idx, $style);
-		$link_attr = '';
-		$detail_parts = [
-		'venue_full_address',
-		'venue_street',
-		'venue_city',
-		'venue_state',
-		'venue_zip',
-		'venue_country',
-		'venue_phone',
-		'venue_website',
-		'event_map_link',
-		'event_website',
-		'event_phone',
-		'organizer_email',
-		'organizer_phone',
-		'organizer_website',
-		];
-		$extended = ['date', 'event_date', 'event_time', 'event_day', 'event_cost', 'event_tickets', 'event_rsvp', 'read_more', 'venue', 'organizer'];
-		if (! in_array($part, $extended, true) && ! in_array($part, $detail_parts, true)) {
-			return false;
-		}
 
-		$wrap = function ($slug) use ($skin, $idx, $item) {
-			return esc_attr(self::ecbb_part_classes($slug, $idx, $skin, $item));
-		};
-
-		if ($part === 'venue') {
-			return self::ecbb_render_venue($post, $item, $idx, $style, $skin);
-		}
-
-		if ($part === 'organizer') {
-			return self::ecbb_render_organizer($post, $item, $idx, $style, $skin);
-		}
-
-		if ($part === 'date') {
-			$fmt = isset($item['date_display']) ? (string) $item['date_display'] : 'day_time_range';
-			if ($fmt === 'range') {
-				return self::ecbb_render_grid_date_flow($post, $item, $idx, $skin);
+			$part = isset( $item['part'] ) ? (string) $item['part'] : '';
+			if ( $part === '' ) {
+				return false;
 			}
-			$tp   = self::ecbb_build_day_time_parts($post->ID, $item);
-			$html = '';
-			if ($fmt === 'time') {
-				$html = isset($tp['time']) ? trim((string) $tp['time']) : '';
-			} elseif ($fmt === 'day') {
-				$html = isset($tp['day']) ? trim((string) $tp['day']) : '';
-			} else {
-				$day  = isset($tp['day']) ? trim((string) $tp['day']) : '';
-				$time = isset($tp['time']) ? trim((string) $tp['time']) : '';
-				if ($day !== '' && $time !== '') {
-					$html = $day . ', ' . $time;
-				} elseif ($time !== '') {
-					$html = $time;
-				} else {
-					$html = $day;
-				}
+
+			$handlers = self::ecbb_part_ext_dispatch_map();
+			if ( ! isset( $handlers[ $part ] ) ) {
+				return false;
 			}
-			if ($html === '') {
-				return '';
-			}
-			return '<div class="' . $wrap('date') . ($html !== '' ? ' ecbb-has-row-icon' : '') . '"' . $attr . '>' . esc_html($html) . '</div>';
-		}
 
-		$format = ($part === 'event_date' || $part === 'event_time')
-		? self::ecbb_part_date_php_fmt($part, $item)
-		: '';
-
-		if ($part === 'event_date') {
-			$html = '';
-			if (function_exists('tribe_get_start_date')) {
-				$php = $format !== '' ? $format : get_option('date_format');
-				$html = (string) \tribe_get_start_date($post->ID, false, $php);
-			} else {
-			$raw = (string) get_post_meta($post->ID, '_EventStartDate', true);
-			$ts  = $raw ? strtotime($raw) : false;
-			$php = $format !== '' ? $format : get_option('date_format');
-			$html = $ts ? date_i18n($php, $ts) : '';
-		}
-		$html = trim(wp_strip_all_tags($html));
-		if ($html === '') {
-			return '';
-		}
-		return '<div class="' . $wrap('event_date') . '"' . $attr . '>' . esc_html($html) . '</div>';
-		}
-
-		if ($part === 'event_time') {
-			$tp   = self::ecbb_build_day_time_parts($post->ID, $item);
-			$html = isset($tp['time']) ? trim((string) $tp['time']) : '';
-			if ($html === '') {
-				$php = $format !== '' ? $format : get_option('time_format');
-				$php = self::ecbb_time_fmt_lower($php);
-				if (function_exists('tribe_get_start_time')) {
-					$html = (string) \tribe_get_start_time($post->ID, $php);
-				} elseif (function_exists('tribe_get_start_date')) {
-					$html = (string) \tribe_get_start_date($post->ID, true, $php);
-				} else {
-					$raw = (string) get_post_meta($post->ID, '_EventStartDate', true);
-					$ts  = $raw ? strtotime($raw) : false;
-					$html = $ts ? date_i18n($php, $ts) : '';
-				}
-				$html = self::ecbb_time_lower_am(trim(wp_strip_all_tags($html)));
-			}
-		if ($html === '') {
-			return '';
-		}
-		return '<div class="' . $wrap('event_time') . ($skin !== 'style2' && $html !== '' ? ' ecbb-has-row-icon' : '') . '"' . $attr . '>' . esc_html($html) . '</div>';
-		}
-
-		if ($part === 'event_day') {
-			$html = '';
-			$pr = self::ecbb_build_day_time_parts($post->ID, []);
-			$html = isset($pr['day']) ? trim((string) $pr['day']) : '';
-			if ($html === '') {
-				$raw = (string) get_post_meta($post->ID, '_EventStartDate', true);
-				$ts  = $raw ? strtotime($raw) : false;
-				$html = $ts ? trim(wp_strip_all_tags(date_i18n('l', $ts))) : '';
-			}
-		if ($html === '') {
-			return '';
-		}
-		return '<div class="' . $wrap('event_day') . '"' . $attr . '>' . esc_html($html) . '</div>';
-		}
-
-		if (in_array($part, $detail_parts, true)) {
-			$html = self::ecbb_part_detail_text($post->ID, $part);
-			if ($html === '') {
-				return '';
-			}
-		$venue_physical = ['venue_full_address', 'venue_street', 'venue_city', 'venue_state', 'venue_zip', 'venue_country', 'venue_phone'];
-		$loc_icon       = in_array($part, $venue_physical, true) ? ' ecbb-has-row-icon' : '';
-
-		if ($part === 'organizer_email' && is_email($html)) {
-			return '<div class="' . $wrap($part) . '"' . $attr . '><a class="ecbb-event__link" href="' . esc_url('mailto:' . $html) . '"' . $link_attr . '>' . esc_html($html) . '</a></div>';
-		}
-
-		$url_parts = ['venue_website', 'event_website', 'organizer_website', 'event_map_link'];
-		if (in_array($part, $url_parts, true)) {
-			$safe = esc_url_raw($html);
-			if (! $safe || ! preg_match('#^https?://#i', $safe)) {
-				return '<div class="' . $wrap($part) . '"' . $attr . '>' . esc_html($html) . '</div>';
-			}
-		$label = isset($item['detail_link_text']) ? trim((string) $item['detail_link_text']) : '';
-		if ($label === '') {
-			$defaults = [
-			'event_map_link'    => __('Open map', 'events-calendar-for-bricks'),
-			'event_website'     => __('Event website', 'events-calendar-for-bricks'),
-			'venue_website'     => __('Venue website', 'events-calendar-for-bricks'),
-			'organizer_website' => __('Organizer website', 'events-calendar-for-bricks'),
-			];
-			$label = isset($defaults[$part]) ? $defaults[$part] : $safe;
-		} else {
-		$label = sanitize_text_field($label);
-		}
-		return '<div class="' . $wrap($part) . '"' . $attr . '><a class="ecbb-event__link" href="' . esc_url($safe) . '" rel="noopener noreferrer" target="_blank"' . $link_attr . '>' . esc_html($label) . '</a></div>';
-		}
-
-		return '<div class="' . $wrap($part) . $loc_icon . '"' . $attr . '>' . esc_html($html) . '</div>';
-		}
-
-		if ($part === 'event_cost') {
-			$cost = self::ecbb_layout_cost_label($post->ID, $item);
-			if ($cost === '') {
-				return '';
-			}
-		return '<div class="' . $wrap('event_cost') . '"' . $attr . '>' . esc_html($cost) . '</div>';
-		}
-
-		if ($part === 'event_tickets') {
-			$url = '';
-			if (function_exists('tribe_get_event')) {
-				$ev = tribe_get_event($post->ID);
-				if ($ev && ! empty($ev->website)) {
-					$url = esc_url_raw((string) $ev->website);
-				}
-		}
-		if ($url === '') {
-			$m = get_post_meta($post->ID, '_EventUrl', true);
-			$url = $m ? esc_url_raw((string) $m) : '';
-		}
-		if ($url === '') {
-			return '';
-		}
-		$label = isset($item['tickets_link_text']) ? trim((string) $item['tickets_link_text']) : '';
-		if ($label === '') {
-			$label = esc_html__('Tickets', 'events-calendar-for-bricks');
-		} else {
-		$label = sanitize_text_field($label);
-		}
-		$inner_el = self::ecbb_action_link_html(
-			$item,
-			$url,
-			$label,
-			$link_attr,
-			' rel="noopener noreferrer" target="_blank"'
-		);
-		return '<div class="' . $wrap('event_tickets') . '"' . $attr . '>' . $inner_el . '</div>';
-		}
-
-		if ($part === 'event_rsvp') {
-			$url   = get_permalink($post->ID);
-			$label = isset($item['rsvp_link_text']) ? trim((string) $item['rsvp_link_text']) : '';
-			if ($label === '') {
-				$label = __('RSVP', 'events-calendar-for-bricks');
-			} else {
-			$label = sanitize_text_field($label);
-		}
-		$frag = '#tribe-tickets__tickets-form';
-		if (function_exists('tribe_events_has_tickets') && tribe_events_has_tickets($post->ID)) {
-			$url = $url . $frag;
-		}
-		$inner_el = self::ecbb_action_link_html( $item, $url, $label, $link_attr );
-		return '<div class="' . $wrap('event_rsvp') . '"' . $attr . '>' . $inner_el . '</div>';
-		}
-
-		if ($part === 'read_more') {
-			$label = isset($item['read_more_text']) ? trim((string) $item['read_more_text']) : '';
-			if ($label === '') {
-				$label = __( 'View Details', 'events-calendar-for-bricks' );
-			} else {
-				$label = sanitize_text_field($label);
-			}
-		$inner_el = self::ecbb_action_link_html(
-			$item,
-			get_permalink( $post->ID ),
-			$label,
-			$link_attr
-		);
-		return '<div class="' . $wrap('read_more') . '"' . $attr . '>' . $inner_el . '</div>';
-		}
-
-		return false;
+			return call_user_func( $handlers[ $part ], $post, $item, $idx, $style, $skin );
 		}
 
 		// --- Layout shell helpers (List 1 / List 2 / Grid reference markup) ---

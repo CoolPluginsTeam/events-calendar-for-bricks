@@ -135,7 +135,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 		public static function ecbb_req_shell_category_style_list1() {
 			return [
 				[ 'show_event_image', '!=', 'hide' ],
-				[ 'layout_template', '!=', 'grid' ],
+				[ 'layout_template', '=', 'list' ],
 				[ 'list_item_style', '!=', 'style-2' ],
 				[ 'list1_show_category_badge', '!=', 'hide' ],
 			];
@@ -162,7 +162,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 		public static function ecbb_req_shell_date_badge_style() {
 			return [
 				[ 'show_event_image', '!=', 'hide' ],
-				[ 'layout_template', '!=', 'grid' ],
+				[ 'layout_template', '=', 'list' ],
 				[ 'list_item_style', '=', 'style-2' ],
 				[ 'style2_show_date_badge', '!=', 'hide' ],
 			];

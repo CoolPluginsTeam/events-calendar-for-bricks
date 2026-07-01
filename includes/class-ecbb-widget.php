@@ -606,12 +606,13 @@ class ECBB_Widget extends \Bricks\Element
 	}
 
 	/**
-	 * @param \WP_Post[]          $events
-	 * @param array<int,array<string,mixed>> $parts_effective
-	 * @param array<string,mixed> $layout
+	 * @param \WP_Post[]                       $events
+	 * @param array<int,array<string,mixed>>   $parts_effective
+	 * @param array<string,mixed>              $layout
+	 * @param array<string,mixed>              $settings Normalized element settings from {@see render()}.
 	 * @return void
 	 */
-	private function ecbb_render_event_items( array $events, array $parts_effective, array $layout ) {
+	private function ecbb_render_event_items( array $events, array $parts_effective, array $layout, array $settings ) {
 		global $post;
 		$original_post = $post ?? null;
 
@@ -622,12 +623,6 @@ class ECBB_Widget extends \Bricks\Element
 			$list_class .= ' ecbb-list';
 		} elseif ( $layout['use_grid_shell'] ) {
 			$list_class .= ' event-grid';
-		}
-
-		$settings = is_array( $this->settings ) ? $this->settings : [];
-		if ( class_exists( 'ECBB_Markup', false ) ) {
-			$settings = \ECBB_Markup::ecbb_norm_layout_shell_settings( $settings );
-			\ECBB_Markup::ecbb_active_widget_settings( $settings );
 		}
 
 		echo '<div class="' . esc_attr( $list_class ) . '">';
@@ -664,9 +659,6 @@ class ECBB_Widget extends \Bricks\Element
 	private function ecbb_render_event_item_inner( $post, array $parts_effective, array $layout, array $settings = [] ) {
 		if ( $settings === [] ) {
 			$settings = is_array( $this->settings ) ? $this->settings : [];
-			if ( class_exists( 'ECBB_Markup', false ) ) {
-				$settings = \ECBB_Markup::ecbb_norm_layout_shell_settings( $settings );
-			}
 		}
 
 		$shells = [
@@ -742,7 +734,7 @@ class ECBB_Widget extends \Bricks\Element
 			return;
 		}
 
-		$this->ecbb_render_event_items( $events, $parts, $layout );
+		$this->ecbb_render_event_items( $events, $parts, $layout, $settings );
 
 		echo '</div>';
 

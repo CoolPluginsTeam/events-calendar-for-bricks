@@ -26,7 +26,6 @@ define( 'ECBB_VERSION', '1.0.0' );
 define( 'ECBB_FILE', __FILE__ );
 define( 'ECBB_DIR', plugin_dir_path( ECBB_FILE ) );
 define( 'ECBB_URL', plugin_dir_url( ECBB_FILE ) );
-define( 'ECBB_BASENAME', plugin_basename( ECBB_FILE ) );
 
 if ( ! class_exists( 'EventsCalendarForBricks' ) ) {
 
