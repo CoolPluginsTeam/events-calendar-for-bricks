@@ -92,8 +92,8 @@ if ( ! class_exists( 'ECBB_List_2', false ) ) {
 			if ( $post_id < 1 ) {
 				return [ false, false ];
 			}
-			$start_raw = (string) get_post_meta( $post_id, '_EventStartDate', true );
-			$end_raw   = (string) get_post_meta( $post_id, '_EventEndDate', true );
+			$start_raw = \ECBB_Markup::ecbb_event_start_date_raw( $post_id );
+			$end_raw   = \ECBB_Markup::ecbb_event_end_date_raw( $post_id );
 			$start_ts  = $start_raw ? strtotime( $start_raw ) : false;
 			$end_ts    = $end_raw ? strtotime( $end_raw ) : $start_ts;
 			if ( ! $start_ts ) {

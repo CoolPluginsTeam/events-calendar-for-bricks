@@ -247,6 +247,7 @@ if (! class_exists('ECBB_Markup', false)) {
 		public static function ecbb_parts_preserve_bricks_rows( array $saved, array $defaults ) {
 			$style_keys = [
 				'id', 'ecbb_typography', 'ecbb_text_align', 'ecbb_background', 'ecbb_background_inner',
+				'ecbb_meta_icon_color', 'ecbb_meta_icon_background',
 				'ecbb_margin', 'ecbb_padding', 'ecbb_use_hover', 'ecbb_hover_color', 'ecbb_hover_background',
 				'ecbb_hover_text_decoration', 'ecbb_hover_animation', 'btn_style', 'btn_bg', 'btn_text_color',
 				'btn_border_type', 'btn_border_width', 'btn_border_color', 'btn_padding', 'btn_border_radius',
@@ -1381,6 +1382,52 @@ if (! class_exists('ECBB_Markup', false)) {
 		/** @var array<int,int> */
 		private static $ecbb_meta_organizer_id_cache = array();
 
+		/** @var array<int,array{start:string,end:string}> */
+		private static $ecbb_meta_event_dates_cache = array();
+
+		/**
+		 * Cached `_EventStartDate` / `_EventEndDate` raw strings (one meta read pair per event per request).
+		 *
+		 * @param int $event_id Event post ID.
+		 * @return array{start:string,end:string}
+		 */
+		private static function ecbb_event_meta_dates( $event_id ) {
+			$event_id = (int) $event_id;
+			if ( $event_id < 1 ) {
+				return array(
+					'start' => '',
+					'end'   => '',
+				);
+			}
+			if ( ! array_key_exists( $event_id, self::$ecbb_meta_event_dates_cache ) ) {
+				self::$ecbb_meta_event_dates_cache[ $event_id ] = array(
+					'start' => (string) get_post_meta( $event_id, '_EventStartDate', true ),
+					'end'   => (string) get_post_meta( $event_id, '_EventEndDate', true ),
+				);
+			}
+			return self::$ecbb_meta_event_dates_cache[ $event_id ];
+		}
+
+		/**
+		 * Cached raw `_EventStartDate` for an event.
+		 *
+		 * @param int $event_id Event post ID.
+		 * @return string
+		 */
+		public static function ecbb_event_start_date_raw( $event_id ) {
+			return self::ecbb_event_meta_dates( $event_id )['start'];
+		}
+
+		/**
+		 * Cached raw `_EventEndDate` for an event.
+		 *
+		 * @param int $event_id Event post ID.
+		 * @return string
+		 */
+		public static function ecbb_event_end_date_raw( $event_id ) {
+			return self::ecbb_event_meta_dates( $event_id )['end'];
+		}
+
 		/**
 		 * Cached `_EventVenueID` for an event (one meta read per event per request).
 		 *
@@ -1923,8 +1970,9 @@ if (! class_exists('ECBB_Markup', false)) {
 		public static function ecbb_build_day_time_parts($post_id, array $item)
 		{
 			$post_id = (int) $post_id;
-			$start_raw = (string) get_post_meta($post_id, '_EventStartDate', true);
-			$end_raw   = (string) get_post_meta($post_id, '_EventEndDate', true);
+			$dates     = self::ecbb_event_meta_dates( $post_id );
+			$start_raw = $dates['start'];
+			$end_raw   = $dates['end'];
 			$start_ts  = $start_raw ? strtotime($start_raw) : false;
 			if (! $start_ts) {
 				return ['day' => '', 'time' => ''];
@@ -2817,7 +2865,7 @@ if (! class_exists('ECBB_Markup', false)) {
 				$php  = $format !== '' ? $format : get_option( 'date_format' );
 				$html = (string) \tribe_get_start_date( $post->ID, false, $php );
 			} else {
-				$raw  = (string) get_post_meta( $post->ID, '_EventStartDate', true );
+				$raw  = self::ecbb_event_start_date_raw( $post->ID );
 				$ts   = $raw ? strtotime( $raw ) : false;
 				$php  = $format !== '' ? $format : get_option( 'date_format' );
 				$html = $ts ? date_i18n( $php, $ts ) : '';
@@ -2856,7 +2904,7 @@ if (! class_exists('ECBB_Markup', false)) {
 				} elseif ( function_exists( 'tribe_get_start_date' ) ) {
 					$html = (string) \tribe_get_start_date( $post->ID, true, $php );
 				} else {
-					$raw  = (string) get_post_meta( $post->ID, '_EventStartDate', true );
+					$raw  = self::ecbb_event_start_date_raw( $post->ID );
 					$ts   = $raw ? strtotime( $raw ) : false;
 					$html = $ts ? date_i18n( $php, $ts ) : '';
 				}
@@ -2887,7 +2935,7 @@ if (! class_exists('ECBB_Markup', false)) {
 			$html = isset( $pr['day'] ) ? trim( (string) $pr['day'] ) : '';
 
 			if ( $html === '' ) {
-				$raw  = (string) get_post_meta( $post->ID, '_EventStartDate', true );
+				$raw  = self::ecbb_event_start_date_raw( $post->ID );
 				$ts   = $raw ? strtotime( $raw ) : false;
 				$html = $ts ? trim( wp_strip_all_tags( date_i18n( 'l', $ts ) ) ) : '';
 			}
@@ -3438,6 +3486,75 @@ if (! class_exists('ECBB_Markup', false)) {
 				. esc_html( $label ) . '</a>';
 		}
 
+		/**
+		 * Whether a resolved part slug renders with a Style 2 meta list icon.
+		 *
+		 * @param string $part_slug Cleaned part slug.
+		 * @return bool
+		 */
+		public static function ecbb_part_shows_style2_meta_icon( $part_slug ) {
+			$part_slug = (string) $part_slug;
+			if ( $part_slug === 'event_cost' ) {
+				return true;
+			}
+			if ( in_array( $part_slug, [ 'date', 'event_date', 'event_time', 'event_day' ], true ) ) {
+				return true;
+			}
+			$venue_slugs = [
+				'venue',
+				'venue_full_address',
+				'venue_street',
+				'venue_city',
+				'venue_state',
+				'venue_zip',
+				'venue_country',
+				'venue_phone',
+			];
+
+			return in_array( $part_slug, $venue_slugs, true );
+		}
+
+		/**
+		 * Part slugs that render inside a meta list with a leading icon (List 1 / Grid).
+		 *
+		 * @return string[]
+		 */
+		public static function ecbb_meta_list_icon_part_slugs() {
+			return [
+				'date',
+				'event_date',
+				'event_time',
+				'event_day',
+				'venue',
+				'organizer',
+				'event_cost',
+				'tags',
+				'event_link',
+				'event_tickets',
+				'event_rsvp',
+				'venue_full_address',
+				'venue_street',
+				'venue_city',
+				'venue_state',
+				'venue_zip',
+				'venue_country',
+				'venue_phone',
+				'venue_website',
+				'event_map_link',
+				'organizer_email',
+				'organizer_phone',
+				'organizer_website',
+			];
+		}
+
+		/**
+		 * @param string $part_slug Cleaned part slug.
+		 * @return bool
+		 */
+		public static function ecbb_part_renders_meta_list_icon( $part_slug ) {
+			return in_array( (string) $part_slug, self::ecbb_meta_list_icon_part_slugs(), true );
+		}
+
 		public static function ecbb_meta_icon( $type ) {
 			$type = (string) $type;
 			static $svgs = [
@@ -3655,7 +3772,7 @@ if (! class_exists('ECBB_Markup', false)) {
 			if ( class_exists( 'ECBB_List_2', false ) ) {
 				list( $start_ts ) = \ECBB_List_2::ecbb_date_bounds( $post->ID );
 			} else {
-				$raw      = (string) get_post_meta( $post->ID, '_EventStartDate', true );
+				$raw      = self::ecbb_event_start_date_raw( $post->ID );
 				$start_ts = $raw ? strtotime( $raw ) : false;
 			}
 			if ( ! $start_ts ) {
@@ -3676,7 +3793,7 @@ if (! class_exists('ECBB_Markup', false)) {
 			if ( class_exists( 'ECBB_List_2', false ) ) {
 				list( $start_ts ) = \ECBB_List_2::ecbb_date_bounds( $post->ID );
 			} else {
-				$raw      = (string) get_post_meta( $post->ID, '_EventStartDate', true );
+				$raw      = self::ecbb_event_start_date_raw( $post->ID );
 				$start_ts = $raw ? strtotime( $raw ) : false;
 			}
 			if ( ! $start_ts ) {
@@ -3702,8 +3819,8 @@ if (! class_exists('ECBB_Markup', false)) {
 			if ( class_exists( 'ECBB_List_2', false ) ) {
 				list( $start_ts, $end_ts ) = \ECBB_List_2::ecbb_date_bounds( $post->ID );
 			} else {
-				$raw      = (string) get_post_meta( $post->ID, '_EventStartDate', true );
-				$raw_end  = (string) get_post_meta( $post->ID, '_EventEndDate', true );
+				$raw      = self::ecbb_event_start_date_raw( $post->ID );
+				$raw_end  = self::ecbb_event_end_date_raw( $post->ID );
 				$start_ts = $raw ? strtotime( $raw ) : false;
 				$end_ts   = $raw_end ? strtotime( $raw_end ) : $start_ts;
 			}

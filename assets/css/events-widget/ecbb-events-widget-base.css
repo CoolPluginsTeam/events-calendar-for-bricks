@@ -200,6 +200,11 @@
 	gap: 5px;
 }
 
+.ecbb-ev .event-list .event-meta li,
+.ecbb-ev .event-grid .event-meta li {
+	gap: 8px;
+}
+
 .ecbb-ev .ecbb-event-card__meta-icon {
 	display: inline-flex;
 	width: 38px;
@@ -260,6 +265,30 @@
 	background-color: transparent !important;
 	border: none !important;
 	padding: 0 !important;
+}
+
+/* Layout CTA rows: Bricks typography also paints the wrapper; collapse it so font-size sizes the button only. */
+.ecbb-event-part--read-more:not(.ecbb-has-btn),
+.ecbb-event-part--event-tickets:not(.ecbb-has-btn),
+.ecbb-event-part--event-rsvp:not(.ecbb-has-btn) {
+	font-size: 0 !important;
+	line-height: 0 !important;
+}
+
+.ecbb-event-part--read-more:not(.ecbb-has-btn) > a.event-button,
+.ecbb-event-part--read-more:not(.ecbb-has-btn) > .ecbb-event__link,
+.ecbb-event-part--read-more:not(.ecbb-has-btn) a.event-button,
+.ecbb-event-part--read-more:not(.ecbb-has-btn) .ecbb-event__link,
+.ecbb-event-part--event-tickets:not(.ecbb-has-btn) > a.event-button,
+.ecbb-event-part--event-tickets:not(.ecbb-has-btn) > .ecbb-event__link,
+.ecbb-event-part--event-tickets:not(.ecbb-has-btn) a.event-button,
+.ecbb-event-part--event-tickets:not(.ecbb-has-btn) .ecbb-event__link,
+.ecbb-event-part--event-rsvp:not(.ecbb-has-btn) > a.event-button,
+.ecbb-event-part--event-rsvp:not(.ecbb-has-btn) > .ecbb-event__link,
+.ecbb-event-part--event-rsvp:not(.ecbb-has-btn) a.event-button,
+.ecbb-event-part--event-rsvp:not(.ecbb-has-btn) .ecbb-event__link {
+	font-size: var(--ecbb-btn-font-size, 12px) !important;
+	line-height: var(--ecbb-btn-line-height, 1) !important;
 }
 
 .ecbb-event-part.ecbb-has-btn > .ecbb-event__link,

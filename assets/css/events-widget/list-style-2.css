@@ -44,7 +44,7 @@
 	align-items: center;
 	justify-content: center;
 	color: var(--ecbb-shell-date-color, var(--color-card-bg));
-	background: var(--ecbb-shell-date-bg, var(--ecbb-accent, #0d55d8));
+	background: var(--ecbb-shell-date-bg, var(--ecbb-accent));
 	border-radius: 10px;
 	box-shadow: 0 10px 22px rgba(13, 85, 216, 0.28);
 	padding: 10px 15px;
@@ -169,8 +169,8 @@
 	justify-content: center;
 	padding: 14px 25px;
 	color: var(--ecbb-btn-fg, var(--color-card-bg));
-	background: var(--ecbb-accent, #0d55d8);
-	border: 1px solid var(--ecbb-accent, #0d55d8);
+	background: var(--ecbb-accent);
+	border: 1px solid var(--ecbb-accent);
 	border-radius: 10px;
 	font-size: 15px;
 	font-weight: 500;
@@ -211,12 +211,6 @@
 		grid-template-columns: 1fr;
 		gap: 20px;
 		padding: 16px;
-	}
-
-	.ecbb-ev .ecbb-event-card__meta {
-		flex-direction: column;
-		align-items: stretch;
-		gap: 18px;
 	}
 
 	.ecbb-ev .ecbb-event-card__image-wrap {
@@ -329,7 +323,7 @@
 .ecbb-ev .ecbb-style2-categories:not(.ecbb-no-hover):not(.ecbb-has-hover-fg) a.ecbb-event-card__category:focus-visible,
 .ecbb-ev .ecbb-event-card__top:not(.ecbb-no-hover):not(.ecbb-has-hover-fg) a.ecbb-event-card__category:hover,
 .ecbb-ev .ecbb-event-card__top:not(.ecbb-no-hover):not(.ecbb-has-hover-fg) a.ecbb-event-card__category:focus-visible {
-	color: var(--ecbb-hover-fg, var(--ecbb-chip-fg, var(--ecbb-accent, #0d55d8))) !important;
+	color: var(--ecbb-hover-fg, var(--ecbb-chip-fg, var(--ecbb-accent))) !important;
 }
 
 .ecbb-ev .ecbb-style2-categories:not(.ecbb-no-hover):not(.ecbb-has-hover-bg) a.ecbb-event-card__category:hover,

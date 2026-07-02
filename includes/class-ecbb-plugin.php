@@ -378,7 +378,3 @@ if ( ! class_exists( 'ECBB_Plugin', false ) ) {
 	}
 
 }
-
-if ( ! class_exists( 'ECBB_WidgetClass', false ) && class_exists( 'ECBB_Plugin', false ) ) {
-	class_alias( 'ECBB_Plugin', 'ECBB_WidgetClass' );
-}

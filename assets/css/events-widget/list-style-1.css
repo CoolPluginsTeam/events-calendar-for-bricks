@@ -85,6 +85,11 @@
 	align-items: flex-start;
 }
 
+.ecbb-ev .event-list-card__body > .ecbb-event-part--title {
+	align-self: stretch;
+	width: 100%;
+}
+
 .ecbb-ev .event-list-card__body > .ecbb-event-part--read-more,
 .ecbb-ev .event-list-card__body > .ecbb-event-part--event-tickets,
 .ecbb-ev .event-list-card__body > .ecbb-event-part--event-rsvp {

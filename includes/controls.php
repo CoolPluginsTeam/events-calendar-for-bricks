@@ -97,6 +97,15 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 		 *
 		 * @return string[]
 		 */
+		/**
+		 * Style 2 meta rows that render a leading icon (venue, timing, cost).
+		 *
+		 * @return string[]
+		 */
+		public static function ecbb_style2_meta_icon_ui_parts() {
+			return [ 'venue', 'date', 'event_cost' ];
+		}
+
 		public static function ecbb_btn_part_types() {
 			return [ 'read_more', 'event_tickets', 'event_rsvp' ];
 		}
@@ -478,7 +487,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 				'css'        => self::ecbb_field_css(
 					'text-align',
 					class_exists( 'ECBB_Styles', false )
-						? \ECBB_Styles::ecbb_repeater_type_selector()
+						? \ECBB_Styles::ecbb_repeater_align_selector()
 						: '&'
 				),
 			],
@@ -1079,6 +1088,58 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 	}
 
 	/**
+	 * Style 2 only — meta icon color/background (venue, date, event cost rows).
+	 *
+	 * @return array<string,array<string,mixed>>
+	 */
+	public static function ecbb_part_fields_style2_meta_icon() {
+		return [
+			'ecbb_sep_meta_icon' => [
+				'type'     => 'separator',
+				'label'    => esc_html__( 'Meta icon', 'events-calendar-for-bricks' ),
+				'required' => [ 'part', '=', self::ecbb_style2_meta_icon_ui_parts() ],
+			],
+			'ecbb_meta_icon_color' => [
+				'label'       => esc_html__( 'Icon color', 'events-calendar-for-bricks' ),
+				'type'        => 'color',
+				'placeholder' => '#0d55d8',
+				'responsive'  => true,
+				'rerender'    => true,
+				'required'    => [ 'part', '=', self::ecbb_style2_meta_icon_ui_parts() ],
+			],
+			'ecbb_meta_icon_background' => [
+				'label'       => esc_html__( 'Icon background', 'events-calendar-for-bricks' ),
+				'type'        => 'color',
+				'placeholder' => '#eaf2ff',
+				'responsive'  => true,
+				'rerender'    => true,
+				'required'    => [ 'part', '=', self::ecbb_style2_meta_icon_ui_parts() ],
+			],
+		];
+	}
+
+	/**
+	 * Event parts repeater fields for List Style 2 (includes meta icon controls).
+	 *
+	 * @return array<string,array<string,mixed>>
+	 */
+	public static function ecbb_part_fields_for_style2() {
+		$fields = self::ecbb_part_fields();
+		$out    = [];
+
+		foreach ( $fields as $key => $field ) {
+			$out[ $key ] = $field;
+			if ( $key === 'ecbb_background' ) {
+				foreach ( self::ecbb_part_fields_style2_meta_icon() as $meta_key => $meta_field ) {
+					$out[ $meta_key ] = $meta_field;
+				}
+			}
+		}
+
+		return $out;
+	}
+
+	/**
 	 * @param \ECBB\ECBB_Widget $element Element instance.
 	 * @return void
 	 */
@@ -1148,7 +1209,8 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 	 * @return void
 	 */
 	private static function ecbb_register_parts_repeaters( $element ) {
-		$part_repeater_fields = self::ecbb_part_fields();
+		$part_repeater_fields         = self::ecbb_part_fields();
+		$part_repeater_fields_style2  = self::ecbb_part_fields_for_style2();
 
 		$element->controls['parts_style1'] = [
 			'tab'           => 'content',
@@ -1187,7 +1249,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			'default'       => class_exists( 'ECBB_List_2', false )
 				? \ECBB_List_2::ecbb_default_parts()
 				: [],
-			'fields'        => $part_repeater_fields,
+			'fields'        => $part_repeater_fields_style2,
 		];
 
 		$element->controls['parts_grid'] = [
