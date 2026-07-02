@@ -398,7 +398,7 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 
 		public static function ecbb_repeater_type_selector() {
 			return '&, & .ecbb-event__term-chip, & .ecbb-event__link, & > .ecbb-event__link, & .ecbb-event__term, & > .ecbb-event__term, '
-			. '& .ecbb-event-card__category, & > .ecbb-event-card__category, '
+			. '& .ecbb-event__title-text, & .ecbb-event-card__category, & > .ecbb-event-card__category, '
 			. '& a.event-button, & > a.event-button, & a.ecbb-event-card__button, & > a.ecbb-event-card__button, '
 			. self::ecbb_date_inner_type_selector();
 		}
@@ -411,7 +411,8 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 		}
 
 		public static function ecbb_title_inner_selectors( $scope_sel ) {
-			return $scope_sel . ' .ecbb-event__link,'
+			return $scope_sel . ','
+			. $scope_sel . ' .ecbb-event__link,'
 			. $scope_sel . ' > .ecbb-event__link,'
 			. $scope_sel . ' .ecbb-event__title-text';
 		}
@@ -419,33 +420,39 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 		/**
 		* Bricks repeater typography control CSS (live builder + frontend).
 		*
-		* Uses `typography` and explicit `color` so text color updates instantly like other
-		* typography fields (the `font` shorthand omits color in repeater live preview).
+		* Typography control already emits `color` in Bricks. A duplicate `color` rule on the
+		* same selector prevents the builder live preview from updating after the first pick.
 		*
 		* @return array<int,array<string,string>>
 		*/
 
 		public static function ecbb_repeater_type_css() {
-			$selector = self::ecbb_repeater_type_selector();
-
 			return [
-			[
-			'property' => 'typography',
-			'selector' => $selector,
-			],
-			[
-			'property' => 'color',
-			'selector' => $selector,
-			],
+				[
+					'property' => 'typography',
+					'selector' => self::ecbb_repeater_type_selector(),
+				],
 			];
 		}
 
 		/**
-		 * Bricks repeater hover color selectors (live builder preview).
+		 * Whether the current request is the Bricks builder (main or preview iframe).
+		 *
+		 * @return bool
+		 */
+		public static function ecbb_is_builder_preview() {
+			if ( function_exists( 'bricks_is_builder' ) && bricks_is_builder() ) {
+				return true;
+			}
+			return function_exists( 'bricks_is_builder_call' ) && bricks_is_builder_call();
+		}
+
+		/**
+		 * Bricks repeater hover selectors (live builder preview).
 		 *
 		 * @return string
 		 */
-		public static function ecbb_repeater_hover_color_selector() {
+		public static function ecbb_repeater_hover_selector() {
 			return '& .ecbb-event__term-chip:hover, & .ecbb-event__link:hover, & > .ecbb-event__link:hover, '
 				. '& a.event-button:hover, & > a.event-button:hover, & a.ecbb-event-card__button:hover, & > a.ecbb-event-card__button:hover, '
 				. '& .ecbb-event__term:hover, & .ecbb-event__title-text:hover, & .ecbb-event-card__category:hover, '
@@ -453,15 +460,17 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 		}
 
 		/**
-		 * Bricks repeater hover background selectors (live builder preview).
-		 *
+		 * @return string
+		 */
+		public static function ecbb_repeater_hover_color_selector() {
+			return self::ecbb_repeater_hover_selector();
+		}
+
+		/**
 		 * @return string
 		 */
 		public static function ecbb_repeater_hover_bg_selector() {
-			return '& .ecbb-event__term-chip:hover, & .ecbb-event__link:hover, & > .ecbb-event__link:hover, '
-				. '& a.event-button:hover, & > a.event-button:hover, & a.ecbb-event-card__button:hover, & > a.ecbb-event-card__button:hover, '
-				. '& .ecbb-event__term:hover, & .ecbb-event__title-text:hover, & .ecbb-event-card__category:hover, '
-				. 'li:has(> &):hover > .ecbb-event-card__meta-icon';
+			return self::ecbb_repeater_hover_selector();
 		}
 
 		/**
@@ -475,6 +484,10 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 		public static function ecbb_type_selectors( $scope_sel, $part_type ) {
 			if ( 'date' === $part_type ) {
 				return self::ecbb_date_type_selectors( $scope_sel );
+			}
+
+			if ( 'title' === $part_type ) {
+				return self::ecbb_title_inner_selectors( $scope_sel );
 			}
 
 		if ( in_array( $part_type, self::ecbb_chip_parts(), true ) ) {
@@ -1200,7 +1213,7 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 		}
 		}
 
-		if ( ! empty( $typo['color'] ) ) {
+		if ( ! empty( $typo['color'] ) && ! self::ecbb_is_builder_preview() ) {
 			$color_raw = self::ecbb_device_value( $typo['color'], $device );
 			$color     = class_exists( 'ECBB_Markup', false )
 			? \ECBB_Markup::ecbb_norm_color( $color_raw )
@@ -1277,64 +1290,6 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 		}
 
 		/**
-		* Clear only layout button chrome that Style tab explicitly overrides.
-		*
-		* @param string              $scope_sel Scoped row selector.
-		* @param array<string,mixed> $item      Repeater row.
-		* @return string CSS rule or empty.
-		*/
-
-		public static function ecbb_layout_btn_reset_rule( $scope_sel, array $item = [] ) {
-			$inner = self::ecbb_button_inner_selectors( $scope_sel );
-			$unset = [];
-			$typo  = is_array( $item['ecbb_typography'] ?? null ) ? $item['ecbb_typography'] : [];
-
-			foreach (
-				[
-					'font-family'    => 'font-family',
-					'font-size'      => 'font-size',
-					'font-weight'    => 'font-weight',
-					'line-height'    => 'line-height',
-					'letter-spacing' => 'letter-spacing',
-					'text-transform' => 'text-transform',
-					'color'          => 'color',
-				] as $typo_key => $css_prop
-			) {
-				if ( self::ecbb_field_has_device_value( $typo, $typo_key ) ) {
-					$unset[ $css_prop ] = true;
-				}
-			}
-
-			if ( self::ecbb_field_has_device_value( $item['ecbb_background'] ?? null ) ) {
-				$unset['background'] = true;
-				$unset['box-shadow'] = true;
-			}
-
-			if ( self::ecbb_field_has_device_value( $item['ecbb_padding'] ?? null ) ) {
-				$unset['padding'] = true;
-			}
-
-			if ( $unset === [] ) {
-				return '';
-			}
-
-			$decls = [];
-			foreach ( array_keys( $unset ) as $prop ) {
-				$decls[] = $prop . ':unset!important';
-			}
-			$decls[] = 'min-height:unset!important';
-			$decls[] = 'width:unset!important';
-			$decls[] = 'max-width:unset!important';
-			$decls[] = 'display:inline-flex!important';
-			$decls[] = 'align-items:center!important';
-			$decls[] = 'justify-content:center!important';
-			$decls[] = 'box-sizing:border-box!important';
-			$decls[] = 'text-decoration:none!important';
-
-			return $inner . '{' . implode( ';', $decls ) . '}';
-		}
-
-		/**
 		 * Style 2 category pill layout hover (scoped), when Style tab hover colors are not set.
 		 *
 		 * @param string              $scope_sel      Part scope selector.
@@ -1354,28 +1309,8 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 				. $scope_sel . ' > a.ecbb-event-card__category:hover';
 
 			return [
-				$chip_hover . '{color:#0d55d8!important;background-color:#d4e4ff!important;}',
+				$chip_hover . '{color:var(--ecbb-accent,#0d55d8)!important;background-color:var(--ecbb-accent-soft,#d4e4ff)!important;}',
 			];
-		}
-
-		/**
-		* Whether a repeater row has any Style-tab surface rules (typography, background, padding).
-		*
-		* @param array<string,mixed> $item Repeater row.
-		* @return bool
-		*/
-
-		public static function ecbb_part_has_surface_styles( array $item ) {
-			if ( ! empty( $item['ecbb_typography'] ) && is_array( $item['ecbb_typography'] ) ) {
-				return true;
-			}
-			if ( ! empty( $item['ecbb_background'] ) ) {
-				return true;
-			}
-			if ( ! empty( $item['ecbb_padding'] ) ) {
-				return true;
-			}
-			return false;
 		}
 
 		/**
@@ -1421,16 +1356,31 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 		? self::ecbb_chip_selectors( $scope_sel )
 		: $scope_sel;
 
-		if ( $layout_btn_part && ! $btn_style_on && self::ecbb_part_has_surface_styles( $p ) ) {
-			$reset_rule = self::ecbb_layout_btn_reset_rule( $scope_sel, $p );
-			if ( $reset_rule !== '' ) {
-				$style_css[] = $reset_rule;
-			}
-		}
-
 		// Emit repeater typography/spacing on the frontend (Bricks fieldId misses nested date text nodes).
 		if ( 'image' !== $part_type ) {
 			foreach ( self::ecbb_breakpoints() as $device => $mq ) {
+				if ( $chip_surface && ! empty( $p['ecbb_typography'] ) && is_array( $p['ecbb_typography'] ) ) {
+					$chip_fg_raw = self::ecbb_device_value( $p['ecbb_typography']['color'] ?? '', $device );
+					$chip_fg     = class_exists( 'ECBB_Markup', false )
+						? \ECBB_Markup::ecbb_norm_color( $chip_fg_raw )
+						: '';
+					if ( $chip_fg !== '' ) {
+						$chip_fg_rule = $scope_sel . '{--ecbb-chip-fg:' . $chip_fg . ';}';
+						$style_css[]  = ( $mq !== '' ? $mq . '{' . $chip_fg_rule . '}' : $chip_fg_rule );
+					}
+				}
+
+				if ( $layout_btn_part && ! empty( $p['ecbb_typography'] ) && is_array( $p['ecbb_typography'] ) ) {
+					$btn_fg_raw = self::ecbb_device_value( $p['ecbb_typography']['color'] ?? '', $device );
+					$btn_fg     = class_exists( 'ECBB_Markup', false )
+						? \ECBB_Markup::ecbb_norm_color( $btn_fg_raw )
+						: '';
+					if ( $btn_fg !== '' ) {
+						$btn_fg_rule = $scope_sel . '{--ecbb-btn-fg:' . $btn_fg . ';}';
+						$style_css[] = ( $mq !== '' ? $mq . '{' . $btn_fg_rule . '}' : $btn_fg_rule );
+					}
+				}
+
 				if ( ! empty( $p['ecbb_typography'] ) && is_array( $p['ecbb_typography'] ) ) {
 					$typo_decls = self::ecbb_type_decls( $p['ecbb_typography'], $device );
 					if ( ! empty( $typo_decls ) ) {
@@ -1468,7 +1418,9 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 
 		$align_raw = self::ecbb_device_value( $p['ecbb_text_align'] ?? '', $device );
 		if ( is_string( $align_raw ) && in_array( $align_raw, [ 'left', 'center', 'right', 'justify' ], true ) ) {
-			$align_sel  = self::ecbb_type_selectors( $scope_sel, $part_type );
+			$align_sel  = in_array( $part_type, self::ecbb_button_parts(), true )
+				? $scope_sel
+				: self::ecbb_type_selectors( $scope_sel, $part_type );
 			$align_rule = $align_sel . '{text-align:' . $align_raw . ' !important;}';
 			$style_css[] = ( $mq !== '' ? $mq . '{' . $align_rule . '}' : $align_rule );
 		}
@@ -1523,16 +1475,7 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 			: $color_fn( $p['ecbb_hover_background'] ?? '' );
 		if ( $hover_bg !== '' ) {
 			if ( in_array( $part_type, self::ecbb_link_hover_parts(), true ) ) {
-				$hover_css[] = $scope_sel . ' .ecbb-event__term-chip:hover,'
-				. $scope_sel . ' .ecbb-event__link:hover,'
-				. $scope_sel . ' > .ecbb-event__link:hover,'
-				. $scope_sel . ' .ecbb-event-card__category:hover,'
-				. $scope_sel . ' > .ecbb-event-card__category:hover,'
-				. $scope_sel . ' a.event-button:hover,'
-				. $scope_sel . ' > a.event-button:hover,'
-				. $scope_sel . ' a.ecbb-event-card__button:hover,'
-				. $scope_sel . ' > a.ecbb-event-card__button:hover,'
-				. $scope_sel . ' .ecbb-event__term:hover{background-color:' . $hover_bg . ' !important;}';
+				$hover_css[] = $hover_sel . '{background-color:' . $hover_bg . ' !important;}';
 			} elseif ( $part_type === 'title' ) {
 			$hover_css[] = $scope_sel . ' .ecbb-event__link:hover,'
 			. $scope_sel . ' .ecbb-event__title-text:hover{background-color:' . $hover_bg . ' !important;}';
@@ -1544,16 +1487,7 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 		$hover_td = isset( $p['ecbb_hover_text_decoration'] ) ? (string) $p['ecbb_hover_text_decoration'] : '';
 		if ( $hover_td !== '' && in_array( $hover_td, [ 'none', 'underline', 'overline', 'line-through' ], true ) ) {
 			if ( in_array( $part_type, self::ecbb_link_hover_parts(), true ) ) {
-				$hover_css[] = $scope_sel . ' .ecbb-event__term-chip:hover,'
-				. $scope_sel . ' .ecbb-event__link:hover,'
-				. $scope_sel . ' > .ecbb-event__link:hover,'
-				. $scope_sel . ' .ecbb-event-card__category:hover,'
-				. $scope_sel . ' > .ecbb-event-card__category:hover,'
-				. $scope_sel . ' a.event-button:hover,'
-				. $scope_sel . ' > a.event-button:hover,'
-				. $scope_sel . ' a.ecbb-event-card__button:hover,'
-				. $scope_sel . ' > a.ecbb-event-card__button:hover,'
-				. $scope_sel . ' .ecbb-event__term:hover{text-decoration:' . $hover_td . ' !important;}';
+				$hover_css[] = $hover_sel . '{text-decoration:' . $hover_td . ' !important;}';
 			} else {
 			$hover_css[] = $scope_sel . ':hover,'
 			. $scope_sel . ' a:hover,'

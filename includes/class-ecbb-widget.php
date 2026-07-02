@@ -94,11 +94,32 @@ class ECBB_Widget extends \Bricks\Element
 	 * @return void
 	 */
 	private function ecbb_ensure_widget_dependencies() {
-		if ( ! class_exists( '\ECBB_WidgetClass', false ) ) {
+		if ( ! class_exists( '\ECBB_Plugin', false ) ) {
 			return;
 		}
-		\ECBB_WidgetClass::ecbb_load_render_dependencies();
-		\ECBB_WidgetClass::ecbb_load_layouts();
+		\ECBB_Plugin::ecbb_load_render_dependencies();
+		\ECBB_Plugin::ecbb_load_layouts();
+	}
+
+	/**
+	 * Ensure render helpers are loaded before calling ECBB_Markup methods.
+	 *
+	 * @return bool
+	 */
+	private function ecbb_has_markup_dependencies() {
+		$this->ecbb_ensure_widget_dependencies();
+		return class_exists( 'ECBB_Markup', false );
+	}
+
+	/**
+	 * Builder-only placeholder when core render helpers are unavailable.
+	 *
+	 * @return void
+	 */
+	private function ecbb_render_missing_dependency_notice() {
+		if ( \Bricks\Capabilities::current_user_can_use_builder() ) {
+			echo '<div class="ecbb-event-placeholder">' . esc_html__( 'Events Widget dependencies could not be loaded.', 'events-calendar-for-bricks' ) . '</div>';
+		}
 	}
 
 	/**
@@ -108,8 +129,8 @@ class ECBB_Widget extends \Bricks\Element
 	 * @return void
 	 */
 	public function enqueue_scripts() {
-		if ( class_exists( '\ECBB_WidgetClass', false ) ) {
-			\ECBB_WidgetClass::ecbb_enqueue_events_widget_styles();
+		if ( class_exists( '\ECBB_Plugin', false ) ) {
+			\ECBB_Plugin::ecbb_enqueue_events_widget_styles();
 		}
 	}
 
@@ -126,7 +147,7 @@ class ECBB_Widget extends \Bricks\Element
 	 * @return string Normalized CSS color or empty string.
 	 */
 	private function ecbb_norm_color( $value ) {
-		return class_exists( 'ECBB_Markup', false ) ? \ECBB_Markup::ecbb_norm_color( $value ) : '';
+		return \ECBB_Markup::ecbb_norm_color( $value );
 	}
 
 	private function ecbb_get_instance_scope_class()
@@ -140,17 +161,12 @@ class ECBB_Widget extends \Bricks\Element
 	}
 
 	private function ecbb_part_surface_class( $part, $skin ) {
-		if ( ! class_exists( 'ECBB_Markup', false ) ) {
-			return '';
-		}
 		$skin = (string) $skin;
 		return \ECBB_Markup::ecbb_layout_surface_class( $part, $skin !== '' ? $skin : 'grid' );
 	}
 
 	private function ecbb_part_wrap_attrs( array $item, $idx, $style = '' ) {
-		return class_exists( 'ECBB_Markup', false )
-			? \ECBB_Markup::ecbb_part_wrap_attrs( $item, $idx, $style )
-			: ( $style !== '' ? ' style="' . esc_attr( $style ) . '"' : '' );
+		return \ECBB_Markup::ecbb_part_wrap_attrs( $item, $idx, $style );
 	}
 
 	/**
@@ -184,9 +200,7 @@ class ECBB_Widget extends \Bricks\Element
 		$part = isset( $item['part'] ) ? (string) $item['part'] : 'title';
 		$idx  = absint( $idx );
 		$skin = (string) $skin;
-		$wrap = class_exists( 'ECBB_Markup', false )
-			? \ECBB_Markup::ecbb_part_classes( $part, $idx, $skin, is_array( $item ) ? $item : [] )
-			: ( 'ecbb-event-part ecbb-event-part--' . str_replace( '_', '-', $part ) . ' ecbb-p' . $idx );
+		$wrap = \ECBB_Markup::ecbb_part_classes( $part, $idx, $skin, is_array( $item ) ? $item : [] );
 
 		return [
 			'part' => $part,
@@ -207,18 +221,16 @@ class ECBB_Widget extends \Bricks\Element
 	private function ecbb_render_part( $post, $item, $idx = 0, $skin = '' ) {
 		$ctx = $this->ecbb_prepare_part( $item, $idx, $skin );
 
-		if ( class_exists( 'ECBB_Markup', false ) ) {
-			$ext = \ECBB_Markup::ecbb_render_part_ext(
-				$post,
-				$ctx['item'],
-				$ctx['idx'],
-				'',
-				$ctx['skin']
-			);
-			if ( $ext !== false ) {
-				echo $ext; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in includes/markup.php
-				return;
-			}
+		$ext = \ECBB_Markup::ecbb_render_part_ext(
+			$post,
+			$ctx['item'],
+			$ctx['idx'],
+			'',
+			$ctx['skin']
+		);
+		if ( $ext !== false ) {
+			echo $ext; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in includes/markup.php
+			return;
 		}
 
 		switch ( $ctx['part'] ) {
@@ -251,33 +263,17 @@ class ECBB_Widget extends \Bricks\Element
 	 * @return void
 	 */
 	private function ecbb_render_part_image( $post, array $item, $idx, $wrap ) {
-		$thumb_id = class_exists( 'ECBB_Markup', false )
-			? \ECBB_Markup::ecbb_event_thumbnail_id( $post->ID )
-			: (int) get_post_thumbnail_id( $post->ID );
+		$thumb_id = \ECBB_Markup::ecbb_event_thumbnail_id( $post->ID );
 		if ( ! $thumb_id ) {
 			return;
 		}
 
-		$image_html = '';
-		if ( class_exists( 'ECBB_Markup', false ) ) {
-			$image_html = \ECBB_Markup::ecbb_render_featured_img( $thumb_id, $item );
-			if ( $image_html === '' ) {
-				$size       = \ECBB_Markup::ecbb_sanitize_image_size( $item['image_size'] ?? '', 'large' );
-				$image_html = wp_get_attachment_image(
-					$thumb_id,
-					$size !== '' ? $size : 'large',
-					false,
-					[ 'class' => 'ecbb-event__image' ]
-				);
-			}
-		} else {
-			$size = isset( $item['image_size'] ) ? trim( (string) $item['image_size'] ) : 'large';
-			if ( $size === '' ) {
-				$size = 'large';
-			}
+		$image_html = \ECBB_Markup::ecbb_render_featured_img( $thumb_id, $item );
+		if ( $image_html === '' ) {
+			$size = \ECBB_Markup::ecbb_sanitize_image_size( $item['image_size'] ?? '', 'large' );
 			$image_html = wp_get_attachment_image(
 				$thumb_id,
-				$size,
+				$size !== '' ? $size : 'large',
 				false,
 				[ 'class' => 'ecbb-event__image' ]
 			);
@@ -288,7 +284,7 @@ class ECBB_Widget extends \Bricks\Element
 		}
 
 		$link         = isset( $item['image_link'] ) ? (bool) $item['image_link'] : true;
-		$dual         = class_exists( 'ECBB_Markup', false ) && \ECBB_Markup::ecbb_image_dual_layer( $item );
+		$dual         = \ECBB_Markup::ecbb_image_dual_layer( $item );
 		$part_classes = $dual ? $wrap . ' ecbb-is-dual-img' : $wrap;
 
 		$this->ecbb_print_part_open_tag( 'div', $part_classes, $item, $idx );
@@ -313,16 +309,14 @@ class ECBB_Widget extends \Bricks\Element
 	 * @return void
 	 */
 	private function ecbb_render_part_taxonomy( $post, array $item, $idx, $wrap, $skin, $taxonomy, $part_key ) {
-		$terms = ( $taxonomy === 'tribe_events_cat' && class_exists( 'ECBB_Markup', false ) )
+		$terms = ( $taxonomy === 'tribe_events_cat' )
 			? \ECBB_Markup::ecbb_event_category_terms( $post->ID )
 			: get_the_terms( $post->ID, $taxonomy );
 		if ( empty( $terms ) || is_wp_error( $terms ) ) {
 			return;
 		}
 
-		$inner = class_exists( 'ECBB_Markup', false )
-			? \ECBB_Markup::ecbb_terms_html( $terms, $item, '', $skin, $part_key )
-			: '';
+		$inner = \ECBB_Markup::ecbb_terms_html( $terms, $item, '', $skin, $part_key );
 		if ( $inner === '' ) {
 			return;
 		}
@@ -345,7 +339,7 @@ class ECBB_Widget extends \Bricks\Element
 			$layout_skin = 'grid';
 		}
 
-		if ( $layout_skin === 'grid' && class_exists( 'ECBB_Markup', false ) ) {
+		if ( $layout_skin === 'grid' ) {
 			$content = \ECBB_Markup::ecbb_grid_description_html( $post, $item );
 			if ( $content === '' ) {
 				return;
@@ -359,25 +353,21 @@ class ECBB_Widget extends \Bricks\Element
 			return;
 		}
 
-		$source = $item['desc_source'] ?? 'auto';
-		$source = in_array( $source, [ 'auto', 'excerpt', 'content' ], true ) ? $source : 'auto';
 		$len_mode = isset( $item['desc_length'] ) ? (string) $item['desc_length'] : 'short';
 		$len_mode = in_array( $len_mode, [ 'short', 'full', 'custom' ], true ) ? $len_mode : 'short';
 		$words    = isset( $item['desc_words'] ) ? max( 5, (int) $item['desc_words'] ) : 55;
 
-		$content = '';
-		if ( $source === 'content' || ( $source === 'auto' && $post->post_excerpt === '' ) ) {
-			$raw     = $post->post_content;
-			$content = has_blocks( $raw ) ? do_blocks( $raw ) : wpautop( $raw );
-			$content = do_shortcode( $content );
-		} elseif ( $post->post_excerpt ) {
-			$content = wpautop( $post->post_excerpt );
+		$plain = \ECBB_Markup::ecbb_description_plain_text( $post, $item );
+		if ( $plain === '' ) {
+			return;
 		}
 
 		if ( $len_mode === 'short' ) {
-			$content = wpautop( wp_trim_words( wp_strip_all_tags( $content !== '' ? $content : $post->post_content ), 55 ) );
+			$content = wpautop( wp_trim_words( $plain, 55 ) );
 		} elseif ( $len_mode === 'custom' ) {
-			$content = wpautop( wp_trim_words( wp_strip_all_tags( $content !== '' ? $content : $post->post_content ), $words ) );
+			$content = wpautop( wp_trim_words( $plain, $words ) );
+		} else {
+			$content = wpautop( $plain );
 		}
 
 		$surface = trim( $this->ecbb_part_surface_class( 'description', $skin ) );
@@ -396,21 +386,9 @@ class ECBB_Widget extends \Bricks\Element
 	 * @return void
 	 */
 	private function ecbb_render_part_date( $post, array $item, $idx, $wrap ) {
-		$day  = '';
-		$time = '';
-		if ( class_exists( 'ECBB_Markup', false ) ) {
-			$parts_out = \ECBB_Markup::ecbb_build_day_time_parts( $post->ID, $item );
-			$day       = isset( $parts_out['day'] ) ? (string) $parts_out['day'] : '';
-			$time      = isset( $parts_out['time'] ) ? (string) $parts_out['time'] : '';
-		} elseif ( function_exists( 'tribe_get_start_date' ) ) {
-			$day = trim( wp_strip_all_tags( (string) \tribe_get_start_date( $post->ID, true ) ) );
-		} else {
-			$raw = get_post_meta( $post->ID, '_EventStartDate', true );
-			$ts  = $raw ? strtotime( (string) $raw ) : false;
-			$day = $ts
-				? trim( wp_strip_all_tags( date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $ts ) ) )
-				: '';
-		}
+		$parts_out = \ECBB_Markup::ecbb_build_day_time_parts( $post->ID, $item );
+		$day       = isset( $parts_out['day'] ) ? (string) $parts_out['day'] : '';
+		$time      = isset( $parts_out['time'] ) ? (string) $parts_out['time'] : '';
 
 		$day  = trim( wp_strip_all_tags( (string) $day ) );
 		$time = trim( wp_strip_all_tags( (string) $time ) );
@@ -437,10 +415,8 @@ class ECBB_Widget extends \Bricks\Element
 	 * @return void
 	 */
 	private function ecbb_render_part_title( $post, array $item, $idx, $wrap, $skin = '' ) {
-		$hover = ! class_exists( 'ECBB_Markup', false ) || \ECBB_Markup::ecbb_hover_style_active( $item );
-		$link  = class_exists( 'ECBB_Markup', false )
-			? ( \ECBB_Markup::ecbb_title_link_active( $item ) && $hover )
-			: ( ! empty( $item['link'] ) && $hover );
+		$hover = \ECBB_Markup::ecbb_hover_style_active( $item );
+		$link  = \ECBB_Markup::ecbb_title_link_active( $item ) && $hover;
 		$this->ecbb_print_part_open_tag( 'h3', trim( $wrap . ' ' . $this->ecbb_part_surface_class( 'title', $skin ) ), $item, $idx );
 		if ( $link ) {
 			echo '<a class="ecbb-event__link" href="' . esc_url( get_permalink( $post->ID ) ) . '">';
@@ -499,9 +475,7 @@ class ECBB_Widget extends \Bricks\Element
 	 * @return array<int,array<string,mixed>>
 	 */
 	private function ecbb_get_parts_effective( $template, $item_chrome, array $layout ) {
-		$parts_effective = class_exists( 'ECBB_Markup', false )
-			? \ECBB_Markup::ecbb_resolve_parts( $this->settings, $template, $item_chrome )
-			: [];
+		$parts_effective = \ECBB_Markup::ecbb_resolve_parts( $this->settings, $template, $item_chrome );
 
 		if ( $layout['use_grid_shell'] && class_exists( 'ECBB_Grid', false ) ) {
 			return \ECBB_Grid::ecbb_norm_parts( $parts_effective );
@@ -514,7 +488,7 @@ class ECBB_Widget extends \Bricks\Element
 		}
 		if (
 			$parts_effective === []
-			|| ( class_exists( 'ECBB_Markup', false ) && \ECBB_Markup::ecbb_parts_is_empty( $parts_effective ) )
+			|| \ECBB_Markup::ecbb_parts_is_empty( $parts_effective )
 		) {
 			return [
 				[ 'part' => 'title', 'link' => true ],
@@ -645,9 +619,7 @@ class ECBB_Widget extends \Bricks\Element
 		wp_reset_postdata();
 		$post = $original_post;
 
-		if ( class_exists( 'ECBB_Markup', false ) ) {
-			\ECBB_Markup::ecbb_active_widget_settings( [] );
-		}
+		\ECBB_Markup::ecbb_active_widget_settings( [] );
 	}
 
 	/**
@@ -694,12 +666,16 @@ class ECBB_Widget extends \Bricks\Element
 	}
 
 	public function render() {
-		$this->ecbb_ensure_widget_dependencies();
-
-		if ( class_exists( 'ECBB_Markup', false ) ) {
-			$this->settings = \ECBB_Markup::ecbb_norm_layout_shell_settings( is_array( $this->settings ) ? $this->settings : [] );
-			\ECBB_Markup::ecbb_active_widget_settings( $this->settings );
+		if ( ! $this->ecbb_has_markup_dependencies() ) {
+			$this->set_attribute( '_root', 'class', 'ecbb-ev' );
+			echo '<div ' . $this->render_attributes( '_root' ) . '>';
+			$this->ecbb_render_missing_dependency_notice();
+			echo '</div>';
+			return;
 		}
+
+		$this->settings = \ECBB_Markup::ecbb_norm_layout_shell_settings( is_array( $this->settings ) ? $this->settings : [] );
+		\ECBB_Markup::ecbb_active_widget_settings( $this->settings );
 
 		$scope_class = $this->ecbb_get_instance_scope_class();
 		$this->set_attribute( '_root', 'class', 'ecbb-ev' );
@@ -747,9 +723,7 @@ class ECBB_Widget extends \Bricks\Element
 	 * @return void
 	 */
 	private function ecbb_reset_active_widget_settings() {
-		if ( class_exists( 'ECBB_Markup', false ) ) {
-			\ECBB_Markup::ecbb_active_widget_settings( [] );
-		}
+		\ECBB_Markup::ecbb_active_widget_settings( [] );
 	}
 }
 

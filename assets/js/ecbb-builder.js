@@ -15,9 +15,7 @@
 	];
 
 	function readPartValue(item) {
-		var partInner = item.querySelector(
-			'.repeater-item-inner[data-control-key="part"]'
-		);
+		var partInner = getControlInner(item, "part");
 		if (!partInner) {
 			return "";
 		}
@@ -74,9 +72,7 @@
 		if (!item) {
 			return false;
 		}
-		var inner = item.querySelector(
-			'.repeater-item-inner[data-control-key="link"]'
-		);
+		var inner = getControlInner(item, "link");
 		if (!inner) {
 			return false;
 		}
@@ -100,9 +96,7 @@
 			return true;
 		}
 
-		var inner = item.querySelector(
-			'.repeater-item-inner[data-control-key="ecbb_use_hover"]'
-		);
+		var inner = getControlInner(item, "ecbb_use_hover");
 		if (!inner) {
 			return true;
 		}
@@ -170,7 +164,7 @@
 	}
 
 	function bindAccordionToggle(item, sepKey, attrName) {
-		var sep = item.querySelector('.repeater-item-inner[data-control-key="' + sepKey + '"]');
+		var sep = getControlInner(item, sepKey);
 		if (!sep || sep.getAttribute("data-ecbb-accordion-bound") === "1") {
 			return;
 		}
@@ -217,7 +211,7 @@
 	}
 
 	function injectTabs(item) {
-		var partEl = item.querySelector('.repeater-item-inner[data-control-key="part"]');
+		var partEl = getControlInner(item, "part");
 		if (!partEl || !partEl.parentNode) {
 			return;
 		}
@@ -322,22 +316,13 @@
 			ensureAccordions(item);
 		});
 		hookPreviewResync();
-		syncAllButtonPaint();
-		syncAllTitleInnerBackground();
-		syncAllCategoryChipBackgrounds();
-		syncAllActionButtonRepeaterStyles();
-		syncAllHoverPreviewStyles();
-		setTimeout(syncAllHoverPreviewStyles, 150);
-		setTimeout(syncAllHoverPreviewStyles, 350);
-		syncAllTypographyFromWrapper();
+		runAllSyncPasses(true);
 	}
 
 	function syncAllTypographyFromWrapper() {
-		document
-			.querySelectorAll(".ecbb-parts-repeater-item")
-			.forEach(function (item) {
-				syncTypographyColorFromWrapper(item);
-			});
+		if (typographySync) {
+			typographySync.syncAll();
+		}
 	}
 
 	var t = null;
@@ -370,6 +355,15 @@
 		return "";
 	}
 
+	function getControlInner(item, key) {
+		if (!item || !key) {
+			return null;
+		}
+		return item.querySelector(
+			'.repeater-item-inner[data-control-key="' + key + '"]'
+		);
+	}
+
 	function getPreviewDocument() {
 		var selectors = [
 			"#bricks-builder-iframe",
@@ -384,6 +378,150 @@
 			}
 		}
 		return null;
+	}
+
+	function getBuilderPanelRoot() {
+		return (
+			document.querySelector(
+				"#bricks-panel, #bricks-panel-wrapper, .bricks-panel, .brx-panel"
+			) || document.body
+		);
+	}
+
+	function mutationTouchesRepeater(mutations) {
+		var i;
+		for (i = 0; i < mutations.length; i++) {
+			var mutation = mutations[i];
+			var target = mutation.target;
+			if (
+				target &&
+				target.nodeType === 1 &&
+				target.closest &&
+				target.closest(".repeater-item")
+			) {
+				return true;
+			}
+			if (mutation.type === "childList") {
+				var j;
+				for (j = 0; j < mutation.addedNodes.length; j++) {
+					var node = mutation.addedNodes[j];
+					if (
+						node.nodeType === 1 &&
+						((node.matches && node.matches(".repeater-item")) ||
+							(node.querySelector && node.querySelector(".repeater-item")))
+					) {
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+
+	var syncRegistry = [];
+	var actionButtonSync;
+	var categoryChipSync;
+	var titleInnerBgSync;
+	var typographySync;
+	var hoverSync;
+	var buttonPaintSync;
+
+	function createSync(options) {
+		var delay = options.delay != null ? options.delay : 60;
+		var timers =
+			typeof WeakMap !== "undefined" ? new WeakMap() : null;
+		var fallbackById = {};
+
+		function run(item) {
+			if (options.run) {
+				options.run(item);
+				return;
+			}
+			options.sync(item);
+		}
+
+		function schedule(item) {
+			if (!item) {
+				return;
+			}
+			if (options.matches && !options.matches(item)) {
+				return;
+			}
+
+			if (timers) {
+				var pending = timers.get(item);
+				if (pending) {
+					clearTimeout(pending);
+				}
+				timers.set(
+					item,
+					setTimeout(function () {
+						timers.delete(item);
+						run(item);
+					}, delay)
+				);
+				return;
+			}
+
+			var id = readRepeaterRowId(item) || item;
+			if (fallbackById[id]) {
+				clearTimeout(fallbackById[id]);
+			}
+			fallbackById[id] = setTimeout(function () {
+				delete fallbackById[id];
+				run(item);
+			}, delay);
+		}
+
+		function syncAll() {
+			document
+				.querySelectorAll(".ecbb-parts-repeater-item")
+				.forEach(function (item) {
+					if (options.matches && !options.matches(item)) {
+						return;
+					}
+					options.sync(item);
+				});
+		}
+
+		function handlesKey(key) {
+			return !!(
+				key &&
+				options.controlKeys &&
+				options.controlKeys.indexOf(key) !== -1
+			);
+		}
+
+		var entry = {
+			id: options.id || "",
+			schedule: schedule,
+			syncAll: syncAll,
+			handlesKey: handlesKey,
+		};
+		syncRegistry.push(entry);
+		return entry;
+	}
+
+	function runAllSyncPasses(includeDelayed) {
+		var i;
+		for (i = 0; i < syncRegistry.length; i++) {
+			syncRegistry[i].syncAll();
+		}
+		if (!includeDelayed || !hoverSync || !typographySync) {
+			return;
+		}
+		setTimeout(function () {
+			hoverSync.syncAll();
+		}, 150);
+		setTimeout(function () {
+			hoverSync.syncAll();
+		}, 350);
+		setTimeout(function () {
+			typographySync.syncAll();
+		}, 150);
+		setTimeout(function () {
+			typographySync.syncAll();
+		}, 350);
 	}
 
 	var ACTION_BUTTON_PARTS = ["read_more", "event_tickets", "event_rsvp"];
@@ -402,9 +540,7 @@
 	}
 
 	function readBtnStyleEnabled(repeaterItem) {
-		var btnStyleInner = repeaterItem.querySelector(
-			'.repeater-item-inner[data-control-key="btn_style"]'
-		);
+		var btnStyleInner = getControlInner(repeaterItem, "btn_style");
 		if (!btnStyleInner) {
 			return false;
 		}
@@ -413,11 +549,7 @@
 	}
 
 	function readTypographyColor(repeaterItem) {
-		return readControlInnerColor(
-			repeaterItem.querySelector(
-				'.repeater-item-inner[data-control-key="ecbb_typography"]'
-			)
-		);
+		return readControlInnerColor(getControlInner(repeaterItem, "ecbb_typography"));
 	}
 
 	function isLayoutChromeNode(node, repeaterItem) {
@@ -539,21 +671,9 @@
 			return;
 		}
 
-		var bg = readControlInnerColor(
-			repeaterItem.querySelector(
-				'.repeater-item-inner[data-control-key="ecbb_background"]'
-			)
-		);
-		var pad = readSpacingControlValue(
-			repeaterItem.querySelector(
-				'.repeater-item-inner[data-control-key="ecbb_padding"]'
-			)
-		);
-		var typoColor = readControlInnerColor(
-			repeaterItem.querySelector(
-				'.repeater-item-inner[data-control-key="ecbb_typography"]'
-			)
-		);
+		var bg = readControlInnerColor(getControlInner(repeaterItem, "ecbb_background"));
+		var pad = readSpacingControlValue(getControlInner(repeaterItem, "ecbb_padding"));
+		var typoColor = readControlInnerColor(getControlInner(repeaterItem, "ecbb_typography"));
 		var computed = preview.defaultView.getComputedStyle(wrapper);
 
 		if (bg || pad) {
@@ -580,40 +700,30 @@
 			if (computed.fontWeight) {
 				node.style.setProperty("font-weight", computed.fontWeight, "important");
 			}
-			if (computed.lineHeight) {
-				node.style.setProperty("line-height", computed.lineHeight, "important");
-			}
 			if (computed.letterSpacing) {
 				node.style.setProperty("letter-spacing", computed.letterSpacing, "important");
 			}
 			if (computed.textTransform && computed.textTransform !== "none") {
 				node.style.setProperty("text-transform", computed.textTransform, "important");
 			}
+			// Keep layout buttons on their native baseline so font-size changes do not
+			// look like extra top padding in the builder preview.
+			node.style.setProperty("line-height", "1", "important");
 		});
 	}
 
-	var actionBtnSyncTimer = null;
 	function scheduleActionButtonRepeaterStyleSync(repeaterItem) {
-		if (!repeaterItem || !isActionButtonPart(repeaterItem)) {
+		if (actionButtonSync) {
+			actionButtonSync.schedule(repeaterItem);
 			return;
 		}
-		if (actionBtnSyncTimer) {
-			clearTimeout(actionBtnSyncTimer);
-		}
-		actionBtnSyncTimer = setTimeout(function () {
-			actionBtnSyncTimer = null;
-			syncActionButtonRepeaterStyle(repeaterItem);
-		}, 60);
+		syncActionButtonRepeaterStyle(repeaterItem);
 	}
 
 	function syncAllActionButtonRepeaterStyles() {
-		document
-			.querySelectorAll(".ecbb-parts-repeater-item")
-			.forEach(function (item) {
-				if (isActionButtonPart(item)) {
-					syncActionButtonRepeaterStyle(item);
-				}
-			});
+		if (actionButtonSync) {
+			actionButtonSync.syncAll();
+		}
 	}
 
 	function onActionButtonStyleInteraction(e) {
@@ -660,16 +770,8 @@
 			return;
 		}
 
-		var bg = readControlInnerColor(
-			repeaterItem.querySelector(
-				'.repeater-item-inner[data-control-key="ecbb_background"]'
-			)
-		);
-		var pad = readSpacingControlValue(
-			repeaterItem.querySelector(
-				'.repeater-item-inner[data-control-key="ecbb_padding"]'
-			)
-		);
+		var bg = readControlInnerColor(getControlInner(repeaterItem, "ecbb_background"));
+		var pad = readSpacingControlValue(getControlInner(repeaterItem, "ecbb_padding"));
 
 		if (!bg && !pad) {
 			clearLayoutChromeInlineStyles(repeaterItem);
@@ -697,28 +799,18 @@
 			});
 	}
 
-	var categoryChipBgTimer = null;
 	function scheduleCategoryChipBackgroundSync(repeaterItem) {
-		if (!repeaterItem) {
+		if (categoryChipSync) {
+			categoryChipSync.schedule(repeaterItem);
 			return;
 		}
-		if (categoryChipBgTimer) {
-			clearTimeout(categoryChipBgTimer);
-		}
-		categoryChipBgTimer = setTimeout(function () {
-			categoryChipBgTimer = null;
-			syncCategoryChipBackground(repeaterItem);
-		}, 60);
+		syncCategoryChipBackground(repeaterItem);
 	}
 
 	function syncAllCategoryChipBackgrounds() {
-		document
-			.querySelectorAll(".ecbb-parts-repeater-item")
-			.forEach(function (item) {
-				if (readPartValue(item) === "categories") {
-					syncCategoryChipBackground(item);
-				}
-			});
+		if (categoryChipSync) {
+			categoryChipSync.syncAll();
+		}
 	}
 
 	function onCategoryChipBackgroundInteraction(e) {
@@ -758,17 +850,9 @@
 			return;
 		}
 
-		var bg = readControlInnerColor(
-			repeaterItem.querySelector(
-				'.repeater-item-inner[data-control-key="ecbb_background"]'
-			)
-		);
+		var bg = readControlInnerColor(getControlInner(repeaterItem, "ecbb_background"));
 		if (!bg) {
-			bg = readControlInnerColor(
-				repeaterItem.querySelector(
-					'.repeater-item-inner[data-control-key="ecbb_background_inner"]'
-				)
-			);
+			bg = readControlInnerColor(getControlInner(repeaterItem, "ecbb_background_inner"));
 		}
 
 		wrapper.style.setProperty("background-color", "transparent", "important");
@@ -787,28 +871,18 @@
 			});
 	}
 
-	var titleInnerBgTimer = null;
 	function scheduleTitleInnerBackgroundSync(repeaterItem) {
-		if (!repeaterItem) {
+		if (titleInnerBgSync) {
+			titleInnerBgSync.schedule(repeaterItem);
 			return;
 		}
-		if (titleInnerBgTimer) {
-			clearTimeout(titleInnerBgTimer);
-		}
-		titleInnerBgTimer = setTimeout(function () {
-			titleInnerBgTimer = null;
-			syncTitleInnerBackground(repeaterItem);
-		}, 60);
+		syncTitleInnerBackground(repeaterItem);
 	}
 
 	function syncAllTitleInnerBackground() {
-		document
-			.querySelectorAll(".ecbb-parts-repeater-item")
-			.forEach(function (item) {
-				if (readPartValue(item) === "title") {
-					syncTitleInnerBackground(item);
-				}
-			});
+		if (titleInnerBgSync) {
+			titleInnerBgSync.syncAll();
+		}
 	}
 
 	function onTitleInnerBackgroundInteraction(e) {
@@ -848,11 +922,7 @@
 			return;
 		}
 
-		var textColor = readControlInnerColor(
-			repeaterItem.querySelector(
-				'.repeater-item-inner[data-control-key="ecbb_typography"]'
-			)
-		);
+		var textColor = readControlInnerColor(getControlInner(repeaterItem, "ecbb_typography"));
 		if (!textColor && preview.defaultView) {
 			textColor = preview.defaultView.getComputedStyle(wrapper).color;
 		}
@@ -861,21 +931,19 @@
 		}
 	}
 
-	var typoSyncTimer = null;
+	function runTypographySyncPasses(repeaterItem) {
+		syncTypographyColorFromWrapper(repeaterItem);
+		syncButtonTypographyForeground(repeaterItem);
+		scheduleActionButtonRepeaterStyleSync(repeaterItem);
+		scheduleHoverPreviewSync(repeaterItem);
+	}
+
 	function scheduleTypographyColorSync(repeaterItem) {
-		if (!repeaterItem) {
+		if (typographySync) {
+			typographySync.schedule(repeaterItem);
 			return;
 		}
-		if (typoSyncTimer) {
-			clearTimeout(typoSyncTimer);
-		}
-		typoSyncTimer = setTimeout(function () {
-			typoSyncTimer = null;
-			syncTypographyColorFromWrapper(repeaterItem);
-			syncButtonTypographyForeground(repeaterItem);
-			scheduleActionButtonRepeaterStyleSync(repeaterItem);
-			scheduleHoverPreviewSync(repeaterItem);
-		}, 60);
+		runTypographySyncPasses(repeaterItem);
 	}
 
 	function onTypographyControlInteraction(e) {
@@ -916,22 +984,17 @@
 		  })
 		: [ "ecbb_use_hover", "ecbb_hover_color", "ecbb_hover_background" ];
 
-	function readRepeaterHoverColor(repeaterItem) {
-		var color = readControlInnerColor(
-			repeaterItem.querySelector(
-				'.repeater-item-inner[data-control-key="ecbb_hover_color"]'
-			)
-		);
+	function readRepeaterHoverPaint(repeaterItem, key) {
+		var color = readControlInnerColor(getControlInner(repeaterItem, key));
 		return isMeaningfulHoverColor(color) ? color : "";
 	}
 
+	function readRepeaterHoverColor(repeaterItem) {
+		return readRepeaterHoverPaint(repeaterItem, "ecbb_hover_color");
+	}
+
 	function readRepeaterHoverBackground(repeaterItem) {
-		var color = readControlInnerColor(
-			repeaterItem.querySelector(
-				'.repeater-item-inner[data-control-key="ecbb_hover_background"]'
-			)
-		);
-		return isMeaningfulHoverColor(color) ? color : "";
+		return readRepeaterHoverPaint(repeaterItem, "ecbb_hover_background");
 	}
 
 	function isMeaningfulHoverColor(value) {
@@ -1021,9 +1084,6 @@
 		}
 		var part = readRepeaterPartSlug(repeaterItem);
 		if (!partSupportsHover(part, repeaterItem)) {
-			return false;
-		}
-		if (part === "title" && !titleLinkEnabled(repeaterItem)) {
 			return false;
 		}
 		if (repeaterHasHoverPaint(repeaterItem)) {
@@ -1143,9 +1203,7 @@
 			return;
 		}
 
-		var useHoverInner = repeaterItem.querySelector(
-			'.repeater-item-inner[data-control-key="ecbb_use_hover"]'
-		);
+		var useHoverInner = getControlInner(repeaterItem, "ecbb_use_hover");
 		if (useHoverInner) {
 			wrapper.classList.toggle("ecbb-no-hover", !partHoverEnabled(repeaterItem));
 		}
@@ -1228,44 +1286,18 @@
 		rebuildHoverPreviewStylesheet(preview);
 	}
 
-	var hoverPreviewSyncTimers =
-		typeof WeakMap !== "undefined" ? new WeakMap() : null;
 	function scheduleHoverPreviewSync(repeaterItem) {
-		if (!repeaterItem) {
+		if (hoverSync) {
+			hoverSync.schedule(repeaterItem);
 			return;
 		}
-
-		function runHoverSyncPasses() {
-			syncHoverPreviewStyles(repeaterItem);
-			setTimeout(function () {
-				syncHoverPreviewStyles(repeaterItem);
-			}, 120);
-		}
-
-		if (hoverPreviewSyncTimers) {
-			var pending = hoverPreviewSyncTimers.get(repeaterItem);
-			if (pending) {
-				clearTimeout(pending);
-			}
-			hoverPreviewSyncTimers.set(
-				repeaterItem,
-				setTimeout(function () {
-					hoverPreviewSyncTimers.delete(repeaterItem);
-					runHoverSyncPasses();
-				}, 60)
-			);
-			return;
-		}
-
-		runHoverSyncPasses();
+		syncHoverPreviewStyles(repeaterItem);
 	}
 
 	function syncAllHoverPreviewStyles() {
-		document
-			.querySelectorAll(".ecbb-parts-repeater-item")
-			.forEach(function (item) {
-				syncHoverPreviewStyles(item);
-			});
+		if (hoverSync) {
+			hoverSync.syncAll();
+		}
 	}
 
 	function onHoverControlInteraction(e) {
@@ -1326,11 +1358,7 @@
 			return;
 		}
 
-		var bg = readControlInnerColor(
-			repeaterItem.querySelector(
-				'.repeater-item-inner[data-control-key="ecbb_background"]'
-			)
-		);
+		var bg = readControlInnerColor(getControlInner(repeaterItem, "ecbb_background"));
 		if (bg) {
 			wrapper.style.setProperty("--ecbb-btn-bg", bg);
 		}
@@ -1433,40 +1461,22 @@
 			return;
 		}
 
-		var padding = readSpacingControlValue(
-			repeaterItem.querySelector(
-				'.repeater-item-inner[data-control-key="btn_padding"]'
-			)
-		);
+		var padding = readSpacingControlValue(getControlInner(repeaterItem, "btn_padding"));
 		if (padding) {
 			surface.style.padding = padding;
 		}
 
-		var radius = readSpacingControlValue(
-			repeaterItem.querySelector(
-				'.repeater-item-inner[data-control-key="btn_border_radius"]'
-			)
-		);
+		var radius = readSpacingControlValue(getControlInner(repeaterItem, "btn_border_radius"));
 		if (radius) {
 			surface.style.borderRadius = radius;
 		}
 
 		var borderType =
-			readSelectControlValue(
-				repeaterItem.querySelector(
-					'.repeater-item-inner[data-control-key="btn_border_type"]'
-				)
-			) || "";
+			readSelectControlValue(getControlInner(repeaterItem, "btn_border_type")) || "";
 		var borderWidth = readNumberControlValue(
-			repeaterItem.querySelector(
-				'.repeater-item-inner[data-control-key="btn_border_width"]'
-			)
+			getControlInner(repeaterItem, "btn_border_width")
 		);
-		var borderColor = readControlInnerColor(
-			repeaterItem.querySelector(
-				'.repeater-item-inner[data-control-key="btn_border_color"]'
-			)
-		);
+		var borderColor = readControlInnerColor(getControlInner(repeaterItem, "btn_border_color"));
 
 		if (borderType === "none") {
 			surface.style.setProperty("border", "none");
@@ -1606,36 +1616,18 @@
 		surface.style.setProperty("box-sizing", "border-box");
 	}
 
-	var btnSyncTimer = null;
 	function scheduleButtonPaintSync(repeaterItem) {
-		if (!repeaterItem) {
+		if (buttonPaintSync) {
+			buttonPaintSync.schedule(repeaterItem);
 			return;
 		}
-		if (btnSyncTimer) {
-			clearTimeout(btnSyncTimer);
-		}
-		btnSyncTimer = setTimeout(function () {
-			btnSyncTimer = null;
-			syncButtonPaintToInnerLink(repeaterItem);
-			// Bricks border/spacing controls may apply after the first paint pass.
-			setTimeout(function () {
-				syncButtonPaintToInnerLink(repeaterItem);
-			}, 120);
-		}, 60);
+		syncButtonPaintToInnerLink(repeaterItem);
 	}
 
 	function syncAllButtonPaint() {
-		document
-			.querySelectorAll(".ecbb-parts-repeater-item")
-			.forEach(function (item) {
-				if (
-					item.querySelector(
-						'.repeater-item-inner[data-control-key="btn_style"]'
-					)
-				) {
-					syncButtonPaintToInnerLink(item);
-				}
-			});
+		if (buttonPaintSync) {
+			buttonPaintSync.syncAll();
+		}
 	}
 
 	function onButtonControlInteraction(e) {
@@ -1659,66 +1651,123 @@
 		}
 	}
 
-	document.addEventListener(
-		"change",
-		function (e) {
-			var item = e.target.closest(".ecbb-parts-repeater-item");
-			if (!item) {
-				return;
-			}
-			if (e.target.closest('.repeater-item-inner[data-control-key="part"]')) {
-				syncHoverVisibility(item);
-				return;
-			}
-			if (e.target.closest('.repeater-item-inner[data-control-key="link"]')) {
-				syncHoverVisibility(item);
-				scheduleTitleInnerBackgroundSync(item);
-				return;
-			}
-			if (e.target.closest('.repeater-item-inner[data-control-key="ecbb_use_hover"]')) {
-				syncUseHoverEnabled(item);
-				scheduleButtonPaintSync(item);
-				scheduleHoverPreviewSync(item);
-				return;
-			}
-			if (e.target.closest('.repeater-item-inner[data-control-key="ecbb_typography"]')) {
-				scheduleTypographyColorSync(item);
-				return;
-			}
-			if (
-				e.target.closest('.repeater-item-inner[data-control-key="ecbb_background"]') ||
-				e.target.closest('.repeater-item-inner[data-control-key="ecbb_background_inner"]')
-			) {
-				if (readPartValue(item) === "title") {
-					scheduleTitleInnerBackgroundSync(item);
-				}
-			}
-			if (
-				e.target.closest('.repeater-item-inner[data-control-key="btn_style"]') ||
-				e.target.closest('.repeater-item-inner[data-control-key="btn_border_type"]') ||
-				e.target.closest('.repeater-item-inner[data-control-key="btn_border_width"]') ||
-				e.target.closest('.repeater-item-inner[data-control-key="btn_border_color"]') ||
-				e.target.closest('.repeater-item-inner[data-control-key="btn_padding"]') ||
-				e.target.closest('.repeater-item-inner[data-control-key="btn_border_radius"]') ||
-				e.target.closest('.repeater-item-inner[data-control-key="ecbb_background"]')
-			) {
-				scheduleButtonPaintSync(item);
-			}
-		},
-		true
-	);
+	function initSyncRegistry() {
+		syncRegistry.length = 0;
 
-	document.addEventListener("input", onTypographyControlInteraction, true);
-	document.addEventListener("input", onButtonControlInteraction, true);
-	document.addEventListener("change", onButtonControlInteraction, true);
-	document.addEventListener("input", onHoverControlInteraction, true);
-	document.addEventListener("change", onHoverControlInteraction, true);
-	document.addEventListener("input", onActionButtonStyleInteraction, true);
-	document.addEventListener("change", onActionButtonStyleInteraction, true);
-	document.addEventListener("input", onTitleInnerBackgroundInteraction, true);
-	document.addEventListener("change", onTitleInnerBackgroundInteraction, true);
-	document.addEventListener("input", onCategoryChipBackgroundInteraction, true);
-	document.addEventListener("change", onCategoryChipBackgroundInteraction, true);
+		actionButtonSync = createSync({
+			id: "actionButton",
+			matches: isActionButtonPart,
+			controlKeys: ["ecbb_background", "ecbb_padding", "ecbb_typography", "ecbb_text_align"],
+			sync: syncActionButtonRepeaterStyle,
+		});
+
+		categoryChipSync = createSync({
+			id: "categoryChip",
+			matches: function (item) {
+				return readRepeaterPartSlug(item) === "categories";
+			},
+			controlKeys: ["ecbb_background", "ecbb_padding"],
+			sync: syncCategoryChipBackground,
+		});
+
+		titleInnerBgSync = createSync({
+			id: "titleInnerBg",
+			matches: function (item) {
+				return readPartValue(item) === "title";
+			},
+			controlKeys: ["ecbb_background", "ecbb_background_inner"],
+			sync: syncTitleInnerBackground,
+		});
+
+		typographySync = createSync({
+			id: "typography",
+			controlKeys: ["ecbb_typography"],
+			sync: syncTypographyColorFromWrapper,
+			run: runTypographySyncPasses,
+		});
+
+		hoverSync = createSync({
+			id: "hover",
+			controlKeys: HOVER_PAINT_KEYS,
+			sync: syncHoverPreviewStyles,
+			run: function (item) {
+				syncHoverPreviewStyles(item);
+				setTimeout(function () {
+					syncHoverPreviewStyles(item);
+				}, 120);
+			},
+		});
+
+		buttonPaintSync = createSync({
+			id: "buttonPaint",
+			matches: function (item) {
+				return !!getControlInner(item, "btn_style");
+			},
+			controlKeys: BTN_PAINT_KEYS,
+			sync: syncButtonPaintToInnerLink,
+			run: function (item) {
+				syncButtonPaintToInnerLink(item);
+				setTimeout(function () {
+					syncButtonPaintToInnerLink(item);
+				}, 120);
+			},
+		});
+	}
+
+	function routeRepeaterPanelInput(e) {
+		var item = e.target.closest(".ecbb-parts-repeater-item");
+		if (!item) {
+			return;
+		}
+		var key = getControlKeyFromEvent(e);
+		if (!key) {
+			return;
+		}
+		var i;
+		for (i = 0; i < syncRegistry.length; i++) {
+			if (syncRegistry[i].handlesKey(key)) {
+				syncRegistry[i].schedule(item);
+			}
+		}
+	}
+
+	function routeRepeaterPanelChange(e) {
+		var item = e.target.closest(".ecbb-parts-repeater-item");
+		if (!item) {
+			return;
+		}
+		var key = getControlKeyFromEvent(e);
+		if (key === "part") {
+			syncHoverVisibility(item);
+			runAllSyncPasses(false);
+			return;
+		}
+		if (key === "link") {
+			syncHoverVisibility(item);
+			scheduleTitleInnerBackgroundSync(item);
+			return;
+		}
+		if (key === "ecbb_use_hover") {
+			syncUseHoverEnabled(item);
+			scheduleButtonPaintSync(item);
+			scheduleHoverPreviewSync(item);
+			return;
+		}
+		routeRepeaterPanelInput(e);
+	}
+
+	function getControlKeyFromEvent(e) {
+		var inner = e.target.closest(".repeater-item-inner[data-control-key]");
+		if (!inner) {
+			return "";
+		}
+		return inner.getAttribute("data-control-key") || "";
+	}
+
+	initSyncRegistry();
+
+	document.addEventListener("input", routeRepeaterPanelInput, true);
+	document.addEventListener("change", routeRepeaterPanelChange, true);
 
 	document.addEventListener(
 		"click",
@@ -1770,8 +1819,12 @@
 		scan();
 	}
 
-	var obs = new MutationObserver(scheduleScan);
-	obs.observe(document.body, {
+	var obs = new MutationObserver(function (mutations) {
+		if (mutationTouchesRepeater(mutations)) {
+			scheduleScan();
+		}
+	});
+	obs.observe(getBuilderPanelRoot(), {
 		childList: true,
 		subtree: true,
 		attributes: true,

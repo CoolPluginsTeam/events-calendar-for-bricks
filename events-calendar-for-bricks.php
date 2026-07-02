@@ -27,7 +27,7 @@ define( 'ECBB_FILE', __FILE__ );
 define( 'ECBB_DIR', plugin_dir_path( ECBB_FILE ) );
 define( 'ECBB_URL', plugin_dir_url( ECBB_FILE ) );
 
-if ( ! class_exists( 'EventsCalendarForBricks' ) ) {
+if ( ! class_exists( __NAMESPACE__ . '\\EventsCalendarForBricks' ) ) {
 
 	class EventsCalendarForBricks {
 
@@ -41,7 +41,7 @@ if ( ! class_exists( 'EventsCalendarForBricks' ) ) {
 		 * Load the lightweight integration bootstrap (hooks only).
 		 *
 		 * The heavy render/builder helpers (query, markup, styles, controls,
-		 * layouts) are loaded on demand by {@see ECBB_WidgetClass} so they are
+		 * layouts) are loaded on demand by {@see ECBB_Plugin} so they are
 		 * not parsed on cron, REST, or front-end requests that never use the
 		 * events widget.
 		 */
@@ -61,11 +61,11 @@ if ( ! class_exists( 'EventsCalendarForBricks' ) ) {
 
 			$this->ecbb_load_files();
 
-			if ( ! class_exists( 'ECBB_WidgetClass', false ) ) {
+			if ( ! class_exists( 'ECBB_Plugin', false ) ) {
 				return;
 			}
 
-			new \ECBB_WidgetClass();
+			new \ECBB_Plugin();
 		}
 
 		public static function ecbb_is_bricks_active() {

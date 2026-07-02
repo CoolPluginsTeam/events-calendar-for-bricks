@@ -46,6 +46,7 @@
 	--badge-blue: #244ee7;
 	--ecbb-accent: #0d55d8;
 	--ecbb-accent-dark: #0847bb;
+	--ecbb-accent-soft: #d4e4ff;
 	--font-family-base: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 	--radius-sm: 5px;
 	--shadow-card: 0 8px 24px rgba(15, 23, 42, 0.06);
@@ -76,7 +77,17 @@
 	height: 100%;
 }
 
-.ecbb-ev a {
+.ecbb-ev .event-grid-card__image,
+.ecbb-ev .event-list-card__image,
+.ecbb-ev .ecbb-event-card__image {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	transition: transform var(--transition-base);
+}
+
+.ecbb-ev a,
+.ecbb-event-part--title.ecbb-no-hover .ecbb-event__link {
 	color: inherit;
 	text-decoration: none;
 }
@@ -114,7 +125,7 @@
 	background: var(--ecbb-shell-cat-bg, var(--badge-blue));
 	padding: 5px 9px;
 	border-radius: 50px;
-	color: var(--ecbb-shell-cat-color, #ffffff);
+	color: var(--ecbb-shell-cat-color, var(--color-card-bg));
 	font-size: 10px;
 	font-weight: 700;
 	text-transform: uppercase;
@@ -122,7 +133,7 @@
 }
 
 .ecbb-ev a.event-badge--blue:hover {
-	color: var(--ecbb-shell-cat-color, #ffffff);
+	color: var(--ecbb-shell-cat-color, var(--color-card-bg));
 	background: var(--ecbb-shell-cat-bg, var(--badge-blue));
 }
 
@@ -151,12 +162,12 @@
 .ecbb-ev .event-button--outline {
 	padding: 0 16px;
 	border: 1px solid var(--color-primary);
-	color: var(--color-primary);
-	background: #ffffff;
+	color: var(--ecbb-btn-fg, var(--color-primary));
+	background: var(--color-card-bg);
 }
 
 .ecbb-ev .event-button--outline:hover {
-	color: #ffffff;
+	color: var(--color-card-bg);
 	background: var(--color-primary);
 	border-color: var(--color-primary);
 	box-shadow: 0 8px 18px rgba(33, 71, 199, 0.2);
@@ -165,7 +176,7 @@
 .ecbb-ev .event-button--filled {
 	width: 100%;
 	padding: 0 16px;
-	color: #ffffff;
+	color: var(--ecbb-btn-fg, var(--color-card-bg));
 	background: var(--color-primary);
 	border: 1px solid var(--color-primary);
 }
@@ -211,7 +222,8 @@
 	stroke-linejoin: round;
 }
 
-.ecbb-ev .event-list-card--no-image {
+.ecbb-ev .event-list-card--no-image,
+.ecbb-ev .ecbb-event-card--no-image {
 	grid-template-columns: 1fr !important;
 }
 
@@ -221,10 +233,6 @@
 
 .ecbb-ev .event-list-card--no-image .event-list-card__image-wrap {
 	display: none;
-}
-
-.ecbb-ev .ecbb-event-card--no-image {
-	grid-template-columns: 1fr !important;
 }
 
 .ecbb-ev .ecbb-event-card--no-image .ecbb-event-card__image-wrap {
@@ -240,9 +248,10 @@
 	position: relative;
 }
 
-/* Category chips: never paint the flex wrapper (background belongs on each chip/pill). */
+/* Category chips / card top / hover rows: wrapper stays transparent. */
 .ecbb-event-part--categories.ecbb-event-part,
-.ecbb-ev .ecbb-event-card__top {
+.ecbb-ev .ecbb-event-card__top,
+.ecbb-event-part.ecbb-has-hover-bg:not(.ecbb-no-hover):hover {
 	background-color: transparent !important;
 }
 
@@ -267,6 +276,18 @@
 	box-sizing: border-box;
 	background-color: var(--ecbb-btn-bg, unset);
 	color: var(--ecbb-btn-fg, unset);
+}
+
+/* Repeater typography color on layout buttons (builder live preview + frontend). */
+.ecbb-event-part.ecbb-has-typo-fg:not(.ecbb-has-btn) > .ecbb-event__link,
+.ecbb-event-part.ecbb-has-typo-fg:not(.ecbb-has-btn) .ecbb-event__link,
+.ecbb-event-part.ecbb-has-typo-fg:not(.ecbb-has-btn) > a.event-button,
+.ecbb-event-part.ecbb-has-typo-fg:not(.ecbb-has-btn) a.event-button,
+.ecbb-event-part.ecbb-has-typo-fg:not(.ecbb-has-btn) > a.ecbb-event-card__button,
+.ecbb-event-part.ecbb-has-typo-fg:not(.ecbb-has-btn) a.ecbb-event-card__button,
+.ecbb-event-part.ecbb-has-typo-fg:not(.ecbb-has-btn) > .ecbb-event__plain,
+.ecbb-event-part.ecbb-has-typo-fg:not(.ecbb-has-btn) .ecbb-event__plain {
+	color: var(--ecbb-btn-fg) !important;
 }
 
 .ecbb-event-part.ecbb-has-btn.ecbb-no-hover .ecbb-event__plain {
@@ -305,11 +326,6 @@
 	background-color: var(--ecbb-hover-bg) !important;
 }
 
-/* Keep row wrappers transparent; hover background belongs on the inner control only. */
-.ecbb-event-part.ecbb-has-hover-bg:not(.ecbb-no-hover):hover {
-	background-color: transparent !important;
-}
-
 /* Smooth hover transitions for interactive event parts (when hover is enabled per row). */
 .ecbb-event-part:not(.ecbb-no-hover) .ecbb-event__link,
 .ecbb-event-part:not(.ecbb-no-hover) .ecbb-event__term,
@@ -324,12 +340,6 @@
 .ecbb-event-part--event-tickets:not(.ecbb-no-hover),
 .ecbb-event-part--event-rsvp:not(.ecbb-no-hover) {
 	transition: opacity 0.2s ease, transform 0.2s ease, background-color 0.2s ease, color 0.2s ease, text-decoration-color 0.2s ease;
-}
-
-/* Title with hover off: plain text (no link underline treatment). */
-.ecbb-event-part--title.ecbb-no-hover .ecbb-event__link {
-	text-decoration: none;
-	color: inherit;
 }
 
 /* Interactive parts with hover off: plain text, no link affordance (not button-styled rows). */

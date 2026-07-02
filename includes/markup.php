@@ -781,35 +781,67 @@ if (! class_exists('ECBB_Markup', false)) {
 		// --- Cost ---
 
 		/**
+		 * Currency code => display symbol (UTF-8 via PHP unicode escapes).
+		 *
+		 * @return array<string,string>
+		 */
+		private static function ecbb_cost_currency_symbols() {
+			return [
+				'USD' => '$',
+				'EUR' => "\u{20AC}",
+				'GBP' => "\u{00A3}",
+				'CAD' => '$',
+				'AUD' => '$',
+				'INR' => "\u{20B9}",
+				'JPY' => "\u{00A5}",
+				'CNY' => "\u{00A5}",
+				'CHF' => 'Fr',
+				'SEK' => 'kr',
+				'NOK' => 'kr',
+				'DKK' => 'kr',
+				'NZD' => '$',
+				'ZAR' => 'R',
+				'BRL' => 'R$',
+				'MXN' => '$',
+				'SGD' => '$',
+				'HKD' => '$',
+				'AED' => "\u{062F}.\u{0625}",
+				'SAR' => "\u{FDFC}",
+			];
+		}
+
+		/**
 		* Currency choices for the Event cost part (per repeater row).
 		*
 		* @return array<string,string>
 		*/
 		public static function ecbb_cost_currency_opts()
 		{
+			$symbols = self::ecbb_cost_currency_symbols();
+
 			return [
 			'default' => esc_html__('Site default', 'events-calendar-for-bricks'),
 			'none'    => esc_html__('No currency symbol', 'events-calendar-for-bricks'),
-			'USD'     => 'USD ($)',
-			'EUR'     => 'EUR (â‚¬)',
-			'GBP'     => 'GBP (Â£)',
-			'CAD'     => 'CAD ($)',
-			'AUD'     => 'AUD ($)',
-			'INR'     => 'INR (â‚¹)',
-			'JPY'     => 'JPY (Â¥)',
-			'CNY'     => 'CNY (Â¥)',
-			'CHF'     => 'CHF (Fr)',
-			'SEK'     => 'SEK (kr)',
-			'NOK'     => 'NOK (kr)',
-			'DKK'     => 'DKK (kr)',
-			'NZD'     => 'NZD ($)',
-			'ZAR'     => 'ZAR (R)',
-			'BRL'     => 'BRL (R$)',
-			'MXN'     => 'MXN ($)',
-			'SGD'     => 'SGD ($)',
-			'HKD'     => 'HKD ($)',
-			'AED'     => 'AED (Ø¯.Ø¥)',
-			'SAR'     => 'SAR (ï·¼)',
+			'USD'     => 'USD (' . $symbols['USD'] . ')',
+			'EUR'     => 'EUR (' . $symbols['EUR'] . ')',
+			'GBP'     => 'GBP (' . $symbols['GBP'] . ')',
+			'CAD'     => 'CAD (' . $symbols['CAD'] . ')',
+			'AUD'     => 'AUD (' . $symbols['AUD'] . ')',
+			'INR'     => 'INR (' . $symbols['INR'] . ')',
+			'JPY'     => 'JPY (' . $symbols['JPY'] . ')',
+			'CNY'     => 'CNY (' . $symbols['CNY'] . ')',
+			'CHF'     => 'CHF (' . $symbols['CHF'] . ')',
+			'SEK'     => 'SEK (' . $symbols['SEK'] . ')',
+			'NOK'     => 'NOK (' . $symbols['NOK'] . ')',
+			'DKK'     => 'DKK (' . $symbols['DKK'] . ')',
+			'NZD'     => 'NZD (' . $symbols['NZD'] . ')',
+			'ZAR'     => 'ZAR (' . $symbols['ZAR'] . ')',
+			'BRL'     => 'BRL (' . $symbols['BRL'] . ')',
+			'MXN'     => 'MXN (' . $symbols['MXN'] . ')',
+			'SGD'     => 'SGD (' . $symbols['SGD'] . ')',
+			'HKD'     => 'HKD (' . $symbols['HKD'] . ')',
+			'AED'     => 'AED (' . $symbols['AED'] . ')',
+			'SAR'     => 'SAR (' . $symbols['SAR'] . ')',
 			];
 		}
 
@@ -867,28 +899,7 @@ if (! class_exists('ECBB_Markup', false)) {
 		*/
 		public static function ecbb_cost_currency_symbol($currency_code)
 		{
-			$map = [
-			'USD' => '$',
-			'EUR' => 'â‚¬',
-			'GBP' => 'Â£',
-			'CAD' => '$',
-			'AUD' => '$',
-			'INR' => 'â‚¹',
-			'JPY' => 'Â¥',
-			'CNY' => 'Â¥',
-			'CHF' => 'Fr',
-			'SEK' => 'kr',
-			'NOK' => 'kr',
-			'DKK' => 'kr',
-			'NZD' => '$',
-			'ZAR' => 'R',
-			'BRL' => 'R$',
-			'MXN' => '$',
-			'SGD' => '$',
-			'HKD' => '$',
-			'AED' => 'Ø¯.Ø¥',
-			'SAR' => 'ï·¼',
-			];
+			$map = self::ecbb_cost_currency_symbols();
 			$currency_code = self::ecbb_sanitize_cost_currency($currency_code);
 			return isset($map[$currency_code]) ? $map[$currency_code] : '';
 		}
@@ -1763,18 +1774,16 @@ if (! class_exists('ECBB_Markup', false)) {
 		* Whether the organizer repeater row should render full organizer details.
 		*
 		* @param array<string,mixed> $item Repeater row.
-		* @param string              $skin Loop skin: '' or 'style1' or 'style2'.
 		* @return bool
 		*/
 
-		public static function ecbb_organizer_uses_full(array $item, $skin = '')
-		{
-			$display = isset($item['organizer_display']) ? (string) $item['organizer_display'] : 'full_details';
-			if ($display === '') {
+		public static function ecbb_organizer_uses_full( array $item ) {
+			$display = isset( $item['organizer_display'] ) ? (string) $item['organizer_display'] : 'full_details';
+			if ( $display === '' ) {
 				$display = 'full_details';
 			}
 
-		return $display === 'full_details';
+			return $display === 'full_details';
 		}
 
 		/**
@@ -1793,7 +1802,7 @@ if (! class_exists('ECBB_Markup', false)) {
 				return '';
 			}
 
-		if (self::ecbb_organizer_uses_full($item, $skin)) {
+		if ( self::ecbb_organizer_uses_full( $item ) ) {
 			return self::ecbb_organizer_full($event_id);
 		}
 
@@ -2072,6 +2081,42 @@ if (! class_exists('ECBB_Markup', false)) {
 		}
 
 		/**
+		 * Whether a repeater row defines any typography color value.
+		 *
+		 * Used to suppress layout fallback button hover colors when the user already
+		 * chose a custom text color in the Typography control.
+		 *
+		 * @param array<string,mixed> $item Repeater row.
+		 * @return bool
+		 */
+		private static function ecbb_row_has_typography_color( array $item ) {
+			if ( empty( $item['ecbb_typography'] ) || ! is_array( $item['ecbb_typography'] ) ) {
+				return false;
+			}
+
+			$stack = [ $item['ecbb_typography'] ];
+			while ( $stack !== [] ) {
+				$current = array_pop( $stack );
+				if ( ! is_array( $current ) ) {
+					continue;
+				}
+
+				foreach ( $current as $key => $value ) {
+					if ( is_array( $value ) ) {
+						$stack[] = $value;
+						continue;
+					}
+
+					if ( strpos( (string) $key, 'color' ) !== false && trim( (string) $value ) !== '' ) {
+						return true;
+					}
+				}
+			}
+
+			return false;
+		}
+
+		/**
 		 * Reference layout button class for read-more per skin.
 		 *
 		 * @param string $skin style1|style2|grid
@@ -2164,6 +2209,9 @@ if (! class_exists('ECBB_Markup', false)) {
 		&& in_array($ui_part, \ECBB_Styles::ecbb_button_parts(), true)
 		) {
 			$classes .= ' ecbb-has-btn';
+		}
+		if ( self::ecbb_row_has_typography_color( $item ) ) {
+			$classes .= ' ecbb-has-typo-fg';
 		}
 		if ( self::ecbb_hover_style_active( $item ) ) {
 			$hover_fg = self::ecbb_norm_hover_paint_color( $item['ecbb_hover_color'] ?? ( $item['hover_color'] ?? '' ) );
@@ -2298,7 +2346,7 @@ if (! class_exists('ECBB_Markup', false)) {
 		* Scoped CSS for hover motion that animates in place (rest = natural position).
 		*
 		* @param string $scope_sel Full selector (e.g. .scope .ecbb-p0).
-		* @param string $anim      One of fade_in_up, fade_in_right, â€¦
+		* @param string $anim      One of fade_in_up, fade_in_right, ...
 		* @return array{base:string, hover:string}
 		*/
 
@@ -2348,7 +2396,7 @@ if (! class_exists('ECBB_Markup', false)) {
 				}
 			$w = isset($data['width']) ? (int) $data['width'] : 0;
 			$h = isset($data['height']) ? (int) $data['height'] : 0;
-			$opts[$slug] = $slug . ' (' . $w . 'Ã—' . $h . ')';
+			$opts[$slug] = $slug . ' (' . $w . "\u{00D7}" . $h . ')';
 		}
 		if (function_exists('get_intermediate_image_sizes')) {
 			foreach (get_intermediate_image_sizes() as $slug) {
@@ -2413,7 +2461,7 @@ if (! class_exists('ECBB_Markup', false)) {
 		}
 
 		/**
-		* @param string $key Short key (tl, mc, â€¦) or empty.
+		* @param string $key Short key (tl, mc, ...) or empty.
 		* @return string CSS object-position value or empty when default.
 		*/
 
@@ -2868,7 +2916,6 @@ if (! class_exists('ECBB_Markup', false)) {
 			$idx       = absint( $idx );
 			$skin      = (string) $skin;
 			$attr      = self::ecbb_part_wrap_attrs( $item, $idx, $style );
-			$link_attr = '';
 			$wrap      = esc_attr( self::ecbb_part_classes( $part, $idx, $skin, $item ) );
 			$html      = self::ecbb_part_detail_text( $post->ID, $part );
 
@@ -2880,7 +2927,7 @@ if (! class_exists('ECBB_Markup', false)) {
 			$loc_icon       = in_array( $part, $venue_physical, true ) ? ' ecbb-has-row-icon' : '';
 
 			if ( $part === 'organizer_email' && is_email( $html ) ) {
-				return '<div class="' . $wrap . '"' . $attr . '><a class="ecbb-event__link" href="' . esc_url( 'mailto:' . $html ) . '"' . $link_attr . '>' . esc_html( $html ) . '</a></div>';
+				return '<div class="' . $wrap . '"' . $attr . '><a class="ecbb-event__link" href="' . esc_url( 'mailto:' . $html ) . '">' . esc_html( $html ) . '</a></div>';
 			}
 
 			$url_parts = [ 'venue_website', 'event_website', 'organizer_website', 'event_map_link' ];
@@ -2903,7 +2950,7 @@ if (! class_exists('ECBB_Markup', false)) {
 					$label = sanitize_text_field( $label );
 				}
 
-				return '<div class="' . $wrap . '"' . $attr . '><a class="ecbb-event__link" href="' . esc_url( $safe ) . '" rel="noopener noreferrer" target="_blank"' . $link_attr . '>' . esc_html( $label ) . '</a></div>';
+				return '<div class="' . $wrap . '"' . $attr . '><a class="ecbb-event__link" href="' . esc_url( $safe ) . '" rel="noopener noreferrer" target="_blank">' . esc_html( $label ) . '</a></div>';
 			}
 
 			return '<div class="' . $wrap . $loc_icon . '"' . $attr . '>' . esc_html( $html ) . '</div>';
@@ -2965,13 +3012,12 @@ if (! class_exists('ECBB_Markup', false)) {
 			$idx       = absint( $idx );
 			$skin      = (string) $skin;
 			$attr      = self::ecbb_part_wrap_attrs( $item, $idx, $style );
-			$link_attr = '';
 			$wrap      = esc_attr( self::ecbb_part_classes( 'event_tickets', $idx, $skin, $item ) );
 			$inner_el  = self::ecbb_action_link_html(
 				$item,
 				$url,
 				$label,
-				$link_attr,
+				'',
 				' rel="noopener noreferrer" target="_blank"'
 			);
 
@@ -3003,9 +3049,8 @@ if (! class_exists('ECBB_Markup', false)) {
 			$idx       = absint( $idx );
 			$skin      = (string) $skin;
 			$attr      = self::ecbb_part_wrap_attrs( $item, $idx, $style );
-			$link_attr = '';
 			$wrap      = esc_attr( self::ecbb_part_classes( 'event_rsvp', $idx, $skin, $item ) );
-			$inner_el  = self::ecbb_action_link_html( $item, $url, $label, $link_attr );
+			$inner_el  = self::ecbb_action_link_html( $item, $url, $label );
 
 			return '<div class="' . $wrap . '"' . $attr . '>' . $inner_el . '</div>';
 		}
@@ -3029,13 +3074,11 @@ if (! class_exists('ECBB_Markup', false)) {
 			$idx       = absint( $idx );
 			$skin      = (string) $skin;
 			$attr      = self::ecbb_part_wrap_attrs( $item, $idx, $style );
-			$link_attr = '';
 			$wrap      = esc_attr( self::ecbb_part_classes( 'read_more', $idx, $skin, $item ) );
 			$inner_el  = self::ecbb_action_link_html(
 				$item,
 				get_permalink( $post->ID ),
-				$label,
-				$link_attr
+				$label
 			);
 
 			return '<div class="' . $wrap . '"' . $attr . '>' . $inner_el . '</div>';
@@ -3232,8 +3275,23 @@ if (! class_exists('ECBB_Markup', false)) {
 
 		public static function ecbb_style2_date_badge_order( $settings ) {
 			$settings = self::ecbb_layout_settings( is_array( $settings ) ? $settings : [] );
-			$order = isset( $settings['style2_date_badge_order'] ) ? (string) $settings['style2_date_badge_order'] : 'month_day';
-			return in_array( $order, [ 'month_day', 'day_month' ], true ) ? $order : 'month_day';
+			return self::ecbb_date_column_order_value( $settings['style2_date_badge_order'] ?? '', 'month_day' );
+		}
+
+		public static function ecbb_list1_date_column_order( $settings ) {
+			$settings = self::ecbb_layout_settings( is_array( $settings ) ? $settings : [] );
+			return self::ecbb_date_column_order_value( $settings['list1_date_column_order'] ?? '', 'day_month' );
+		}
+
+		/**
+		 * @param mixed  $raw     Setting value.
+		 * @param string $default month_day|day_month.
+		 * @return string
+		 */
+		private static function ecbb_date_column_order_value( $raw, $default = 'month_day' ) {
+			$order = is_string( $raw ) ? $raw : '';
+			$fallback = in_array( $default, [ 'month_day', 'day_month' ], true ) ? $default : 'month_day';
+			return in_array( $order, [ 'month_day', 'day_month' ], true ) ? $order : $fallback;
 		}
 
 		/**
@@ -3589,7 +3647,7 @@ if (! class_exists('ECBB_Markup', false)) {
 				: $inner;
 		}
 
-		public static function ecbb_list1_date_column( $post ) {
+		public static function ecbb_list1_date_column( $post, $settings = [] ) {
 			if ( ! $post instanceof \WP_Post ) {
 				return '';
 			}
@@ -3603,10 +3661,10 @@ if (! class_exists('ECBB_Markup', false)) {
 			if ( ! $start_ts ) {
 				return '<div class="event-list-card__date"></div>';
 			}
-			$order = 'day_month';
+			$order = self::ecbb_list1_date_column_order( is_array( $settings ) ? $settings : [] );
 			$day   = '<span class="event-list-card__day">' . esc_html( date_i18n( 'd', $start_ts ) ) . '</span>';
 			$month = '<span class="event-list-card__month">' . esc_html( date_i18n( 'M', $start_ts ) ) . '</span>';
-			$inner = $day . $month;
+			$inner = ( $order === 'day_month' ) ? $day . $month : $month . $day;
 			return '<div class="event-list-card__date event-list-card__date--' . esc_attr( $order ) . '">' . $inner . '</div>';
 		}
 

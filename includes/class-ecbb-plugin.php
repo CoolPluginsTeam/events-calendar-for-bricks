@@ -6,9 +6,9 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-if ( ! class_exists( 'ECBB_WidgetClass', false ) ) {
+if ( ! class_exists( 'ECBB_Plugin', false ) ) {
 
-	final class ECBB_WidgetClass {
+	final class ECBB_Plugin {
 
 		/**
 		 * Layout template files (loaded on demand — never globally).
@@ -16,6 +16,7 @@ if ( ! class_exists( 'ECBB_WidgetClass', false ) ) {
 		 * @var array<int,string>
 		 */
 		const ECBB_LAYOUT_FILES = [
+			'templates/class-ecbb-layout-base.php',
 			'templates/list/list-style-1.php',
 			'templates/list/list-style-2.php',
 			'templates/grid/grid.php',
@@ -376,4 +377,8 @@ if ( ! class_exists( 'ECBB_WidgetClass', false ) ) {
 		}
 	}
 
+}
+
+if ( ! class_exists( 'ECBB_WidgetClass', false ) && class_exists( 'ECBB_Plugin', false ) ) {
+	class_alias( 'ECBB_Plugin', 'ECBB_WidgetClass' );
 }

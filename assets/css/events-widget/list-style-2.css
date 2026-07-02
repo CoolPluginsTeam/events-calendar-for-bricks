@@ -30,13 +30,6 @@
 	background: #dbe4ef;
 }
 
-.ecbb-ev .ecbb-event-card__image {
-	width: 100%;
-	height: 100%;
-	object-fit: cover;
-	transition: transform var(--transition-base);
-}
-
 .ecbb-ev .ecbb-event-card:hover .ecbb-event-card__image {
 	transform: none;
 }
@@ -102,7 +95,7 @@
 	align-items: center;
 	justify-content: center;
 	padding: 4px 16px;
-	color: #1e3356;
+	color: var(--ecbb-chip-fg, #1e3356);
 	background: #eaf2ff;
 	border-radius: 999px;
 	font-size: 11px;
@@ -134,6 +127,12 @@
 	height: 1px;
 	margin: 22px 0 22px;
 	background: #edf1f7;
+}
+
+.ecbb-ev .ecbb-event-card__footer > .ecbb-event-part--read-more,
+.ecbb-ev .ecbb-event-card__footer > .ecbb-event-part--event-tickets,
+.ecbb-ev .ecbb-event-card__footer > .ecbb-event-part--event-rsvp {
+	width: 100%;
 }
 
 .ecbb-ev .ecbb-event-card__meta {
@@ -169,7 +168,7 @@
 	align-items: center;
 	justify-content: center;
 	padding: 14px 25px;
-	color: var(--color-card-bg);
+	color: var(--ecbb-btn-fg, var(--color-card-bg));
 	background: var(--ecbb-accent, #0d55d8);
 	border: 1px solid var(--ecbb-accent, #0d55d8);
 	border-radius: 10px;
@@ -311,10 +310,10 @@
  * Layout default hovers (Style 2) — only when Style tab hover colors are not set.
  * Scoped to style-2 items so Style 1 layout hovers stay independent.
  */
-.ecbb-ev__item--style-2 .ecbb-event-part:not(.ecbb-has-hover-fg):not(.ecbb-no-hover) a.ecbb-event-card__button:hover,
-.ecbb-ev__item--style-2 .ecbb-event-part:not(.ecbb-has-hover-fg):not(.ecbb-no-hover) > a.ecbb-event-card__button:hover,
-.ecbb-ev__item--style-2 .ecbb-event-part:not(.ecbb-has-hover-fg):not(.ecbb-no-hover) a.ecbb-event__link.ecbb-event-card__button:hover {
-	color: var(--color-card-bg) !important;
+.ecbb-ev__item--style-2 .ecbb-event-part:not(.ecbb-has-hover-fg):not(.ecbb-has-typo-fg):not(.ecbb-no-hover) a.ecbb-event-card__button:hover,
+.ecbb-ev__item--style-2 .ecbb-event-part:not(.ecbb-has-hover-fg):not(.ecbb-has-typo-fg):not(.ecbb-no-hover) > a.ecbb-event-card__button:hover,
+.ecbb-ev__item--style-2 .ecbb-event-part:not(.ecbb-has-hover-fg):not(.ecbb-has-typo-fg):not(.ecbb-no-hover) a.ecbb-event__link.ecbb-event-card__button:hover {
+	color: var(--ecbb-hover-fg, var(--ecbb-btn-fg, var(--color-card-bg))) !important;
 }
 
 .ecbb-ev__item--style-2 .ecbb-event-part:not(.ecbb-has-hover-bg):not(.ecbb-no-hover) a.ecbb-event-card__button:hover,
@@ -330,12 +329,12 @@
 .ecbb-ev .ecbb-style2-categories:not(.ecbb-no-hover):not(.ecbb-has-hover-fg) a.ecbb-event-card__category:focus-visible,
 .ecbb-ev .ecbb-event-card__top:not(.ecbb-no-hover):not(.ecbb-has-hover-fg) a.ecbb-event-card__category:hover,
 .ecbb-ev .ecbb-event-card__top:not(.ecbb-no-hover):not(.ecbb-has-hover-fg) a.ecbb-event-card__category:focus-visible {
-	color: var(--ecbb-accent, #0d55d8) !important;
+	color: var(--ecbb-hover-fg, var(--ecbb-chip-fg, var(--ecbb-accent, #0d55d8))) !important;
 }
 
 .ecbb-ev .ecbb-style2-categories:not(.ecbb-no-hover):not(.ecbb-has-hover-bg) a.ecbb-event-card__category:hover,
 .ecbb-ev .ecbb-style2-categories:not(.ecbb-no-hover):not(.ecbb-has-hover-bg) a.ecbb-event-card__category:focus-visible,
 .ecbb-ev .ecbb-event-card__top:not(.ecbb-no-hover):not(.ecbb-has-hover-bg) a.ecbb-event-card__category:hover,
 .ecbb-ev .ecbb-event-card__top:not(.ecbb-no-hover):not(.ecbb-has-hover-bg) a.ecbb-event-card__category:focus-visible {
-	background-color: #d4e4ff !important;
+	background-color: var(--ecbb-accent-soft, #d4e4ff) !important;
 }
