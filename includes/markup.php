@@ -2165,6 +2165,49 @@ if (! class_exists('ECBB_Markup', false)) {
 		}
 
 		/**
+		 * Whether a repeater row defines any typography font-size value.
+		 *
+		 * @param array<string,mixed> $item Repeater row.
+		 * @return bool
+		 */
+		private static function ecbb_row_has_typography_font_size( array $item ) {
+			if ( empty( $item['ecbb_typography'] ) || ! is_array( $item['ecbb_typography'] ) ) {
+				return false;
+			}
+
+			$stack = [ $item['ecbb_typography'] ];
+			while ( $stack !== [] ) {
+				$current = array_pop( $stack );
+				if ( ! is_array( $current ) ) {
+					continue;
+				}
+
+				foreach ( $current as $key => $value ) {
+					if ( is_array( $value ) ) {
+						if (
+							in_array( (string) $key, [ 'font-size', 'fontSize' ], true )
+							&& isset( $value['size'] )
+							&& trim( (string) $value['size'] ) !== ''
+						) {
+							return true;
+						}
+						$stack[] = $value;
+						continue;
+					}
+
+					if (
+						in_array( (string) $key, [ 'font-size', 'fontSize' ], true )
+						&& trim( (string) $value ) !== ''
+					) {
+						return true;
+					}
+				}
+			}
+
+			return false;
+		}
+
+		/**
 		 * Reference layout button class for read-more per skin.
 		 *
 		 * @param string $skin style1|style2|grid
@@ -2260,6 +2303,9 @@ if (! class_exists('ECBB_Markup', false)) {
 		}
 		if ( self::ecbb_row_has_typography_color( $item ) ) {
 			$classes .= ' ecbb-has-typo-fg';
+		}
+		if ( self::ecbb_row_has_typography_font_size( $item ) ) {
+			$classes .= ' ecbb-has-typo-size';
 		}
 		if ( self::ecbb_hover_style_active( $item ) ) {
 			$hover_fg = self::ecbb_norm_hover_paint_color( $item['ecbb_hover_color'] ?? ( $item['hover_color'] ?? '' ) );

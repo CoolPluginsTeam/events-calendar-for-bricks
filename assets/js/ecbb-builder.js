@@ -19,7 +19,14 @@
 		"event_rsvp",
 		"image",
 	];
-	var STYLE2_META_ICON_PART_SLUGS = [ "venue", "date", "event_cost" ];
+	var STYLE2_META_ICON_PART_SLUGS = [
+		"venue",
+		"date",
+		"event_date",
+		"event_time",
+		"event_day",
+		"event_cost",
+	];
 
 	function readRepeaterPartControlValue(item) {
 		var partInner = getRepeaterControlInner(item, "part");
@@ -620,8 +627,88 @@
 		return !!(btnCb && btnCb.checked);
 	}
 
-	function readTypographyControlColor(repeaterItem) {
-		return readColorControlValue(getRepeaterControlInner(repeaterItem, "ecbb_typography"));
+	function readTypographyControlColor(repeaterItem, wrapper, preview, surfaces) {
+		var controlInner = getRepeaterControlInner(repeaterItem, "ecbb_typography");
+		var color = "";
+
+		if (controlInner) {
+			var colorWrap = controlInner.querySelector(
+				'[data-control-key="color"], [data-setting="color"], .control-color'
+			);
+			color = readColorControlValue(colorWrap || controlInner);
+		}
+
+		if (!color) {
+			color = readActivePickrColor();
+		}
+
+		if (!color && wrapper && preview) {
+			color = readPreviewRepeaterCssValue(wrapper, preview, "color");
+		}
+
+		if (!color && wrapper && preview && preview.defaultView) {
+			color = preview.defaultView.getComputedStyle(wrapper).color;
+		}
+
+		if (!color && surfaces && surfaces.length && preview && preview.defaultView) {
+			color = preview.defaultView.getComputedStyle(surfaces[0]).color;
+		}
+
+		return normalizeTypographyColor(color);
+	}
+
+	function readActivePickrColor() {
+		var app = document.querySelector(".pcr-app.visible");
+		if (!app) {
+			return "";
+		}
+
+		var inputs = app.querySelectorAll('input[type="text"]');
+		var i;
+		for (i = 0; i < inputs.length; i++) {
+			var value = (inputs[i].value || "").trim();
+			if (normalizeTypographyColor(value)) {
+				return value;
+			}
+		}
+
+		var swatches = app.querySelectorAll(".pcr-current-color, .pcr-color-preview");
+		for (i = 0; i < swatches.length; i++) {
+			if (swatches[i].style && swatches[i].style.backgroundColor) {
+				var swatchColor = normalizeTypographyColor(
+					swatches[i].style.backgroundColor
+				);
+				if (swatchColor) {
+					return swatchColor;
+				}
+			}
+		}
+
+		return "";
+	}
+
+	function normalizeTypographyColor(value) {
+		if (!value) {
+			return "";
+		}
+		var trimmed = String(value).trim();
+		if (
+			!trimmed ||
+			trimmed === "transparent" ||
+			trimmed === "currentcolor" ||
+			trimmed === "inherit" ||
+			trimmed === "initial" ||
+			trimmed === "unset"
+		) {
+			return "";
+		}
+		if (/^rgba?\(/i.test(trimmed)) {
+			var rgbaParts = trimmed.match(/[\d.]+/g);
+			if (rgbaParts && rgbaParts.length >= 4 && parseFloat(rgbaParts[3]) <= 0) {
+				return "";
+			}
+		}
+		return trimmed;
 	}
 
 	function normalizeCssSizeValue(value, fallbackUnit) {
@@ -645,6 +732,30 @@
 		var controlInner = getRepeaterControlInner(repeaterItem, "ecbb_typography");
 		if (!controlInner || !property) {
 			return "";
+		}
+
+		var bricksControl = controlInner.querySelector(
+			'[data-control-key="' +
+				property +
+				'"], [data-setting="' +
+				property +
+				'"], .control-' +
+				property.replace(/[^a-z0-9_-]/gi, "")
+		);
+		if (bricksControl) {
+			var bricksInput = bricksControl.querySelector(
+				"input[type='number'], input[type='text'], input:not([type='hidden'])"
+			);
+			if (bricksInput && bricksInput.value) {
+				var bricksUnit = bricksControl.querySelector("select");
+				var bricksValue = normalizeCssSizeValue(
+					bricksInput.value,
+					bricksUnit && bricksUnit.value ? bricksUnit.value : "px"
+				);
+				if (bricksValue) {
+					return bricksValue;
+				}
+			}
 		}
 
 		var keyedWrap = controlInner.querySelector(
@@ -683,6 +794,28 @@
 			}
 		}
 
+		var allInputs = controlInner.querySelectorAll(
+			"input[type='number'], input[type='text']"
+		);
+		for (i = 0; i < allInputs.length; i++) {
+			var inputMeta = (
+				(allInputs[i].getAttribute("data-setting") || "") +
+				(allInputs[i].getAttribute("name") || "") +
+				(allInputs[i].getAttribute("data-name") || "") +
+				(allInputs[i].getAttribute("data-control-key") || "")
+			).toLowerCase();
+			var propertyNeedle = property.replace(/-/g, "").toLowerCase();
+			if (
+				inputMeta.indexOf(propertyNeedle) !== -1 &&
+				allInputs[i].value
+			) {
+				var matchedValue = normalizeCssSizeValue(allInputs[i].value, "px");
+				if (matchedValue) {
+					return matchedValue;
+				}
+			}
+		}
+
 		return "";
 	}
 
@@ -702,7 +835,10 @@
 				: cssProperty.replace(/([A-Z])/g, "-$1").toLowerCase();
 		var needles = [
 			'[data-field-id="' + fieldId + '"] a.event-button',
+			'[data-field-id="' + fieldId + '"] a.ecbb-event-card__button',
 			'[data-field-id="' + fieldId + '"] .ecbb-event__link',
+			'[data-field-id="' + fieldId + '"] .ecbb-event-card__category',
+			'[data-field-id="' + fieldId + '"] .ecbb-event__term-chip',
 			'[data-field-id="' + fieldId + '"]',
 		];
 		var sheetIndex;
@@ -719,7 +855,7 @@
 			if (!rules) {
 				continue;
 			}
-			for (ruleIndex = 0; ruleIndex < rules.length; ruleIndex++) {
+			for (ruleIndex = rules.length - 1; ruleIndex >= 0; ruleIndex--) {
 				var rule = rules[ruleIndex];
 				if (!rule || !rule.selectorText || !rule.style) {
 					continue;
@@ -744,6 +880,108 @@
 		}
 
 		return "";
+	}
+
+	function readTypographyControlSnapshot(repeaterItem, wrapper, preview, surfaces) {
+		var snapshot = {
+			color: readTypographyControlColor(repeaterItem, wrapper, preview, surfaces),
+			fontSize: normalizeCssSizeValue(
+				readTypographyPropertyValue(repeaterItem, "font-size"),
+				"px"
+			),
+			lineHeight: normalizeCssSizeValue(
+				readTypographyPropertyValue(repeaterItem, "line-height"),
+				"px"
+			),
+			fontWeight: readTypographyPropertyValue(repeaterItem, "font-weight"),
+			letterSpacing: normalizeCssSizeValue(
+				readTypographyPropertyValue(repeaterItem, "letter-spacing"),
+				"px"
+			),
+			textTransform: readTypographyPropertyValue(repeaterItem, "text-transform"),
+			fontFamily: readTypographyPropertyValue(repeaterItem, "font-family"),
+		};
+
+		if (!snapshot.fontSize && wrapper && preview) {
+			snapshot.fontSize = normalizeCssSizeValue(
+				readPreviewRepeaterCssValue(wrapper, preview, "font-size"),
+				"px"
+			);
+		}
+		if (!snapshot.lineHeight && wrapper && preview) {
+			snapshot.lineHeight = normalizeCssSizeValue(
+				readPreviewRepeaterCssValue(wrapper, preview, "line-height"),
+				"px"
+			);
+		}
+
+		if (surfaces && surfaces.length && preview && preview.defaultView) {
+			var surfaceComputed = preview.defaultView.getComputedStyle(surfaces[0]);
+			if (
+				!snapshot.fontSize &&
+				surfaceComputed &&
+				surfaceComputed.fontSize &&
+				surfaceComputed.fontSize !== "0px"
+			) {
+				snapshot.fontSize = normalizeCssSizeValue(surfaceComputed.fontSize, "px");
+			}
+			if (!snapshot.lineHeight && surfaceComputed && surfaceComputed.lineHeight) {
+				snapshot.lineHeight = normalizeCssSizeValue(surfaceComputed.lineHeight, "px");
+			}
+			if (!snapshot.fontWeight && surfaceComputed && surfaceComputed.fontWeight) {
+				snapshot.fontWeight = surfaceComputed.fontWeight;
+			}
+			if (!snapshot.letterSpacing && surfaceComputed && surfaceComputed.letterSpacing) {
+				snapshot.letterSpacing = normalizeCssSizeValue(
+					surfaceComputed.letterSpacing,
+					"px"
+				);
+			}
+			if (
+				!snapshot.textTransform &&
+				surfaceComputed &&
+				surfaceComputed.textTransform &&
+				surfaceComputed.textTransform !== "none"
+			) {
+				snapshot.textTransform = surfaceComputed.textTransform;
+			}
+			if (!snapshot.fontFamily && surfaceComputed && surfaceComputed.fontFamily) {
+				snapshot.fontFamily = surfaceComputed.fontFamily;
+			}
+		}
+
+		return snapshot;
+	}
+
+	function setWrapperTypographyFlags(wrapper, repeaterItem, typoColor, typoOverrides) {
+		if (!wrapper) {
+			return;
+		}
+		typoOverrides = typoOverrides || {};
+		wrapper.classList.toggle("ecbb-has-typo-fg", !!typoColor);
+		wrapper.classList.toggle("ecbb-has-typo-size", !!typoOverrides.fontSize);
+		if (typoColor) {
+			wrapper.style.setProperty("--ecbb-btn-fg", typoColor);
+			if (
+				repeaterItem &&
+				readRepeaterPartSlug(repeaterItem) === "categories"
+			) {
+				wrapper.style.setProperty("--ecbb-chip-fg", typoColor);
+			}
+		} else {
+			wrapper.style.removeProperty("--ecbb-btn-fg");
+			wrapper.style.removeProperty("--ecbb-chip-fg");
+		}
+		if (typoOverrides.fontSize) {
+			wrapper.style.setProperty("--ecbb-btn-font-size", typoOverrides.fontSize);
+		} else {
+			wrapper.style.removeProperty("--ecbb-btn-font-size");
+		}
+		if (typoOverrides.lineHeight) {
+			wrapper.style.setProperty("--ecbb-btn-line-height", typoOverrides.lineHeight);
+		} else {
+			wrapper.style.removeProperty("--ecbb-btn-line-height");
+		}
 	}
 
 	function readTextAlignControlValue(repeaterItem) {
@@ -789,65 +1027,7 @@
 	}
 
 	function readLayoutActionButtonTypographyOverrides(repeaterItem, wrapper, preview, surfaces) {
-		var overrides = {
-			fontSize: normalizeCssSizeValue(
-				readTypographyPropertyValue(repeaterItem, "font-size"),
-				"px"
-			),
-			lineHeight: normalizeCssSizeValue(
-				readTypographyPropertyValue(repeaterItem, "line-height"),
-				"px"
-			),
-			fontWeight: readTypographyPropertyValue(repeaterItem, "font-weight"),
-			letterSpacing: normalizeCssSizeValue(
-				readTypographyPropertyValue(repeaterItem, "letter-spacing"),
-				"px"
-			),
-			textTransform: readTypographyPropertyValue(repeaterItem, "text-transform"),
-		};
-
-		if (!preview || !preview.defaultView) {
-			return overrides;
-		}
-
-		if (!overrides.fontSize) {
-			overrides.fontSize = normalizeCssSizeValue(
-				readPreviewRepeaterCssValue(wrapper, preview, "font-size"),
-				"px"
-			);
-		}
-		if (!overrides.lineHeight) {
-			overrides.lineHeight = normalizeCssSizeValue(
-				readPreviewRepeaterCssValue(wrapper, preview, "line-height"),
-				"px"
-			);
-		}
-
-		if (surfaces && surfaces.length) {
-			var surfaceComputed = preview.defaultView.getComputedStyle(surfaces[0]);
-			if (!overrides.fontSize && surfaceComputed && surfaceComputed.fontSize) {
-				overrides.fontSize = surfaceComputed.fontSize;
-			}
-			if (!overrides.lineHeight && surfaceComputed && surfaceComputed.lineHeight) {
-				overrides.lineHeight = surfaceComputed.lineHeight;
-			}
-			if (!overrides.fontWeight && surfaceComputed && surfaceComputed.fontWeight) {
-				overrides.fontWeight = surfaceComputed.fontWeight;
-			}
-			if (!overrides.letterSpacing && surfaceComputed && surfaceComputed.letterSpacing) {
-				overrides.letterSpacing = surfaceComputed.letterSpacing;
-			}
-			if (
-				!overrides.textTransform &&
-				surfaceComputed &&
-				surfaceComputed.textTransform &&
-				surfaceComputed.textTransform !== "none"
-			) {
-				overrides.textTransform = surfaceComputed.textTransform;
-			}
-		}
-
-		return overrides;
+		return readTypographyControlSnapshot(repeaterItem, wrapper, preview, surfaces);
 	}
 
 	function isLayoutOwnedPreviewNode(node, repeaterItem) {
@@ -861,14 +1041,16 @@
 				part === "event_rsvp" ) &&
 			!isStyledButtonModeEnabled(repeaterItem) &&
 			node.matches(
-				"a.event-button, a.ecbb-event-card__button, .ecbb-event__link.event-button, .ecbb-event__link.ecbb-event-card__button"
+				"a.event-button, a.ecbb-event-card__button, .ecbb-event__link"
 			)
 		) {
 			return true;
 		}
 		if (
 			part === "categories" &&
-			node.matches(".ecbb-event-card__category, a.ecbb-event-card__category")
+			node.matches(
+				".ecbb-event__term-chip, .ecbb-event-card__category, a.ecbb-event-card__category"
+			)
 		) {
 			return true;
 		}
@@ -934,11 +1116,29 @@
 			return;
 		}
 
-		var typoColor = readTypographyControlColor(repeaterItem);
+		var typoColor = readTypographyControlColor(
+			repeaterItem,
+			wrapper,
+			preview
+		);
 		if (!typoColor) {
+			wrapper.classList.remove("ecbb-has-typo-fg");
+			wrapper.style.removeProperty("--ecbb-btn-fg");
+			wrapper.style.removeProperty("--ecbb-chip-fg");
+			if (
+				isLayoutActionButtonPart(repeaterItem) &&
+				!isStyledButtonModeEnabled(repeaterItem)
+			) {
+				return;
+			}
+			if (readRepeaterPartSlug(repeaterItem) === "categories") {
+				return;
+			}
 			clearMirroredPreviewInlineStyles(repeaterItem);
 			return;
 		}
+
+		setWrapperTypographyFlags(wrapper, repeaterItem, typoColor, {});
 
 		var targets = wrapper.querySelectorAll(
 			".ecbb-event__term-chip, .ecbb-event__link, .ecbb-event__term, .ecbb-event__date-day, .ecbb-event__date-time, .ecbb-event__date-sep, a.event-button, a.ecbb-event-card__button, .ecbb-event-card__category"
@@ -983,28 +1183,22 @@
 
 		var bg = readColorControlValue(getRepeaterControlInner(repeaterItem, "ecbb_background"));
 		var pad = readSpacingControlValue(getRepeaterControlInner(repeaterItem, "ecbb_padding"));
-		var typoColor = readColorControlValue(getRepeaterControlInner(repeaterItem, "ecbb_typography"));
 		var typoOverrides = readLayoutActionButtonTypographyOverrides(
 			repeaterItem,
 			wrapper,
 			preview,
 			surfaces
 		);
+		var typoColor =
+			readTypographyControlColor(repeaterItem, wrapper, preview, surfaces) ||
+			typoOverrides.color;
 		var textAlign = readTextAlignControlValue(repeaterItem);
 		var computed = preview.defaultView.getComputedStyle(
 			surfaces[0] || wrapper
 		);
 
-		if (typoOverrides.fontSize) {
-			wrapper.style.setProperty("--ecbb-btn-font-size", typoOverrides.fontSize);
-		} else {
-			wrapper.style.removeProperty("--ecbb-btn-font-size");
-		}
-		if (typoOverrides.lineHeight) {
-			wrapper.style.setProperty("--ecbb-btn-line-height", typoOverrides.lineHeight);
-		} else {
-			wrapper.style.removeProperty("--ecbb-btn-line-height");
-		}
+		setWrapperTypographyFlags(wrapper, repeaterItem, typoColor, typoOverrides);
+		syncLayoutButtonTypographyPreviewRule(repeaterItem, typoOverrides);
 
 		collapseRepeaterWrapperTypographyShell(wrapper);
 		if (textAlign) {
@@ -1053,39 +1247,52 @@
 
 		var bg = readColorControlValue(getRepeaterControlInner(repeaterItem, "ecbb_background"));
 		var pad = readSpacingControlValue(getRepeaterControlInner(repeaterItem, "ecbb_padding"));
+		var chips = wrapper.querySelectorAll(
+			".ecbb-event__term-chip, .ecbb-event-card__category"
+		);
+		var typoOverrides = readTypographyControlSnapshot(
+			repeaterItem,
+			wrapper,
+			preview,
+			chips.length ? chips : null
+		);
+		var typoColor =
+			readTypographyControlColor(
+				repeaterItem,
+				wrapper,
+				preview,
+				chips.length ? chips : null
+			) || typoOverrides.color;
 
-		if (!bg && !pad) {
+		if (!bg && !pad && !typoColor && !typoOverrides.fontSize && !typoOverrides.lineHeight) {
 			clearMirroredPreviewInlineStyles(repeaterItem);
+			wrapper.classList.remove("ecbb-has-typo-fg", "ecbb-has-typo-size");
 			return;
 		}
 
-		wrapper.style.setProperty("background-color", "transparent", "important");
-		if (pad) {
-			wrapper.style.setProperty("padding", "0", "important");
+		collapseRepeaterWrapperTypographyShell(wrapper);
+		setWrapperTypographyFlags(wrapper, repeaterItem, typoColor, typoOverrides);
+
+		if (bg || pad) {
+			wrapper.style.setProperty("background-color", "transparent", "important");
+			if (pad) {
+				wrapper.style.setProperty("padding", "0", "important");
+			}
 		}
 
-		wrapper
-			.querySelectorAll(".ecbb-event__term-chip, .ecbb-event-card__category")
-			.forEach(function (chip) {
-				if (bg) {
-					chip.style.setProperty("background-color", bg);
-				} else {
-					chip.style.removeProperty("background-color");
-				}
-				if (pad) {
-					chip.style.setProperty("padding", pad);
-				} else {
-					chip.style.removeProperty("padding");
-				}
-			});
-	}
-
-	function scheduleCategoryChipPreviewSync(repeaterItem) {
-		if (categoryChipPreviewSync) {
-			categoryChipPreviewSync.schedule(repeaterItem);
-			return;
-		}
-		syncCategoryChipPreviewStyle(repeaterItem);
+		chips.forEach(function (chip) {
+			if (bg) {
+				chip.style.setProperty("background-color", bg);
+			} else {
+				chip.style.removeProperty("background-color");
+			}
+			if (pad) {
+				chip.style.setProperty("padding", pad);
+			} else {
+				chip.style.removeProperty("padding");
+			}
+			applyTypographyToButtonPreviewSurface(chip, null, typoColor, typoOverrides);
+		});
 	}
 
 	/** Style 2 meta rows (venue / timing / cost): paint the leading icon sibling. */
@@ -1125,6 +1332,21 @@
 		var bg = readColorControlValue(
 			getRepeaterControlInner(repeaterItem, "ecbb_meta_icon_background")
 		);
+		var typoOverrides = readTypographyControlSnapshot(
+			repeaterItem,
+			wrapper,
+			preview,
+			icon ? [icon] : null
+		);
+		if (!color) {
+			color =
+				readTypographyControlColor(
+					repeaterItem,
+					wrapper,
+					preview,
+					icon ? [icon] : null
+				) || typoOverrides.color;
+		}
 
 		if (color) {
 			icon.style.setProperty("color", color, "important");
@@ -1137,14 +1359,17 @@
 		} else {
 			icon.style.removeProperty("background-color");
 		}
-	}
 
-	function scheduleStyle2MetaIconPreviewSync(repeaterItem) {
-		if (style2MetaIconPreviewSync) {
-			style2MetaIconPreviewSync.schedule(repeaterItem);
-			return;
+		if (typoOverrides.fontSize) {
+			icon.style.setProperty("font-size", typoOverrides.fontSize, "important");
+		} else {
+			icon.style.removeProperty("font-size");
 		}
-		syncStyle2MetaIconPreviewStyle(repeaterItem);
+		if (typoOverrides.lineHeight) {
+			icon.style.setProperty("line-height", typoOverrides.lineHeight, "important");
+		} else {
+			icon.style.removeProperty("line-height");
+		}
 	}
 
 	function syncTitleInnerBackgroundPreview(repeaterItem) {
@@ -1216,36 +1441,41 @@
 			return;
 		}
 
-		var textColor = readColorControlValue(getRepeaterControlInner(repeaterItem, "ecbb_typography"));
-		if (!textColor && preview.defaultView) {
-			textColor = preview.defaultView.getComputedStyle(wrapper).color;
-		}
+		var surface = findStyledButtonPreviewSurface(wrapper);
+		var textColor = readTypographyControlColor(
+			repeaterItem,
+			wrapper,
+			preview,
+			surface ? [surface] : null
+		);
 		if (textColor) {
 			wrapper.style.setProperty("--ecbb-btn-fg", textColor);
+			wrapper.classList.add("ecbb-has-typo-fg");
 		}
 	}
 
 	function runTypographyPreviewSyncChain(repeaterItem) {
+		var part = readRepeaterPartSlug(repeaterItem);
+
 		syncTypographyColorToPreviewTargets(repeaterItem);
 		syncStyledButtonCssColorVariable(repeaterItem);
-		scheduleLayoutActionButtonPreviewSync(repeaterItem);
-		if (isLayoutActionButtonPart(repeaterItem) && !isStyledButtonModeEnabled(repeaterItem)) {
-			setTimeout(function () {
-				syncLayoutActionButtonPreviewStyle(repeaterItem);
-			}, 120);
-		}
-		if (isLayoutActionButtonPart(repeaterItem) && isStyledButtonModeEnabled(repeaterItem)) {
-			scheduleStyledButtonPreviewSync(repeaterItem);
-		}
-		scheduleHoverPreviewStyleSync(repeaterItem);
-	}
 
-	function scheduleTypographyPreviewSync(repeaterItem) {
-		if (typographyPreviewSync) {
-			typographyPreviewSync.schedule(repeaterItem);
-			return;
+		if (part === "categories") {
+			syncCategoryChipPreviewStyle(repeaterItem);
 		}
-		runTypographyPreviewSyncChain(repeaterItem);
+		if (STYLE2_META_ICON_PART_SLUGS.indexOf(part) !== -1) {
+			syncStyle2MetaIconPreviewStyle(repeaterItem);
+		}
+
+		if (isLayoutActionButtonPart(repeaterItem)) {
+			if (isStyledButtonModeEnabled(repeaterItem)) {
+				syncStyledButtonPreviewPaint(repeaterItem);
+			} else {
+				syncLayoutActionButtonPreviewStyle(repeaterItem);
+			}
+		}
+
+		scheduleHoverPreviewStyleSync(repeaterItem);
 	}
 
 	var STYLED_BUTTON_BACKGROUND_KEYS = ["ecbb_background"];
@@ -1355,7 +1585,21 @@
 
 		var icon = li.querySelector(":scope > .ecbb-event-card__meta-icon");
 		var bg = readColorControlValue(getRepeaterControlInner(repeaterItem, "ecbb_background"));
-		var typoColor = readTypographyControlColor(repeaterItem);
+		var typoColor = readTypographyControlColor(
+			repeaterItem,
+			wrapper,
+			preview,
+			icon ? [icon] : null
+		);
+		var typoOverrides = readTypographyControlSnapshot(
+			repeaterItem,
+			wrapper,
+			preview,
+			icon ? [icon] : null
+		);
+		if (!typoColor && typoOverrides.color) {
+			typoColor = typoOverrides.color;
+		}
 		var pad = readSpacingControlValue(getRepeaterControlInner(repeaterItem, "ecbb_padding"));
 
 		li.style.setProperty("gap", "8px", "important");
@@ -1388,20 +1632,25 @@
 			}
 		}
 
+		if (icon) {
+			if (typoOverrides.fontSize) {
+				icon.style.setProperty("font-size", typoOverrides.fontSize, "important");
+			} else {
+				icon.style.removeProperty("font-size");
+			}
+			if (typoOverrides.lineHeight) {
+				icon.style.setProperty("line-height", typoOverrides.lineHeight, "important");
+			} else {
+				icon.style.removeProperty("line-height");
+			}
+		}
+
 		if (pad) {
 			li.style.setProperty("padding", pad, "important");
 			wrapper.style.setProperty("padding", "0", "important");
 		} else {
 			li.style.removeProperty("padding");
 		}
-	}
-
-	function scheduleStyle1GridMetaListRowPreviewSync(repeaterItem) {
-		if (style1GridMetaListRowPreviewSync) {
-			style1GridMetaListRowPreviewSync.schedule(repeaterItem);
-			return;
-		}
-		syncStyle1GridMetaListRowPreviewStyle(repeaterItem);
 	}
 
 	function repeaterHasCustomHoverColors(repeaterItem) {
@@ -1522,19 +1771,124 @@
 	var hoverPreviewRulesByRepeaterItem =
 		typeof WeakMap !== "undefined" ? new WeakMap() : null;
 	var hoverPreviewRulesByRepeaterItemByRowId = {};
+	var layoutButtonTypoPreviewRulesByRepeaterItem =
+		typeof WeakMap !== "undefined" ? new WeakMap() : null;
+	var layoutButtonTypoPreviewRulesByRepeaterItemByRowId = {};
 
-	function getOrCreateHoverPreviewStyleElement(preview) {
+	function getOrCreateBuilderPreviewStyleElement(preview, styleId) {
 		var doc =
 			preview && preview.defaultView
 				? preview.defaultView.document
 				: document;
-		var el = doc.getElementById("ecbb-builder-hover-css");
+		var el = doc.getElementById(styleId);
 		if (!el) {
 			el = doc.createElement("style");
-			el.id = "ecbb-builder-hover-css";
+			el.id = styleId;
 			doc.head.appendChild(el);
 		}
 		return el;
+	}
+
+	function getOrCreateHoverPreviewStyleElement(preview) {
+		return getOrCreateBuilderPreviewStyleElement(preview, "ecbb-builder-hover-css");
+	}
+
+	function rebuildLayoutButtonTypoPreviewStylesheet(preview) {
+		var el = getOrCreateBuilderPreviewStyleElement(
+			preview,
+			"ecbb-builder-layout-btn-typo-css"
+		);
+		if (!el) {
+			return;
+		}
+		var chunks = [];
+		if (layoutButtonTypoPreviewRulesByRepeaterItem) {
+			layoutButtonTypoPreviewRulesByRepeaterItem.forEach(function (rule) {
+				if (rule) {
+					chunks.push(rule);
+				}
+			});
+		} else {
+			Object.keys(layoutButtonTypoPreviewRulesByRepeaterItemByRowId).forEach(
+				function (key) {
+					if (layoutButtonTypoPreviewRulesByRepeaterItemByRowId[key]) {
+						chunks.push(layoutButtonTypoPreviewRulesByRepeaterItemByRowId[key]);
+					}
+				}
+			);
+		}
+		el.textContent = chunks.join("\n");
+	}
+
+	function buildLayoutButtonTypographyPreviewRule(rowId, typoOverrides) {
+		if (!rowId || !typoOverrides) {
+			return "";
+		}
+
+		var scope = '[data-field-id="' + rowId + '"]';
+		var surfaceSelectors =
+			scope +
+			" a.event-button," +
+			scope +
+			" > a.event-button," +
+			scope +
+			" > .ecbb-event__link," +
+			scope +
+			" .ecbb-event__link," +
+			scope +
+			" a.ecbb-event-card__button," +
+			scope +
+			" > a.ecbb-event-card__button";
+		var rule = "";
+
+		if (typoOverrides.fontSize) {
+			rule += surfaceSelectors + "{font-size:" + typoOverrides.fontSize + " !important;";
+			if (typoOverrides.lineHeight) {
+				rule += "line-height:" + typoOverrides.lineHeight + " !important;";
+			}
+			rule += "}";
+		}
+
+		if (typoOverrides.color) {
+			rule +=
+				surfaceSelectors +
+				"{color:" +
+				typoOverrides.color +
+				" !important;}";
+		}
+
+		if (typoOverrides.fontSize || typoOverrides.lineHeight) {
+			rule += scope + "{font-size:0 !important;line-height:0 !important;}";
+		}
+
+		return rule;
+	}
+
+	function syncLayoutButtonTypographyPreviewRule(repeaterItem, typoOverrides) {
+		var preview = getBricksPreviewDocument();
+		if (!preview || !repeaterItem) {
+			return;
+		}
+
+		var rowId = readRepeaterRowId(repeaterItem);
+		if (!rowId) {
+			return;
+		}
+
+		var rule = buildLayoutButtonTypographyPreviewRule(rowId, typoOverrides || {});
+		if (layoutButtonTypoPreviewRulesByRepeaterItem) {
+			if (rule) {
+				layoutButtonTypoPreviewRulesByRepeaterItem.set(repeaterItem, rule);
+			} else {
+				layoutButtonTypoPreviewRulesByRepeaterItem.delete(repeaterItem);
+			}
+		} else if (rule) {
+			layoutButtonTypoPreviewRulesByRepeaterItemByRowId[rowId] = rule;
+		} else {
+			delete layoutButtonTypoPreviewRulesByRepeaterItemByRowId[rowId];
+		}
+
+		rebuildLayoutButtonTypoPreviewStylesheet(preview);
 	}
 
 	function rebuildHoverPreviewStylesheet(preview) {
@@ -1679,7 +2033,8 @@
 				value.indexOf("#") === 0 ||
 				value.indexOf("rgb") === 0 ||
 				value.indexOf("hsl") === 0 ||
-				value.indexOf("hwb") === 0
+				value.indexOf("hwb") === 0 ||
+				value.indexOf("var(") === 0
 			) {
 				return value;
 			}
@@ -1687,7 +2042,18 @@
 
 		var pickr = controlInner.querySelector(".pcr-result");
 		if (pickr && pickr.style && pickr.style.backgroundColor) {
-			return pickr.style.backgroundColor;
+			var pickrBg = pickr.style.backgroundColor;
+			if (normalizeTypographyColor(pickrBg)) {
+				return pickrBg;
+			}
+		}
+
+		var pickrBtn = controlInner.querySelector(".pcr-button");
+		if (pickrBtn && pickrBtn.style && pickrBtn.style.backgroundColor) {
+			var pickrBtnBg = pickrBtn.style.backgroundColor;
+			if (normalizeTypographyColor(pickrBtnBg)) {
+				return pickrBtnBg;
+			}
 		}
 
 		return "";
@@ -1703,19 +2069,12 @@
 			wrapper.style.setProperty("--ecbb-btn-bg", bg);
 		}
 
-		var textColor = readColorControlValue(
-			repeaterItem.querySelector(
-				'.repeater-item-inner[data-control-key="ecbb_typography"]'
-			)
+		var textColor = readTypographyControlColor(
+			repeaterItem,
+			wrapper,
+			preview,
+			[link]
 		);
-		if (
-			!textColor &&
-			wrapper &&
-			preview &&
-			preview.defaultView
-		) {
-			textColor = preview.defaultView.getComputedStyle(wrapper).color;
-		}
 		if (textColor) {
 			wrapper.style.setProperty("--ecbb-btn-fg", textColor);
 		}
@@ -1928,12 +2287,27 @@
 			return;
 		}
 
-		var typoColor = readColorControlValue(getRepeaterControlInner(repeaterItem, "ecbb_typography"));
+		var typoColor = readTypographyControlColor(
+			repeaterItem,
+			wrapper,
+			preview,
+			surface ? [surface] : null
+		);
+		var typoOverrides = readTypographyControlSnapshot(
+			repeaterItem,
+			wrapper,
+			preview,
+			surface ? [surface] : null
+		);
+		if (!typoColor && typoOverrides.color) {
+			typoColor = typoOverrides.color;
+		}
 		var computed =
 			preview.defaultView && wrapper
 				? preview.defaultView.getComputedStyle(wrapper)
 				: null;
 
+		setWrapperTypographyFlags(wrapper, repeaterItem, typoColor, typoOverrides);
 		collapseRepeaterWrapperTypographyShell(wrapper);
 
 		[
@@ -1952,7 +2326,12 @@
 		applyStyledButtonBorderToSurface(repeaterItem, surface);
 		applyStyledButtonCssVariables(repeaterItem, surface, preview, wrapper);
 		if (computed) {
-			applyTypographyToButtonPreviewSurface(surface, computed, typoColor);
+			applyTypographyToButtonPreviewSurface(
+				surface,
+				computed,
+				typoColor,
+				typoOverrides
+			);
 		}
 
 		scheduleHoverPreviewStyleSync(repeaterItem);
@@ -1988,7 +2367,7 @@
 			matches: function (item) {
 				return readRepeaterPartSlug(item) === "categories";
 			},
-			controlKeys: ["ecbb_background", "ecbb_padding"],
+			controlKeys: ["ecbb_background", "ecbb_padding", "ecbb_typography"],
 			sync: syncCategoryChipPreviewStyle,
 		});
 
@@ -1997,7 +2376,11 @@
 			matches: function (item) {
 				return STYLE2_META_ICON_PART_SLUGS.indexOf(readRepeaterPartSlug(item)) !== -1;
 			},
-			controlKeys: ["ecbb_meta_icon_color", "ecbb_meta_icon_background"],
+			controlKeys: [
+				"ecbb_meta_icon_color",
+				"ecbb_meta_icon_background",
+				"ecbb_typography",
+			],
 			sync: syncStyle2MetaIconPreviewStyle,
 		});
 
@@ -2019,6 +2402,7 @@
 		typographyPreviewSync = createPreviewSyncHandler({
 			id: "typographyPreview",
 			controlKeys: ["ecbb_typography"],
+			delay: 0,
 			sync: syncTypographyColorToPreviewTargets,
 			run: runTypographyPreviewSyncChain,
 		});
@@ -2056,14 +2440,16 @@
 		if (!item) {
 			return;
 		}
-		var key = getRepeaterControlKeyFromEvent(e);
-		if (!key) {
-			return;
-		}
+		var keys = getRepeaterControlKeysFromEvent(e);
 		var i;
+		var k;
+		var j;
 		for (i = 0; i < previewSyncRegistry.length; i++) {
-			if (previewSyncRegistry[i].handlesKey(key)) {
-				previewSyncRegistry[i].schedule(item);
+			for (j = 0; j < keys.length; j++) {
+				k = keys[j];
+				if (k && previewSyncRegistry[i].handlesKey(k)) {
+					previewSyncRegistry[i].schedule(item);
+				}
 			}
 		}
 	}
@@ -2101,10 +2487,85 @@
 		return inner.getAttribute("data-control-key") || "";
 	}
 
+	function getRepeaterControlKeysFromEvent(e) {
+		var keys = [];
+		var key = getRepeaterControlKeyFromEvent(e);
+		if (key) {
+			keys.push(key);
+		}
+		if (
+			e.target &&
+			e.target.closest &&
+			e.target.closest(
+				'.repeater-item-inner[data-control-key="ecbb_typography"]'
+			) &&
+			keys.indexOf("ecbb_typography") === -1
+		) {
+			keys.push("ecbb_typography");
+		}
+		return keys;
+	}
+
+	var typographyColorPickerRaf = 0;
+
+	function syncOpenRepeaterTypographyPreview() {
+		document
+			.querySelectorAll(
+				".ecbb-parts-repeater-item.open, .ecbb-parts-repeater-item.always-open"
+			)
+			.forEach(function (item) {
+				if (getRepeaterControlInner(item, "ecbb_typography")) {
+					runTypographyPreviewSyncChain(item);
+				}
+			});
+	}
+
+	function watchTypographyColorPickerDrag() {
+		if (!document.querySelector(".pcr-app.visible")) {
+			typographyColorPickerRaf = 0;
+			return;
+		}
+		syncOpenRepeaterTypographyPreview();
+		typographyColorPickerRaf = requestAnimationFrame(
+			watchTypographyColorPickerDrag
+		);
+	}
+
+	function startTypographyColorPickerDragWatch() {
+		if (!typographyColorPickerRaf) {
+			typographyColorPickerRaf = requestAnimationFrame(
+				watchTypographyColorPickerDrag
+			);
+		}
+	}
+
+	function stopTypographyColorPickerDragWatch() {
+		if (typographyColorPickerRaf) {
+			cancelAnimationFrame(typographyColorPickerRaf);
+			typographyColorPickerRaf = 0;
+		}
+		syncOpenRepeaterTypographyPreview();
+	}
+
 	initPreviewSyncRegistry();
 
 	document.addEventListener("input", onRepeaterControlInput, true);
 	document.addEventListener("change", onRepeaterControlChange, true);
+
+	document.addEventListener(
+		"pointerdown",
+		function (e) {
+			if (
+				e.target.closest(
+					'.repeater-item-inner[data-control-key="ecbb_typography"] .pickr, .repeater-item-inner[data-control-key="ecbb_typography"] .pcr-button, .pcr-app'
+				)
+			) {
+				startTypographyColorPickerDragWatch();
+			}
+		},
+		true
+	);
+	document.addEventListener("pointerup", stopTypographyColorPickerDragWatch, true);
 
 	document.addEventListener(
 		"click",

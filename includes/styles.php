@@ -430,7 +430,8 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 
 		public static function ecbb_repeater_type_selector() {
 			// Layout CTA wrappers are full-width rows; bare `&` typography only adds phantom line-box height.
-			$wrapper_exclude = ':not(.ecbb-event-part--read-more):not(.ecbb-event-part--event-tickets):not(.ecbb-event-part--event-rsvp)';
+			$wrapper_exclude = ':not(.ecbb-event-part--read-more):not(.ecbb-event-part--event-tickets):not(.ecbb-event-part--event-rsvp)'
+				. ':not(.ecbb-style2-read-more):not(.ecbb-style2-event-tickets):not(.ecbb-style2-event-rsvp)';
 
 			return '&' . $wrapper_exclude . ', & .ecbb-event__term-chip, & .ecbb-event__link, & > .ecbb-event__link, & .ecbb-event__term, & > .ecbb-event__term, '
 			. '& .ecbb-event__title-text, & .ecbb-event-card__category, & > .ecbb-event-card__category, '
@@ -1270,6 +1271,22 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 		public static function ecbb_type_decls( array $typo, $device = 'desktop' ) {
 			$decl = [];
 
+			if ( empty( $typo['font-size'] ) && ! empty( $typo['fontSize'] ) ) {
+				$typo['font-size'] = $typo['fontSize'];
+			}
+			if ( empty( $typo['line-height'] ) && ! empty( $typo['lineHeight'] ) ) {
+				$typo['line-height'] = $typo['lineHeight'];
+			}
+			if ( empty( $typo['letter-spacing'] ) && ! empty( $typo['letterSpacing'] ) ) {
+				$typo['letter-spacing'] = $typo['letterSpacing'];
+			}
+			if ( empty( $typo['font-weight'] ) && ! empty( $typo['fontWeight'] ) ) {
+				$typo['font-weight'] = $typo['fontWeight'];
+			}
+			if ( empty( $typo['text-transform'] ) && ! empty( $typo['textTransform'] ) ) {
+				$typo['text-transform'] = $typo['textTransform'];
+			}
+
 			$props = [
 			'font-family'     => 'font-family',
 			'font-size'       => 'font-size',
@@ -1291,9 +1308,12 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 				if ( $val !== '' ) {
 					$decl[] = $css_prop . ':' . $val;
 				}
-		} elseif ( is_numeric( $val ) && $css_prop === 'font-weight' ) {
-		$decl[] = $css_prop . ':' . (int) $val;
-		}
+			} elseif ( is_numeric( $val ) && in_array( $css_prop, [ 'font-weight', 'font-size', 'line-height', 'letter-spacing' ], true ) ) {
+				$val = self::ecbb_clean_type_value( $css_prop, (string) $val );
+				if ( $val !== '' ) {
+					$decl[] = $css_prop . ':' . $val;
+				}
+			}
 		}
 
 		if ( ! empty( $typo['color'] ) && ! self::ecbb_is_builder_preview() ) {
@@ -1478,7 +1498,10 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 				}
 				if ( $layout_btn_part && ! $btn_style_on && ! empty( $p['ecbb_typography'] ) && is_array( $p['ecbb_typography'] ) ) {
 					$btn_var_decls = [];
-					$font_raw      = self::ecbb_device_value( $p['ecbb_typography']['font-size'] ?? '', $device );
+					$font_raw      = self::ecbb_device_value(
+						$p['ecbb_typography']['font-size'] ?? ( $p['ecbb_typography']['fontSize'] ?? '' ),
+						$device
+					);
 					$font_size     = $font_raw !== '' && $font_raw !== null ? self::ecbb_clean_type_value( 'font-size', $font_raw ) : '';
 					if ( $font_size !== '' ) {
 						$btn_var_decls[] = '--ecbb-btn-font-size:' . $font_size;
