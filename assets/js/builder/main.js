@@ -1,0 +1,282 @@
+/**
+ * Registry init, event listeners, and startup.
+ * Runs last; wires everything together.
+ */
+(function (builder) {
+	"use strict";
+	builder.initPreviewSyncRegistry = function() {
+		builder.sync.registry.length = 0;
+
+		builder.sync.layoutActionButton = builder.createPreviewSyncHandler({
+			id: "layoutActionButtonPreview",
+			matches: builder.isLayoutActionButtonPart,
+			controlKeys: ["ecbb_background", "ecbb_padding", "ecbb_typography", "ecbb_text_align"],
+			sync: builder.syncLayoutActionButtonPreviewStyle,
+		});
+
+		builder.sync.categoryChip = builder.createPreviewSyncHandler({
+			id: "categoryChipPreview",
+			matches: function (item) {
+				return builder.readRepeaterPartSlug(item) === "categories";
+			},
+			controlKeys: ["ecbb_background", "ecbb_padding", "ecbb_typography"],
+			sync: builder.syncCategoryChipPreviewStyle,
+		});
+
+		builder.sync.style2MetaIcon = builder.createPreviewSyncHandler({
+			id: "style2MetaIconPreview",
+			matches: function (item) {
+				return builder.config.style2MetaIconParts.indexOf(builder.readRepeaterPartSlug(item)) !== -1;
+			},
+			controlKeys: [
+				"ecbb_meta_icon_color",
+				"ecbb_meta_icon_background",
+				"ecbb_typography",
+			],
+			sync: builder.syncStyle2MetaIconPreviewStyle,
+		});
+
+		builder.sync.style1GridMetaListRow = builder.createPreviewSyncHandler({
+			id: "style1GridMetaListRowPreview",
+			controlKeys: ["ecbb_background", "ecbb_padding", "ecbb_typography"],
+			sync: builder.syncStyle1GridMetaListRowPreviewStyle,
+		});
+
+		builder.sync.titleInnerBackground = builder.createPreviewSyncHandler({
+			id: "titleInnerBackgroundPreview",
+			matches: function (item) {
+				return builder.readRepeaterPartControlValue(item) === "title";
+			},
+			controlKeys: ["ecbb_background", "ecbb_background_inner"],
+			sync: builder.syncTitleInnerBackgroundPreview,
+		});
+
+		builder.sync.typography = builder.createPreviewSyncHandler({
+			id: "typographyPreview",
+			controlKeys: ["ecbb_typography"],
+			delay: 0,
+			sync: builder.syncTypographyColorToPreviewTargets,
+			run: builder.runTypographyPreviewSyncChain,
+		});
+
+		builder.sync.hover = builder.createPreviewSyncHandler({
+			id: "hoverPreview",
+			controlKeys: builder.config.hoverPreviewControlKeys,
+			sync: builder.syncHoverPreviewStyleRules,
+			run: function (item) {
+				builder.syncHoverPreviewStyleRules(item);
+			setTimeout(function () {
+					builder.syncHoverPreviewStyleRules(item);
+			}, 120);
+			},
+		});
+
+		builder.sync.styledButton = builder.createPreviewSyncHandler({
+			id: "styledButtonPreview",
+			matches: function (item) {
+				return !!builder.getRepeaterControlInner(item, "btn_style");
+			},
+			controlKeys: builder.config.styledButtonControlKeys,
+			sync: builder.syncStyledButtonPreviewPaint,
+			run: function (item) {
+				builder.syncStyledButtonPreviewPaint(item);
+				setTimeout(function () {
+					builder.syncStyledButtonPreviewPaint(item);
+				}, 120);
+			},
+		});
+	}
+
+	builder.onRepeaterControlInput = function(e) {
+		var item = e.target.closest(".ecbb-parts-repeater-item");
+		if (!item) {
+			return;
+		}
+		var keys = builder.getRepeaterControlKeysFromEvent(e);
+		var i;
+		var k;
+		var j;
+		for (i = 0; i < builder.sync.registry.length; i++) {
+			for (j = 0; j < keys.length; j++) {
+				k = keys[j];
+				if (k && builder.sync.registry[i].handlesKey(k)) {
+					builder.sync.registry[i].schedule(item);
+				}
+			}
+		}
+	}
+
+	builder.onRepeaterControlChange = function(e) {
+			var item = e.target.closest(".ecbb-parts-repeater-item");
+			if (!item) {
+				return;
+			}
+		var key = builder.getRepeaterControlKeyFromEvent(e);
+		if (key === "part") {
+			builder.syncRepeaterHoverPanelState(item);
+			builder.runAllPreviewSyncHandlers(false);
+				return;
+			}
+		if (key === "link") {
+			builder.syncRepeaterHoverPanelState(item);
+			builder.scheduleTitleInnerBackgroundPreviewSync(item);
+				return;
+			}
+		if (key === "ecbb_use_hover") {
+			builder.syncRepeaterHoverToggleAttribute(item);
+			builder.scheduleStyledButtonPreviewSync(item);
+			builder.scheduleHoverPreviewStyleSync(item);
+				return;
+			}
+		builder.onRepeaterControlInput(e);
+	}
+
+	builder.getRepeaterControlKeyFromEvent = function(e) {
+		var inner = e.target.closest(".repeater-item-inner[data-control-key]");
+		if (!inner) {
+			return "";
+		}
+		return inner.getAttribute("data-control-key") || "";
+	}
+
+	builder.getRepeaterControlKeysFromEvent = function(e) {
+		var keys = [];
+		var key = builder.getRepeaterControlKeyFromEvent(e);
+		if (key) {
+			keys.push(key);
+		}
+		if (
+			e.target &&
+			e.target.closest &&
+			e.target.closest(
+				'.repeater-item-inner[data-control-key="ecbb_typography"]'
+			) &&
+			keys.indexOf("ecbb_typography") === -1
+		) {
+			keys.push("ecbb_typography");
+		}
+		return keys;
+	}
+
+	builder.syncOpenRepeaterTypographyPreview = function() {
+		document
+			.querySelectorAll(
+				".ecbb-parts-repeater-item.open, .ecbb-parts-repeater-item.always-open"
+			)
+			.forEach(function (item) {
+				if (builder.getRepeaterControlInner(item, "ecbb_typography")) {
+					builder.runTypographyPreviewSyncChain(item);
+				}
+			});
+	}
+
+	builder.watchTypographyColorPickerDrag = function() {
+		if (!document.querySelector(".pcr-app.visible")) {
+			builder.preview.typographyPickerRaf = 0;
+			return;
+		}
+		builder.syncOpenRepeaterTypographyPreview();
+		builder.preview.typographyPickerRaf = requestAnimationFrame(
+			watchTypographyColorPickerDrag
+		);
+	}
+
+	builder.startTypographyColorPickerDragWatch = function() {
+		if (!builder.preview.typographyPickerRaf) {
+			builder.preview.typographyPickerRaf = requestAnimationFrame(
+				watchTypographyColorPickerDrag
+			);
+		}
+	}
+
+	builder.stopTypographyColorPickerDragWatch = function() {
+		if (builder.preview.typographyPickerRaf) {
+			cancelAnimationFrame(builder.preview.typographyPickerRaf);
+			builder.preview.typographyPickerRaf = 0;
+		}
+		builder.syncOpenRepeaterTypographyPreview();
+	}
+
+	builder.initPreviewSyncRegistry();
+
+	document.addEventListener("input", builder.onRepeaterControlInput, true);
+	document.addEventListener("change", builder.onRepeaterControlChange, true);
+
+	document.addEventListener(
+		"pointerdown",
+		function (e) {
+			if (
+				e.target.closest(
+					'.repeater-item-inner[data-control-key="ecbb_typography"] .pickr, .repeater-item-inner[data-control-key="ecbb_typography"] .pcr-button, .pcr-app'
+				)
+			) {
+				builder.startTypographyColorPickerDragWatch();
+			}
+		},
+		true
+	);
+	document.addEventListener("pointerup", builder.stopTypographyColorPickerDragWatch, true);
+
+	document.addEventListener(
+		"click",
+		function (e) {
+			if (!e.target.closest('.repeater-item-inner[data-control-key="ecbb_use_hover"]')) {
+				return;
+			}
+			var item = e.target.closest(".ecbb-parts-repeater-item");
+			if (!item) {
+				return;
+			}
+			setTimeout(function () {
+				builder.syncRepeaterHoverToggleAttribute(item);
+				builder.scheduleHoverPreviewStyleSync(item);
+			}, 0);
+		},
+		true
+	);
+
+	document.addEventListener(
+		"click",
+		function (e) {
+			var btn = e.target.closest(".ecbb-repeater-tabs__btn");
+			if (!btn) {
+				return;
+			}
+			var item = btn.closest(".ecbb-parts-repeater-item");
+			if (
+				!item ||
+				(!item.classList.contains("open") &&
+					!item.classList.contains("always-open"))
+			) {
+				return;
+			}
+			e.preventDefault();
+			var next = btn.getAttribute("data-ecbb-tab-btn");
+			if (next !== "content" && next !== "style") {
+				return;
+			}
+			item.setAttribute("data-ecbb-tab", next);
+			builder.syncRepeaterTabButtonStates(item);
+		},
+		true
+	);
+
+	if (document.readyState === "loading") {
+		document.addEventListener("DOMContentLoaded", builder.scanRepeaterRowsAndSyncPreview);
+	} else {
+		builder.scanRepeaterRowsAndSyncPreview();
+	}
+
+	var builderPanelMutationObserver = new MutationObserver(function (mutations) {
+		if (builder.mutationAffectsRepeaterRow(mutations)) {
+			builder.scheduleRepeaterRowScan();
+		}
+	});
+	builderPanelMutationObserver.observe(builder.getBricksBuilderPanelRoot(), {
+		childList: true,
+		subtree: true,
+		attributes: true,
+		attributeFilter: ["class"],
+	});
+})(window.ECBbuilder.builder);
+

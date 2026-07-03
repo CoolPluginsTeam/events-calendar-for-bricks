@@ -40,7 +40,7 @@ if ( ! class_exists( 'ECBB_Plugin', false ) ) {
 		* @return void
 		*/
 		public static function ecbb_load_render_dependencies() {
-			foreach ( [ 'includes/query.php', 'includes/markup.php', 'includes/styles.php', 'includes/controls.php' ] as $relative_path ) {
+			foreach ( [ 'includes/query.php', 'includes/markup/markup.php', 'includes/styles.php', 'includes/controls.php' ] as $relative_path ) {
 				self::ecbb_require_file( $relative_path );
 			}
 		}
@@ -51,7 +51,7 @@ if ( ! class_exists( 'ECBB_Plugin', false ) ) {
 		* @return void
 		*/
 		private static function ecbb_load_markup_dependencies() {
-			self::ecbb_require_file( 'includes/markup.php' );
+			self::ecbb_require_file( 'includes/markup/markup.php' );
 		}
 
 		/**
@@ -358,16 +358,37 @@ if ( ! class_exists( 'ECBB_Plugin', false ) ) {
 				file_exists( $builder_css_path ) ? (string) filemtime( $builder_css_path ) : ECBB_VERSION
 			);
 
-			$builder_js_path = ECBB_DIR . 'assets/js/ecbb-builder.js';
-			wp_enqueue_script(
-				'ecbb-builder',
-				ECBB_URL . 'assets/js/ecbb-builder.js',
-				[ 'bricks-builder' ],
-				file_exists( $builder_js_path ) ? (string) filemtime( $builder_js_path ) : ECBB_VERSION,
-				true
-			);
+			$builder_dir   = ECBB_DIR . 'assets/js/builder/';
+			$builder_url   = ECBB_URL . 'assets/js/builder/';
+			$prev_handle   = 'bricks-builder';
+			$localize_on   = '';
 
-			wp_localize_script( 'ecbb-builder', 'ECBBBuilder', [
+			foreach (
+				[
+					'ecbb-builder-core'     => 'core.js',
+					'ecbb-builder-tabs'     => 'tabs.js',
+					'ecbb-builder-controls' => 'controls.js',
+					'ecbb-builder-sync'     => 'sync.js',
+					'ecbb-builder-preview'  => 'preview.js',
+					'ecbb-builder-button'   => 'button.js',
+					'ecbb-builder-main'     => 'main.js',
+				] as $handle => $file
+			) {
+				$path = $builder_dir . $file;
+				wp_enqueue_script(
+					$handle,
+					$builder_url . $file,
+					[ $prev_handle ],
+					file_exists( $path ) ? (string) filemtime( $path ) : ECBB_VERSION,
+					true
+				);
+				if ( $localize_on === '' ) {
+					$localize_on = $handle;
+				}
+				$prev_handle = $handle;
+			}
+
+			wp_localize_script( $localize_on, 'ECBBBuilder', [
 				'tabContent'    => __( 'CONTENT', 'events-calendar-for-bricks' ),
 				'tabStyle'      => __( 'STYLE', 'events-calendar-for-bricks' ),
 				'hoverParts'    => \ECBB_Controls::ecbb_hover_part_types(),

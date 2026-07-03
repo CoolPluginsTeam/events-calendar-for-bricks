@@ -559,7 +559,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 				],
 				'required' => self::ecbb_req_btn_styled(),
 				// No Bricks `css` rule: child selectors are ignored on repeater fieldId targets.
-				// Frontend: ecbb_button_decls() + build_parts_scoped_css(). Builder: ecbb-builder.js.
+				// Frontend: ecbb_button_decls() + build_parts_scoped_css(). Builder: assets/js/builder/*.js.
 			],
 			'btn_border_radius' => [
 				'label'       => esc_html__( 'Border radius', 'events-calendar-for-bricks' ),
@@ -568,7 +568,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 				'responsive'  => true,
 				'required'    => self::ecbb_req_btn_styled(),
 				// No Bricks `css` rule: child selectors are ignored on repeater fieldId targets.
-				// Frontend: ecbb_button_decls() + build_parts_scoped_css(). Builder: ecbb-builder.js.
+				// Frontend: ecbb_button_decls() + build_parts_scoped_css(). Builder: assets/js/builder/*.js.
 			],
 			'ecbb_use_hover' => [
 				'label'    => esc_html__( 'Enable hover Styling', 'events-calendar-for-bricks' ),

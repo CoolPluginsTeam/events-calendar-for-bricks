@@ -247,7 +247,9 @@
  */
 .ecbb-ev__item--style-1 .ecbb-event-part:not(.ecbb-has-hover-fg):not(.ecbb-has-typo-fg):not(.ecbb-no-hover) a.event-button.event-button--outline:hover,
 .ecbb-ev__item--style-1 .ecbb-event-part:not(.ecbb-has-hover-fg):not(.ecbb-has-typo-fg):not(.ecbb-no-hover) > a.event-button.event-button--outline:hover,
-.ecbb-ev__item--style-1 .ecbb-event-part:not(.ecbb-has-hover-fg):not(.ecbb-has-typo-fg):not(.ecbb-no-hover) a.ecbb-event__link.event-button--outline:hover {
+.ecbb-ev__item--style-1 .ecbb-event-part:not(.ecbb-has-hover-fg):not(.ecbb-has-typo-fg):not(.ecbb-no-hover) a.ecbb-event__link.event-button--outline:hover,
+.ecbb-ev__item--style-1 .ecbb-event-part:not(.ecbb-has-hover-fg):not(.ecbb-has-typo-fg):not(.ecbb-no-hover) a.event-button.event-button--filled:hover,
+.ecbb-ev__item--style-1 .ecbb-event-part:not(.ecbb-has-hover-fg):not(.ecbb-has-typo-fg):not(.ecbb-no-hover) > a.event-button.event-button--filled:hover {
 	color: var(--ecbb-hover-fg, var(--ecbb-btn-fg, #ffffff)) !important;
 }
 
@@ -257,11 +259,6 @@
 	background-color: var(--color-primary) !important;
 	border-color: var(--color-primary) !important;
 	box-shadow: 0 8px 18px rgba(33, 71, 199, 0.2) !important;
-}
-
-.ecbb-ev__item--style-1 .ecbb-event-part:not(.ecbb-has-hover-fg):not(.ecbb-has-typo-fg):not(.ecbb-no-hover) a.event-button.event-button--filled:hover,
-.ecbb-ev__item--style-1 .ecbb-event-part:not(.ecbb-has-hover-fg):not(.ecbb-has-typo-fg):not(.ecbb-no-hover) > a.event-button.event-button--filled:hover {
-	color: var(--ecbb-hover-fg, var(--ecbb-btn-fg, #ffffff)) !important;
 }
 
 .ecbb-ev__item--style-1 .ecbb-event-part:not(.ecbb-has-hover-bg):not(.ecbb-no-hover) a.event-button.event-button--filled:hover,

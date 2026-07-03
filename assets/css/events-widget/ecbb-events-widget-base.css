@@ -270,10 +270,7 @@
 /* Layout CTA rows: Bricks typography also paints the wrapper; collapse it so font-size sizes the button only. */
 .ecbb-event-part--read-more:not(.ecbb-has-btn),
 .ecbb-event-part--event-tickets:not(.ecbb-has-btn),
-.ecbb-event-part--event-rsvp:not(.ecbb-has-btn),
-.ecbb-style2-read-more:not(.ecbb-has-btn),
-.ecbb-style2-event-tickets:not(.ecbb-has-btn),
-.ecbb-style2-event-rsvp:not(.ecbb-has-btn) {
+.ecbb-event-part--event-rsvp:not(.ecbb-has-btn) {
 	font-size: 0 !important;
 	line-height: 0 !important;
 }
@@ -282,9 +279,7 @@
 .ecbb-event-part.ecbb-has-typo-size:not(.ecbb-has-btn) > a.event-button,
 .ecbb-event-part.ecbb-has-typo-size:not(.ecbb-has-btn) > .ecbb-event__link,
 .ecbb-event-part.ecbb-has-typo-size:not(.ecbb-has-btn) a.event-button,
-.ecbb-event-part.ecbb-has-typo-size:not(.ecbb-has-btn) .ecbb-event__link,
-.ecbb-event-part.ecbb-has-typo-size:not(.ecbb-has-btn) > a.ecbb-event-card__button,
-.ecbb-event-part.ecbb-has-typo-size:not(.ecbb-has-btn) a.ecbb-event-card__button {
+.ecbb-event-part.ecbb-has-typo-size:not(.ecbb-has-btn) .ecbb-event__link {
 	font-size: var(--ecbb-btn-font-size) !important;
 	line-height: var(--ecbb-btn-line-height, 1) !important;
 }
@@ -292,7 +287,6 @@
 .ecbb-event-part.ecbb-has-btn > .ecbb-event__link,
 .ecbb-event-part.ecbb-has-btn .ecbb-event__link,
 .ecbb-event-part.ecbb-has-btn > a.event-button,
-.ecbb-event-part.ecbb-has-btn > a.ecbb-event-card__button,
 .ecbb-event-part.ecbb-has-btn > .ecbb-event__plain,
 .ecbb-event-part.ecbb-has-btn .ecbb-event__plain {
 	display: inline-flex;
@@ -310,8 +304,6 @@
 .ecbb-event-part.ecbb-has-typo-fg:not(.ecbb-has-btn) .ecbb-event__link,
 .ecbb-event-part.ecbb-has-typo-fg:not(.ecbb-has-btn) > a.event-button,
 .ecbb-event-part.ecbb-has-typo-fg:not(.ecbb-has-btn) a.event-button,
-.ecbb-event-part.ecbb-has-typo-fg:not(.ecbb-has-btn) > a.ecbb-event-card__button,
-.ecbb-event-part.ecbb-has-typo-fg:not(.ecbb-has-btn) a.ecbb-event-card__button,
 .ecbb-event-part.ecbb-has-typo-fg:not(.ecbb-has-btn) > .ecbb-event__plain,
 .ecbb-event-part.ecbb-has-typo-fg:not(.ecbb-has-btn) .ecbb-event__plain {
 	color: var(--ecbb-btn-fg) !important;
@@ -327,10 +319,6 @@
 .ecbb-event-part.ecbb-has-btn.ecbb-no-hover .ecbb-event__plain {
 	cursor: default;
 	pointer-events: none;
-}
-
-.ecbb-event-part.ecbb-has-btn:not(.ecbb-no-hover) .ecbb-event__link {
-	transition: opacity 0.2s ease, transform 0.2s ease, background-color 0.2s ease, color 0.2s ease, text-decoration-color 0.2s ease;
 }
 
 /* Repeater hover colors (--ecbb-hover-fg/bg on wrapper; only when Style tab hover colors are set). */

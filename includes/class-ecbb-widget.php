@@ -229,7 +229,7 @@ class ECBB_Widget extends \Bricks\Element
 			$ctx['skin']
 		);
 		if ( $ext !== false ) {
-			echo $ext; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in includes/markup.php
+			echo $ext; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in includes/markup/markup.php
 			return;
 		}
 

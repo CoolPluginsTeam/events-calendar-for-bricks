@@ -1070,6 +1070,153 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 		}
 
 		/**
+		 * Background-color declaration for a button row at one breakpoint.
+		 *
+		 * @param array<string,mixed> $item
+		 * @param string              $device
+		 * @param callable            $color_fn
+		 * @return string[]
+		 */
+		private static function ecbb_btn_bg_decl( array $item, $device, callable $color_fn ) {
+			$bg_raw = self::ecbb_device_value( $item['ecbb_background'] ?? '', $device );
+			if ( $bg_raw === '' || $bg_raw === null ) {
+				$bg_raw = self::ecbb_device_value( $item['btn_bg'] ?? '', $device );
+			}
+			if ( $bg_raw === '' || $bg_raw === null ) {
+				return [];
+			}
+			$bg = $color_fn( $bg_raw );
+			return $bg !== '' ? [ 'background-color:' . $bg . ' !important' ] : [];
+		}
+
+		/**
+		 * Text color declaration for a button row at one breakpoint.
+		 *
+		 * @param array<string,mixed> $item
+		 * @param string              $device
+		 * @param callable            $color_fn
+		 * @return string[]
+		 */
+		private static function ecbb_btn_text_decl( array $item, $device, callable $color_fn ) {
+			$tc_raw = '';
+			if ( ! empty( $item['ecbb_typography'] ) && is_array( $item['ecbb_typography'] ) ) {
+				$tc_raw = self::ecbb_device_value( $item['ecbb_typography']['color'] ?? '', $device );
+			}
+			if ( $tc_raw === '' || $tc_raw === null ) {
+				$tc_raw = self::ecbb_device_value( $item['btn_text_color'] ?? '', $device );
+			}
+			if ( $tc_raw === '' || $tc_raw === null ) {
+				return [];
+			}
+			$tc = $color_fn( $tc_raw );
+			return $tc !== '' ? [ 'color:' . $tc . ' !important' ] : [];
+		}
+
+		/**
+		 * Border declarations for a button row (includes legacy btn_border fallback).
+		 *
+		 * @param array<string,mixed> $item
+		 * @param string              $device
+		 * @param callable            $color_fn
+		 * @return string[]
+		 */
+		private static function ecbb_btn_border_decls( array $item, $device, callable $color_fn ) {
+			$border_color_raw = self::ecbb_device_value( $item['btn_border_color'] ?? '', $device );
+			$border_style     = self::ecbb_device_value( $item['btn_border_type'] ?? '', $device );
+			$border_width_raw = self::ecbb_device_value( $item['btn_border_width'] ?? '', $device );
+
+			if ( ( $border_color_raw === '' || $border_color_raw === null ) && ! empty( $item['btn_border'] ) ) {
+				$border_legacy = self::ecbb_device_value( $item['btn_border'], $device );
+				if ( is_array( $border_legacy ) ) {
+					if ( ! empty( $border_legacy['color'] ) ) {
+						$border_color_raw = $border_legacy['color'];
+					}
+					if ( ( $border_style === '' || $border_style === null ) && ! empty( $border_legacy['style'] ) ) {
+						$border_style = $border_legacy['style'];
+					}
+					if ( ( $border_width_raw === '' || $border_width_raw === null ) && isset( $border_legacy['width'] ) ) {
+						$border_width_raw = $border_legacy['width'];
+					}
+				}
+			}
+
+			if ( ! is_string( $border_style ) || $border_style === '' ) {
+				$border_style = isset( $item['btn_border_type'] ) ? trim( (string) $item['btn_border_type'] ) : '';
+			}
+			if ( ! in_array( $border_style, [ 'solid', 'dashed', 'dotted', 'double', 'none' ], true ) ) {
+				$border_style = 'solid';
+			}
+
+			$border_width = '';
+			if ( is_array( $border_width_raw ) ) {
+				$border_width = self::ecbb_spacing_css( $border_width_raw );
+			} elseif ( $border_width_raw !== '' && $border_width_raw !== null ) {
+				$border_width = self::ecbb_css_size( $border_width_raw, 'px' );
+			}
+
+			if ( $border_style === 'none' ) {
+				return [ 'border:none', 'box-sizing:border-box' ];
+			}
+			if ( $border_color_raw === '' || $border_color_raw === null ) {
+				return [];
+			}
+
+			$border_color = $color_fn( $border_color_raw );
+			if ( $border_color === '' ) {
+				return [];
+			}
+			if ( $border_width === '' ) {
+				$border_width = '1px';
+			}
+
+			return [
+				'border:' . $border_width . ' ' . $border_style . ' ' . $border_color,
+				'box-sizing:border-box',
+			];
+		}
+
+		/**
+		 * Padding declaration for a button row at one breakpoint.
+		 *
+		 * @param array<string,mixed> $item
+		 * @param string              $device
+		 * @return string[]
+		 */
+		private static function ecbb_btn_padding_decl( array $item, $device ) {
+			$padding_raw = self::ecbb_responsive_spacing( $item, 'btn_padding', $device );
+			$padding_css = ! empty( $padding_raw ) ? self::ecbb_spacing_css( $padding_raw ) : '';
+			if ( $padding_css === '' ) {
+				$py = self::ecbb_css_size( $item['btn_padding_y'] ?? '', 'px' );
+				$px = self::ecbb_css_size( $item['btn_padding_x'] ?? '', 'px' );
+				if ( $py !== '' || $px !== '' ) {
+					$padding_css = ( $py !== '' ? $py : '10px' ) . ' ' . ( $px !== '' ? $px : '14px' );
+				}
+			}
+			return $padding_css !== '' ? [ 'padding:' . $padding_css ] : [];
+		}
+
+		/**
+		 * Border-radius declaration for a button row at one breakpoint.
+		 *
+		 * @param array<string,mixed> $item
+		 * @param string              $device
+		 * @return string[]
+		 */
+		private static function ecbb_btn_radius_decl( array $item, $device ) {
+			$radius_raw = self::ecbb_responsive_spacing( $item, 'btn_border_radius', $device );
+			$radius_css = ! empty( $radius_raw ) ? self::ecbb_radius_css( $radius_raw ) : '';
+			if ( $radius_css === '' ) {
+				$radius_pick = self::ecbb_device_value( $item['btn_border_radius'] ?? '', $device );
+				if ( is_array( $radius_pick ) ) {
+					$radius_css = self::ecbb_radius_css( $radius_pick );
+				} elseif ( is_string( $radius_pick ) && $radius_pick !== '' ) {
+					$radius_css = self::ecbb_clean_css_box( $radius_pick );
+				}
+			}
+			return $radius_css !== '' ? [ 'border-radius:' . $radius_css ] : [];
+		}
+
+		/**
 		* Button style declarations for a repeater row at a given breakpoint.
 		*
 		* @param array<string,mixed> $item              Repeater row.
@@ -1086,112 +1233,13 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 				return [];
 			}
 
-		$styles = [];
-
-		$bg_raw = self::ecbb_device_value( $item['ecbb_background'] ?? '', $device );
-		if ( $bg_raw === '' || $bg_raw === null ) {
-			$bg_raw = self::ecbb_device_value( $item['btn_bg'] ?? '', $device );
-		}
-		if ( $bg_raw !== '' && $bg_raw !== null ) {
-			$bg = $color_fn( $bg_raw );
-			if ( $bg !== '' ) {
-				$styles[] = 'background-color:' . $bg . ' !important';
-			}
-		}
-
-		$tc_raw = '';
-		if ( ! empty( $item['ecbb_typography'] ) && is_array( $item['ecbb_typography'] ) ) {
-			$tc_raw = self::ecbb_device_value( $item['ecbb_typography']['color'] ?? '', $device );
-		}
-		if ( $tc_raw === '' || $tc_raw === null ) {
-			$tc_raw = self::ecbb_device_value( $item['btn_text_color'] ?? '', $device );
-		}
-		if ( $tc_raw !== '' && $tc_raw !== null ) {
-			$tc = $color_fn( $tc_raw );
-			if ( $tc !== '' ) {
-				$styles[] = 'color:' . $tc . ' !important';
-			}
-		}
-
-		$border_color_raw = self::ecbb_device_value( $item['btn_border_color'] ?? '', $device );
-		$border_style     = self::ecbb_device_value( $item['btn_border_type'] ?? '', $device );
-		$border_width_raw = self::ecbb_device_value( $item['btn_border_width'] ?? '', $device );
-		if ( ( $border_color_raw === '' || $border_color_raw === null ) && ! empty( $item['btn_border'] ) ) {
-			$border_legacy = self::ecbb_device_value( $item['btn_border'], $device );
-			if ( is_array( $border_legacy ) ) {
-				if ( ! empty( $border_legacy['color'] ) ) {
-					$border_color_raw = $border_legacy['color'];
-				}
-			if ( ( $border_style === '' || $border_style === null ) && ! empty( $border_legacy['style'] ) ) {
-				$border_style = $border_legacy['style'];
-			}
-		if ( ( $border_width_raw === '' || $border_width_raw === null ) && isset( $border_legacy['width'] ) ) {
-			$border_width_raw = $border_legacy['width'];
-		}
-		}
-		}
-		if ( ! is_string( $border_style ) || $border_style === '' ) {
-			$border_style = isset( $item['btn_border_type'] ) ? trim( (string) $item['btn_border_type'] ) : '';
-		}
-		if ( ! in_array( $border_style, [ 'solid', 'dashed', 'dotted', 'double', 'none' ], true ) ) {
-			$border_style = 'solid';
-		}
-
-		$border_width = '';
-		if ( is_array( $border_width_raw ) ) {
-			$border_width = self::ecbb_spacing_css( $border_width_raw );
-		} elseif ( $border_width_raw !== '' && $border_width_raw !== null ) {
-		$border_width = self::ecbb_css_size( $border_width_raw, 'px' );
-		}
-
-		if ( $border_style === 'none' ) {
-			$styles[] = 'border:none';
-			$styles[] = 'box-sizing:border-box';
-		} elseif ( $border_color_raw !== '' && $border_color_raw !== null ) {
-		$border_color = $color_fn( $border_color_raw );
-		if ( $border_color !== '' ) {
-			if ( $border_width === '' ) {
-				$border_width = '1px';
-			}
-		$styles[] = 'border:' . $border_width . ' ' . $border_style . ' ' . $border_color;
-		$styles[] = 'box-sizing:border-box';
-		}
-		}
-
-		$padding_raw = self::ecbb_responsive_spacing( $item, 'btn_padding', $device );
-		$padding_css = '';
-		if ( ! empty( $padding_raw ) ) {
-			$padding_css = self::ecbb_spacing_css( $padding_raw );
-		}
-		if ( $padding_css === '' ) {
-			$py = self::ecbb_css_size( $item['btn_padding_y'] ?? '', 'px' );
-			$px = self::ecbb_css_size( $item['btn_padding_x'] ?? '', 'px' );
-			if ( $py !== '' || $px !== '' ) {
-				$padding_css = ( $py !== '' ? $py : '10px' ) . ' ' . ( $px !== '' ? $px : '14px' );
-			}
-		}
-		if ( $padding_css !== '' ) {
-			$styles[] = 'padding:' . $padding_css;
-		}
-
-		$radius_raw = self::ecbb_responsive_spacing( $item, 'btn_border_radius', $device );
-		$radius_css = '';
-		if ( ! empty( $radius_raw ) ) {
-			$radius_css = self::ecbb_radius_css( $radius_raw );
-		}
-		if ( $radius_css === '' ) {
-			$radius_pick = self::ecbb_device_value( $item['btn_border_radius'] ?? '', $device );
-			if ( is_array( $radius_pick ) ) {
-				$radius_css = self::ecbb_radius_css( $radius_pick );
-			} elseif ( is_string( $radius_pick ) && $radius_pick !== '' ) {
-			$radius_css = self::ecbb_clean_css_box( $radius_pick );
-		}
-		}
-		if ( $radius_css !== '' ) {
-			$styles[] = 'border-radius:' . $radius_css;
-		}
-
-		return $styles;
+			return array_merge(
+				self::ecbb_btn_bg_decl( $item, $device, $color_fn ),
+				self::ecbb_btn_text_decl( $item, $device, $color_fn ),
+				self::ecbb_btn_border_decls( $item, $device, $color_fn ),
+				self::ecbb_btn_padding_decl( $item, $device ),
+				self::ecbb_btn_radius_decl( $item, $device )
+			);
 		}
 
 		/**
@@ -1465,22 +1513,19 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 		}
 
 		/**
+		 * Chip/button CSS custom properties per breakpoint.
+		 *
 		 * @param array<string,mixed> $ctx
 		 * @return string[]
 		 */
-		private static function ecbb_parts_typography_spacing_rules( array $ctx ) {
+		private static function ecbb_parts_typo_var_rules( array $ctx ) {
 			$p               = $ctx['part'];
-			$part_type       = $ctx['part_type'];
 			$scope_sel       = $ctx['scope_sel'];
 			$chip_surface    = $ctx['chip_surface'];
 			$layout_btn_part = $ctx['layout_btn_part'];
 			$btn_style_on    = $ctx['btn_style_on'];
-			$meta_unified    = self::ecbb_ctx_meta_list_unified_row( $ctx );
-			$row_sel         = $meta_unified ? self::ecbb_meta_row_selector( $scope_sel ) : '';
 			$rules           = [];
-			if ( 'image' === $part_type ) {
-				return $rules;
-			}
+
 			foreach ( self::ecbb_breakpoints() as $device => $mq ) {
 				if ( $chip_surface && ! empty( $p['ecbb_typography'] ) && is_array( $p['ecbb_typography'] ) ) {
 					$chip_fg_raw = self::ecbb_device_value( $p['ecbb_typography']['color'] ?? '', $device );
@@ -1506,7 +1551,7 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 					if ( $font_size !== '' ) {
 						$btn_var_decls[] = '--ecbb-btn-font-size:' . $font_size;
 					}
-					$lh_raw    = self::ecbb_device_value( $p['ecbb_typography']['line-height'] ?? '', $device );
+					$lh_raw      = self::ecbb_device_value( $p['ecbb_typography']['line-height'] ?? '', $device );
 					$line_height = $lh_raw !== '' && $lh_raw !== null ? self::ecbb_clean_type_value( 'line-height', $lh_raw ) : '';
 					if ( $line_height !== '' ) {
 						$btn_var_decls[] = '--ecbb-btn-line-height:' . $line_height;
@@ -1515,59 +1560,142 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 						$rules[] = self::ecbb_mq_css_rule( $mq, $scope_sel . '{' . implode( ';', $btn_var_decls ) . ';}' );
 					}
 				}
-				if ( ! empty( $p['ecbb_typography'] ) && is_array( $p['ecbb_typography'] ) ) {
-					$typo_decls = self::ecbb_type_decls( $p['ecbb_typography'], $device );
-					if ( $meta_unified ) {
-						$typo_decls = array_values(
-							array_filter(
-								$typo_decls,
-								static function ( $decl ) {
-									return strpos( (string) $decl, 'color:' ) !== 0;
-								}
-							)
-						);
-					}
-					if ( ! empty( $typo_decls ) ) {
-						if ( $layout_btn_part && ! $btn_style_on ) {
-							$typo_decls = self::ecbb_decls_important( $typo_decls );
-							$rules[]    = self::ecbb_mq_css_rule(
-								$mq,
-								$scope_sel . '{font-size:0!important;line-height:0!important;}'
-							);
-						}
-						$typo_sel = self::ecbb_type_selectors( $scope_sel, $part_type );
-						$rules[]  = self::ecbb_mq_css_rule( $mq, $typo_sel . '{' . implode( ';', $typo_decls ) . '}' );
-					}
+			}
+
+			return $rules;
+		}
+
+		/**
+		 * Typography declarations per breakpoint.
+		 *
+		 * @param array<string,mixed> $ctx
+		 * @return string[]
+		 */
+		private static function ecbb_parts_typo_decls_rules( array $ctx ) {
+			$p               = $ctx['part'];
+			$part_type       = $ctx['part_type'];
+			$scope_sel       = $ctx['scope_sel'];
+			$layout_btn_part = $ctx['layout_btn_part'];
+			$btn_style_on    = $ctx['btn_style_on'];
+			$meta_unified    = self::ecbb_ctx_meta_list_unified_row( $ctx );
+			$rules           = [];
+
+			foreach ( self::ecbb_breakpoints() as $device => $mq ) {
+				if ( empty( $p['ecbb_typography'] ) || ! is_array( $p['ecbb_typography'] ) ) {
+					continue;
 				}
+				$typo_decls = self::ecbb_type_decls( $p['ecbb_typography'], $device );
+				if ( $meta_unified ) {
+					$typo_decls = array_values(
+						array_filter(
+							$typo_decls,
+							static function ( $decl ) {
+								return strpos( (string) $decl, 'color:' ) !== 0;
+							}
+						)
+					);
+				}
+				if ( empty( $typo_decls ) ) {
+					continue;
+				}
+				if ( $layout_btn_part && ! $btn_style_on ) {
+					$typo_decls = self::ecbb_decls_important( $typo_decls );
+					$rules[]    = self::ecbb_mq_css_rule(
+						$mq,
+						$scope_sel . '{font-size:0!important;line-height:0!important;}'
+					);
+				}
+				$typo_sel = self::ecbb_type_selectors( $scope_sel, $part_type );
+				$rules[]  = self::ecbb_mq_css_rule( $mq, $typo_sel . '{' . implode( ';', $typo_decls ) . '}' );
+			}
+
+			return $rules;
+		}
+
+		/**
+		 * Margin and padding rules per breakpoint.
+		 *
+		 * @param array<string,mixed> $ctx
+		 * @return string[]
+		 */
+		private static function ecbb_parts_spacing_rules( array $ctx ) {
+			$p               = $ctx['part'];
+			$scope_sel       = $ctx['scope_sel'];
+			$chip_surface    = $ctx['chip_surface'];
+			$layout_btn_part = $ctx['layout_btn_part'];
+			$btn_style_on    = $ctx['btn_style_on'];
+			$meta_unified    = self::ecbb_ctx_meta_list_unified_row( $ctx );
+			$row_sel         = $meta_unified ? self::ecbb_meta_row_selector( $scope_sel ) : '';
+			$rules           = [];
+
+			foreach ( self::ecbb_breakpoints() as $device => $mq ) {
 				$margin_raw = self::ecbb_responsive_spacing( $p, 'ecbb_margin', $device );
 				$margin     = ! empty( $margin_raw ) ? self::ecbb_spacing_css( $margin_raw ) : '';
 				if ( $margin !== '' ) {
 					$margin_sel = ( $meta_unified && $row_sel !== '' ) ? $row_sel : $scope_sel;
 					$rules[]    = self::ecbb_mq_css_rule( $mq, $margin_sel . '{margin:' . $margin . ' !important;}' );
 				}
-				if ( ! $chip_surface && ! $meta_unified ) {
-					$pad_raw = self::ecbb_responsive_spacing( $p, 'ecbb_padding', $device );
-					$padding = ! empty( $pad_raw ) ? self::ecbb_spacing_css( $pad_raw ) : '';
-					if ( $padding !== '' ) {
-						if ( $layout_btn_part && ! $btn_style_on ) {
-							$pad_sel     = self::ecbb_button_inner_selectors( $scope_sel );
-							$wrapper_pad = $scope_sel . '{padding:0!important;}';
-							$rules[]     = self::ecbb_mq_css_rule( $mq, $wrapper_pad );
-							$rules[]     = self::ecbb_mq_css_rule( $mq, $pad_sel . '{padding:' . $padding . ' !important;}' );
-						} else {
-							$rules[] = self::ecbb_mq_css_rule( $mq, $scope_sel . '{padding:' . $padding . ' !important;}' );
-						}
-					}
+				if ( $chip_surface || $meta_unified ) {
+					continue;
 				}
-				$align_raw = self::ecbb_device_value( $p['ecbb_text_align'] ?? '', $device );
-				if ( is_string( $align_raw ) && in_array( $align_raw, [ 'left', 'center', 'right', 'justify' ], true ) ) {
-					$align_sel = ( in_array( $part_type, self::ecbb_button_parts(), true ) || 'title' === $part_type )
-						? $scope_sel
-						: self::ecbb_type_selectors( $scope_sel, $part_type );
-					$rules[] = self::ecbb_mq_css_rule( $mq, $align_sel . '{text-align:' . $align_raw . ' !important;}' );
+				$pad_raw = self::ecbb_responsive_spacing( $p, 'ecbb_padding', $device );
+				$padding = ! empty( $pad_raw ) ? self::ecbb_spacing_css( $pad_raw ) : '';
+				if ( $padding === '' ) {
+					continue;
+				}
+				if ( $layout_btn_part && ! $btn_style_on ) {
+					$pad_sel = self::ecbb_button_inner_selectors( $scope_sel );
+					$rules[] = self::ecbb_mq_css_rule( $mq, $scope_sel . '{padding:0!important;}' );
+					$rules[] = self::ecbb_mq_css_rule( $mq, $pad_sel . '{padding:' . $padding . ' !important;}' );
+				} else {
+					$rules[] = self::ecbb_mq_css_rule( $mq, $scope_sel . '{padding:' . $padding . ' !important;}' );
 				}
 			}
+
 			return $rules;
+		}
+
+		/**
+		 * Text-align rules per breakpoint.
+		 *
+		 * @param array<string,mixed> $ctx
+		 * @return string[]
+		 */
+		private static function ecbb_parts_align_rules( array $ctx ) {
+			$p         = $ctx['part'];
+			$part_type = $ctx['part_type'];
+			$scope_sel = $ctx['scope_sel'];
+			$rules     = [];
+
+			foreach ( self::ecbb_breakpoints() as $device => $mq ) {
+				$align_raw = self::ecbb_device_value( $p['ecbb_text_align'] ?? '', $device );
+				if ( ! is_string( $align_raw ) || ! in_array( $align_raw, [ 'left', 'center', 'right', 'justify' ], true ) ) {
+					continue;
+				}
+				$align_sel = ( in_array( $part_type, self::ecbb_button_parts(), true ) || 'title' === $part_type )
+					? $scope_sel
+					: self::ecbb_type_selectors( $scope_sel, $part_type );
+				$rules[] = self::ecbb_mq_css_rule( $mq, $align_sel . '{text-align:' . $align_raw . ' !important;}' );
+			}
+
+			return $rules;
+		}
+
+		/**
+		 * @param array<string,mixed> $ctx
+		 * @return string[]
+		 */
+		private static function ecbb_parts_typography_spacing_rules( array $ctx ) {
+			if ( 'image' === ( $ctx['part_type'] ?? '' ) ) {
+				return [];
+			}
+
+			return array_merge(
+				self::ecbb_parts_typo_var_rules( $ctx ),
+				self::ecbb_parts_typo_decls_rules( $ctx ),
+				self::ecbb_parts_spacing_rules( $ctx ),
+				self::ecbb_parts_align_rules( $ctx )
+			);
 		}
 
 		/**
