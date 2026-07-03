@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Panel CONTENT/STYLE tabs, hover panel state, DOM helpers, row scanning.
  * Adds functions to window.ECBB.builder (see core.js).
  */
@@ -400,5 +400,5 @@
 		}
 		return false;
 	}
-})(window.ECBbuilder.builder);
+})(window.ECBB.builder);
 

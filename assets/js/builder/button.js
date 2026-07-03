@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Styled-button paint mirroring in the builder preview.
  */
 (function (builder) {
@@ -244,5 +244,5 @@
 		}
 		builder.syncStyledButtonPreviewPaint(repeaterItem);
 	}
-})(window.ECBbuilder.builder);
+})(window.ECBB.builder);
 

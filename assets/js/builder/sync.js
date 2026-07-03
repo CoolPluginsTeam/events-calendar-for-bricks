@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Preview sync registry — maps control changes to preview update functions.
  * Adds functions to window.ECBB.builder (see core.js).
  */
@@ -102,5 +102,5 @@
 			builder.sync.typography.syncAll();
 		}, 350);
 	}
-})(window.ECBbuilder.builder);
+})(window.ECBB.builder);
 

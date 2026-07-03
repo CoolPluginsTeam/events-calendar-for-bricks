@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Registry init, event listeners, and startup.
  * Runs last; wires everything together.
  */
@@ -278,5 +278,5 @@
 		attributes: true,
 		attributeFilter: ["class"],
 	});
-})(window.ECBbuilder.builder);
+})(window.ECBB.builder);
 

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Live preview mirroring and hover preview stylesheet injection.
  */
 (function (builder) {
@@ -1556,5 +1556,5 @@
 		}
 		builder.syncHoverPreviewStyleRules(repeaterItem);
 	}
-})(window.ECBbuilder.builder);
+})(window.ECBB.builder);
 

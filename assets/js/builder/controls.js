@@ -119,4 +119,4 @@
 		}
 		return value + "px";
 	};
-})(window.ECBbuilder.builder);
+})(window.ECBB.builder);
