@@ -492,7 +492,7 @@ class ECBB_Widget extends \Bricks\Element
 		) {
 			return [
 				[ 'part' => 'title', 'link' => true ],
-				[ 'part' => 'description', 'desc_source' => 'content' ],
+				[ 'part' => 'description' ],
 				[ 'part' => 'date', 'date_text_transform' => 'uppercase' ],
 			];
 		}
@@ -618,8 +618,6 @@ class ECBB_Widget extends \Bricks\Element
 
 		wp_reset_postdata();
 		$post = $original_post;
-
-		\ECBB_Markup::ecbb_active_widget_settings( [] );
 	}
 
 	/**

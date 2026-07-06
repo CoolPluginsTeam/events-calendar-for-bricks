@@ -73,7 +73,7 @@
 		inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
-/* Drag handle: only on collapsed event-parts repeater rows */
+/* Drag handle: hide only while a row is expanded (collapse row to reorder). */
 #bricks-panel-element:has([data-control-key="parts_style1"]) .repeater-item.open > .drag,
 #bricks-panel-element:has([data-control-key="parts_style1"]) .repeater-item.always-open > .drag,
 #bricks-panel-element:has([data-control-key="parts_style2"]) .repeater-item.open > .drag,
@@ -81,6 +81,14 @@
 #bricks-panel-element:has([data-control-key="parts_grid"]) .repeater-item.open > .drag,
 #bricks-panel-element:has([data-control-key="parts_grid"]) .repeater-item.always-open > .drag {
 	display: none !important;
+}
+
+#bricks-panel-element:has([data-control-key="parts_style1"]) .repeater-item:not(.open):not(.always-open) > .drag,
+#bricks-panel-element:has([data-control-key="parts_style2"]) .repeater-item:not(.open):not(.always-open) > .drag,
+#bricks-panel-element:has([data-control-key="parts_grid"]) .repeater-item:not(.open):not(.always-open) > .drag {
+	display: flex !important;
+	pointer-events: auto !important;
+	cursor: grab !important;
 }
 
 /* CONTENT tab: hide style fields */
@@ -198,7 +206,6 @@
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="cost_currency"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="event_link_display"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="link"],
-.ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="desc_source"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="date_format_preset"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="date_format_custom"],
 .ecbb-parts-repeater-item:is(.open, .always-open)[data-ecbb-tab="style"] .repeater-item-inner[data-control-key="terms_separator"],

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Live preview mirroring and hover preview stylesheet injection.
  */
 (function (builder) {
@@ -184,7 +184,12 @@
 		var controlInner = builder.getRepeaterControlInner(repeaterItem, "ecbb_typography");
 		var color = "";
 
-		if (controlInner) {
+		// Live pickr session wins over a stale saved control value.
+		if (document.querySelector(".pcr-app.visible")) {
+			color = builder.readActivePickrColor();
+		}
+
+		if (!color && controlInner) {
 			var colorWrap = controlInner.querySelector(
 				'[data-control-key="color"], [data-setting="color"], .control-color'
 			);
@@ -204,10 +209,188 @@
 		}
 
 		if (!color && surfaces && surfaces.length && preview && preview.defaultView) {
-			color = preview.defaultView.getComputedStyle(surfaces[0]).color;
+			var surface = surfaces[0];
+			// Meta icons keep inline builder paint; reading them back returns a stale first pick.
+			if (
+				!(
+					surface &&
+					surface.classList &&
+					surface.classList.contains("ecbb-event-card__meta-icon")
+				)
+			) {
+				color = preview.defaultView.getComputedStyle(surface).color;
+			}
 		}
 
 		return builder.normalizeTypographyColor(color);
+	}
+
+	/**
+	 * Style 1 / grid meta rows: Bricks typography paints the part wrapper; mirror that
+	 * color onto the leading icon sibling (and row) after live CSS settles.
+	 */
+	builder.mirrorMetaRowIconColorFromText = function(wrapper, preview) {
+		if (!wrapper || !preview || !preview.defaultView) {
+			return "";
+		}
+
+		var li = wrapper.closest("li");
+		if (!li || !li.closest(".event-meta")) {
+			return "";
+		}
+
+		var icon = li.querySelector(":scope > .ecbb-event-card__meta-icon");
+		if (!icon) {
+			return "";
+		}
+
+		var textColor = builder.normalizeTypographyColor(
+			preview.defaultView.getComputedStyle(wrapper).color
+		);
+		if (!textColor) {
+			return "";
+		}
+
+		li.style.setProperty("color", textColor, "important");
+		icon.style.setProperty("color", "inherit", "important");
+		return textColor;
+	}
+
+	/** Paint Style 1 / grid meta list rows as one unit (icon + text share the <li> chrome). */
+	builder.applyUnifiedMetaListRowPreviewChrome = function(repeaterItem, li, wrapper, icon, preview) {
+		if (!li || !wrapper) {
+			return;
+		}
+
+		var ul = li.closest("ul.event-meta");
+		var bg = builder.readColorControlValue(
+			builder.getRepeaterControlInner(repeaterItem, "ecbb_background")
+		);
+		var margin = builder.readSpacingControlValue(
+			builder.getRepeaterControlInner(repeaterItem, "ecbb_margin")
+		);
+		var pad = builder.readSpacingControlValue(
+			builder.getRepeaterControlInner(repeaterItem, "ecbb_padding")
+		);
+		var typoColor = builder.readTypographyControlColor(
+			repeaterItem,
+			wrapper,
+			preview,
+			null
+		);
+		var typoOverrides = builder.readTypographyControlSnapshot(
+			repeaterItem,
+			wrapper,
+			preview,
+			null
+		);
+		if (!typoColor && typoOverrides.color) {
+			typoColor = typoOverrides.color;
+		}
+
+		li.style.setProperty("display", "inline-flex", "important");
+		li.style.setProperty("align-items", "center", "important");
+		li.style.setProperty("gap", "8px", "important");
+		li.style.setProperty("width", "fit-content", "important");
+		li.style.setProperty("max-width", "100%", "important");
+		li.style.setProperty("border-radius", "10px", "important");
+
+		if (ul) {
+			if (margin) {
+				ul.style.setProperty("margin", margin, "important");
+			} else {
+				ul.style.removeProperty("margin");
+			}
+			ul.style.setProperty("padding", "0", "important");
+			ul.style.setProperty("list-style", "none", "important");
+		}
+
+		li.style.setProperty("margin", "0", "important");
+		wrapper.style.setProperty("margin", "0", "important");
+		wrapper.style.setProperty("padding", "0", "important");
+		wrapper.style.setProperty("background-color", "transparent", "important");
+
+		if (bg) {
+			li.style.setProperty("background-color", bg, "important");
+		} else {
+			li.style.removeProperty("background-color");
+		}
+
+		if (typoColor) {
+			li.style.setProperty("color", typoColor, "important");
+		} else if (preview && preview.defaultView) {
+			var mirrored = builder.normalizeTypographyColor(
+				preview.defaultView.getComputedStyle(wrapper).color
+			);
+			if (mirrored) {
+				li.style.setProperty("color", mirrored, "important");
+			} else {
+				li.style.removeProperty("color");
+			}
+		} else {
+			li.style.removeProperty("color");
+		}
+
+		wrapper.style.setProperty("color", "inherit", "important");
+
+		var typoProps = [
+			["font-size", typoOverrides.fontSize],
+			["line-height", typoOverrides.lineHeight],
+			["font-weight", typoOverrides.fontWeight],
+			["letter-spacing", typoOverrides.letterSpacing],
+			["font-family", typoOverrides.fontFamily],
+			["text-transform", typoOverrides.textTransform],
+		];
+		var i;
+		for (i = 0; i < typoProps.length; i++) {
+			if (typoProps[i][1]) {
+				li.style.setProperty(typoProps[i][0], typoProps[i][1], "important");
+			} else {
+				li.style.removeProperty(typoProps[i][0]);
+			}
+		}
+
+		wrapper.style.setProperty("font-size", "inherit", "important");
+		wrapper.style.setProperty("line-height", "inherit", "important");
+		wrapper.style.setProperty("font-weight", "inherit", "important");
+		wrapper.style.setProperty("letter-spacing", "inherit", "important");
+		wrapper.style.setProperty("font-family", "inherit", "important");
+		wrapper.style.setProperty("text-transform", "inherit", "important");
+
+		if (pad) {
+			li.style.setProperty("padding", pad, "important");
+		} else {
+			li.style.removeProperty("padding");
+		}
+
+		if (icon) {
+			icon.style.setProperty("width", "auto", "important");
+			icon.style.setProperty("height", "auto", "important");
+			icon.style.setProperty("flex", "0 0 auto", "important");
+			icon.style.setProperty("padding", "0", "important");
+			icon.style.setProperty("background", "transparent", "important");
+			icon.style.setProperty("border-radius", "0", "important");
+			icon.style.setProperty("color", "inherit", "important");
+			icon.style.setProperty("font-size", "inherit", "important");
+			icon.style.setProperty("line-height", "inherit", "important");
+			icon.style.setProperty("font-weight", "inherit", "important");
+			icon.style.setProperty("letter-spacing", "inherit", "important");
+			icon.style.setProperty("font-family", "inherit", "important");
+		}
+	}
+
+	builder.scheduleStyle1GridMetaListRowPreviewStyle = function(repeaterItem) {
+		if (!repeaterItem) {
+			return;
+		}
+
+		builder.syncStyle1GridMetaListRowPreviewStyle(repeaterItem);
+		setTimeout(function () {
+			builder.syncStyle1GridMetaListRowPreviewStyle(repeaterItem);
+		}, 120);
+		setTimeout(function () {
+			builder.syncStyle1GridMetaListRowPreviewStyle(repeaterItem);
+		}, 350);
 	}
 
 	builder.readActivePickrColor = function() {
@@ -281,55 +464,24 @@
 		return trimmed;
 	}
 
-	builder.readTypographyPropertyValue = function(repeaterItem, property) {
-		var controlInner = builder.getRepeaterControlInner(repeaterItem, "ecbb_typography");
-		if (!controlInner || !property) {
+	builder.readTypographyInputFromWrap = function(wrap, fallbackUnit) {
+		if (!wrap) {
 			return "";
 		}
-
-		var bricksControl = controlInner.querySelector(
-			'[data-control-key="' +
-				property +
-				'"], [data-setting="' +
-				property +
-				'"], .control-' +
-				property.replace(/[^a-z0-9_-]/gi, "")
+		var input = wrap.querySelector(
+			"input[type='number'], input[type='text'], input:not([type='hidden'])"
 		);
-		if (bricksControl) {
-			var bricksInput = bricksControl.querySelector(
-				"input[type='number'], input[type='text'], input:not([type='hidden'])"
-			);
-			if (bricksInput && bricksInput.value) {
-				var bricksUnit = bricksControl.querySelector("select");
-				var bricksValue = builder.normalizeCssSizeValue(
-					bricksInput.value,
-					bricksUnit && bricksUnit.value ? bricksUnit.value : "px"
-				);
-				if (bricksValue) {
-					return bricksValue;
-				}
-			}
+		if (!input || !input.value) {
+			return "";
 		}
-
-		var keyedWrap = controlInner.querySelector(
-			'[data-control-key="' + property + '"], [data-setting="' + property + '"]'
+		var unitSelect = wrap.querySelector("select");
+		return builder.normalizeCssSizeValue(
+			input.value,
+			unitSelect && unitSelect.value ? unitSelect.value : fallbackUnit || "px"
 		);
-		if (keyedWrap) {
-			var keyedInput = keyedWrap.querySelector(
-				"input[type='number'], input[type='text'], input:not([type='hidden'])"
-			);
-			if (keyedInput && keyedInput.value) {
-				var keyedUnit = keyedWrap.querySelector("select");
-				var keyedValue = builder.normalizeCssSizeValue(
-					keyedInput.value,
-					keyedUnit && keyedUnit.value ? keyedUnit.value : "px"
-				);
-				if (keyedValue) {
-					return keyedValue;
-				}
-			}
-		}
+	}
 
+	builder.readTypographyBySettingSelectors = function(controlInner, property) {
 		var selectors = [
 			'input[data-setting="' + property + '"]',
 			'[data-setting="' + property + '"] input',
@@ -346,10 +498,15 @@
 				}
 			}
 		}
+		return "";
+	}
 
+	builder.readTypographyByFuzzyInputMeta = function(controlInner, property) {
+		var propertyNeedle = property.replace(/-/g, "").toLowerCase();
 		var allInputs = controlInner.querySelectorAll(
 			"input[type='number'], input[type='text']"
 		);
+		var i;
 		for (i = 0; i < allInputs.length; i++) {
 			var inputMeta = (
 				(allInputs[i].getAttribute("data-setting") || "") +
@@ -357,7 +514,6 @@
 				(allInputs[i].getAttribute("data-name") || "") +
 				(allInputs[i].getAttribute("data-control-key") || "")
 			).toLowerCase();
-			var propertyNeedle = property.replace(/-/g, "").toLowerCase();
 			if (
 				inputMeta.indexOf(propertyNeedle) !== -1 &&
 				allInputs[i].value
@@ -368,8 +524,42 @@
 				}
 			}
 		}
-
 		return "";
+	}
+
+	builder.readTypographyPropertyValue = function(repeaterItem, property) {
+		var controlInner = builder.getRepeaterControlInner(repeaterItem, "ecbb_typography");
+		if (!controlInner || !property) {
+			return "";
+		}
+
+		var bricksControl = controlInner.querySelector(
+			'[data-control-key="' +
+				property +
+				'"], [data-setting="' +
+				property +
+				'"], .control-' +
+				property.replace(/[^a-z0-9_-]/gi, "")
+		);
+		var fromBricks = builder.readTypographyInputFromWrap(bricksControl, "px");
+		if (fromBricks) {
+			return fromBricks;
+		}
+
+		var keyedWrap = controlInner.querySelector(
+			'[data-control-key="' + property + '"], [data-setting="' + property + '"]'
+		);
+		var fromKeyed = builder.readTypographyInputFromWrap(keyedWrap, "px");
+		if (fromKeyed) {
+			return fromKeyed;
+		}
+
+		var fromSelectors = builder.readTypographyBySettingSelectors(controlInner, property);
+		if (fromSelectors) {
+			return fromSelectors;
+		}
+
+		return builder.readTypographyByFuzzyInputMeta(controlInner, property);
 	}
 
 	builder.readPreviewRepeaterCssValue = function(wrapper, preview, cssProperty) {
@@ -611,18 +801,11 @@
 	}
 
 	builder.clearMirroredPreviewInlineStyles = function(repeaterItem) {
-		var preview = builder.getBricksPreviewDocument();
-		if (!preview || !repeaterItem) {
+		var ctx = builder.resolvePreviewRowContext(repeaterItem);
+		if (!ctx) {
 			return;
 		}
-		var rowId = builder.readRepeaterRowId(repeaterItem);
-		if (!rowId) {
-			return;
-		}
-		var wrapper = preview.querySelector('[data-field-id="' + rowId + '"]');
-		if (!wrapper) {
-			return;
-		}
+		var wrapper = ctx.wrapper;
 		wrapper
 			.querySelectorAll(
 				".ecbb-event__term-chip, .ecbb-event__link, .ecbb-event__term, a.event-button, a.ecbb-event-card__button, .ecbb-event-card__category"
@@ -649,23 +832,15 @@
 	 * color onto category chips / links so typography color updates instantly.
 	 */
 	builder.syncTypographyColorToPreviewTargets = function(repeaterItem) {
-		var preview = builder.getBricksPreviewDocument();
-		if (!preview || !repeaterItem) {
+		var ctx = builder.resolvePreviewRowContext(repeaterItem, { needView: true });
+		if (!ctx) {
 			return;
 		}
-
-		var rowId = builder.readRepeaterRowId(repeaterItem);
-		if (!rowId) {
-			return;
-		}
-
-		var wrapper = preview.querySelector('[data-field-id="' + rowId + '"]');
-		if (!wrapper || !preview.defaultView) {
-			return;
-		}
+		var preview = ctx.preview;
+		var wrapper = ctx.wrapper;
 
 		if (builder.isStyle1OrGridMetaListPreviewRow(wrapper, preview)) {
-			builder.syncStyle1GridMetaListRowPreviewStyle(repeaterItem);
+			builder.scheduleStyle1GridMetaListRowPreviewStyle(repeaterItem);
 			return;
 		}
 
@@ -714,20 +889,12 @@
 			return;
 		}
 
-		var preview = builder.getBricksPreviewDocument();
-		if (!preview) {
+		var ctx = builder.resolvePreviewRowContext(repeaterItem, { needView: true });
+		if (!ctx) {
 			return;
 		}
-
-		var rowId = builder.readRepeaterRowId(repeaterItem);
-		if (!rowId) {
-			return;
-		}
-
-		var wrapper = preview.querySelector('[data-field-id="' + rowId + '"]');
-		if (!wrapper || !preview.defaultView) {
-			return;
-		}
+		var preview = ctx.preview;
+		var wrapper = ctx.wrapper;
 
 		var surfaces = builder.findLayoutActionButtonSurfaces(wrapper);
 		if (!surfaces.length) {
@@ -779,34 +946,19 @@
 		});
 	}
 
-	builder.scheduleLayoutActionButtonPreviewSync = function(repeaterItem) {
-		if (builder.sync.layoutActionButton) {
-			builder.sync.layoutActionButton.schedule(repeaterItem);
-			return;
-		}
-		builder.syncLayoutActionButtonPreviewStyle(repeaterItem);
-	}
-
 	/** Categories (Style 1 chips + Style 2 pills): Bricks paints the wrapper; paint each button. */
 	builder.syncCategoryChipPreviewStyle = function(repeaterItem) {
-		if (!repeaterItem || builder.readRepeaterPartSlug(repeaterItem) !== "categories") {
+		var ctx = builder.resolvePreviewRowContext(repeaterItem, {
+			matches: function (item) {
+				return builder.readRepeaterPartSlug(item) === "categories";
+			},
+			needView: true,
+		});
+		if (!ctx) {
 			return;
 		}
-
-		var preview = builder.getBricksPreviewDocument();
-		if (!preview || !preview.defaultView) {
-			return;
-		}
-
-		var rowId = builder.readRepeaterRowId(repeaterItem);
-		if (!rowId) {
-			return;
-		}
-
-		var wrapper = preview.querySelector('[data-field-id="' + rowId + '"]');
-		if (!wrapper) {
-			return;
-		}
+		var preview = ctx.preview;
+		var wrapper = ctx.wrapper;
 
 		var bg = builder.readColorControlValue(builder.getRepeaterControlInner(repeaterItem, "ecbb_background"));
 		var pad = builder.readSpacingControlValue(builder.getRepeaterControlInner(repeaterItem, "ecbb_padding"));
@@ -860,24 +1012,20 @@
 
 	/** Style 2 meta rows (venue / timing / cost): paint the leading icon sibling. */
 	builder.syncStyle2MetaIconPreviewStyle = function(repeaterItem) {
-		if (!repeaterItem || builder.config.style2MetaIconParts.indexOf(builder.readRepeaterPartSlug(repeaterItem)) === -1) {
+		var ctx = builder.resolvePreviewRowContext(repeaterItem, {
+			matches: function (item) {
+				return builder.config.style2MetaIconParts.indexOf(builder.readRepeaterPartSlug(item)) !== -1;
+			},
+			needView: true,
+			wrapperTest: function (wrapper, preview) {
+				return builder.isStyle2LayoutPreview(preview);
+			},
+		});
+		if (!ctx) {
 			return;
 		}
-
-		var preview = builder.getBricksPreviewDocument();
-		if (!preview || !preview.defaultView || !builder.isStyle2LayoutPreview(preview)) {
-			return;
-		}
-
-		var rowId = builder.readRepeaterRowId(repeaterItem);
-		if (!rowId) {
-			return;
-		}
-
-		var wrapper = preview.querySelector('[data-field-id="' + rowId + '"]');
-		if (!wrapper) {
-			return;
-		}
+		var preview = ctx.preview;
+		var wrapper = ctx.wrapper;
 
 		var li = wrapper.closest("li.ecbb-event-card__meta-item");
 		if (!li) {
@@ -889,6 +1037,22 @@
 			return;
 		}
 
+		var ul = li.closest("ul.ecbb-event-card__meta");
+		var margin = builder.readSpacingControlValue(
+			builder.getRepeaterControlInner(repeaterItem, "ecbb_margin")
+		);
+		if (ul) {
+			if (margin) {
+				ul.style.setProperty("margin", margin, "important");
+			} else {
+				ul.style.removeProperty("margin");
+			}
+			ul.style.setProperty("padding", "0", "important");
+			ul.style.setProperty("list-style", "none", "important");
+		}
+		li.style.setProperty("margin", "0", "important");
+		wrapper.style.setProperty("margin", "0", "important");
+
 		var color = builder.readColorControlValue(
 			builder.getRepeaterControlInner(repeaterItem, "ecbb_meta_icon_color")
 		);
@@ -899,7 +1063,7 @@
 			repeaterItem,
 			wrapper,
 			preview,
-			icon ? [icon] : null
+			null
 		);
 		if (!color) {
 			color =
@@ -907,7 +1071,7 @@
 					repeaterItem,
 					wrapper,
 					preview,
-					icon ? [icon] : null
+					null
 				) || typoOverrides.color;
 		}
 
@@ -936,24 +1100,15 @@
 	}
 
 	builder.syncTitleInnerBackgroundPreview = function(repeaterItem) {
-		if (!repeaterItem || builder.readRepeaterPartControlValue(repeaterItem) !== "title") {
+		var ctx = builder.resolvePreviewRowContext(repeaterItem, {
+			matches: function (item) {
+				return builder.readRepeaterPartControlValue(item) === "title";
+			},
+		});
+		if (!ctx) {
 			return;
 		}
-
-		var preview = builder.getBricksPreviewDocument();
-		if (!preview) {
-			return;
-		}
-
-		var rowId = builder.readRepeaterRowId(repeaterItem);
-		if (!rowId) {
-			return;
-		}
-
-		var wrapper = preview.querySelector('[data-field-id="' + rowId + '"]');
-		if (!wrapper) {
-			return;
-		}
+		var wrapper = ctx.wrapper;
 
 		var bg = builder.readColorControlValue(builder.getRepeaterControlInner(repeaterItem, "ecbb_background"));
 		if (!bg) {
@@ -989,20 +1144,12 @@
 			return;
 		}
 
-		var preview = builder.getBricksPreviewDocument();
-		if (!preview) {
+		var ctx = builder.resolvePreviewRowContext(repeaterItem);
+		if (!ctx) {
 			return;
 		}
-
-		var rowId = builder.readRepeaterRowId(repeaterItem);
-		if (!rowId) {
-			return;
-		}
-
-		var wrapper = preview.querySelector('[data-field-id="' + rowId + '"]');
-		if (!wrapper) {
-			return;
-		}
+		var preview = ctx.preview;
+		var wrapper = ctx.wrapper;
 
 		if (builder.isStyle2CardActionButtonContext(preview, wrapper)) {
 			return;
@@ -1107,20 +1254,16 @@
 	}
 
 	builder.syncStyle1GridMetaListRowPreviewStyle = function(repeaterItem) {
-		var preview = builder.getBricksPreviewDocument();
-		if (!preview || !repeaterItem) {
+		var ctx = builder.resolvePreviewRowContext(repeaterItem, {
+			wrapperTest: function (wrapper, preview) {
+				return builder.isStyle1OrGridMetaListPreviewRow(wrapper, preview);
+			},
+		});
+		if (!ctx) {
 			return;
 		}
-
-		var rowId = builder.readRepeaterRowId(repeaterItem);
-		if (!rowId) {
-			return;
-		}
-
-		var wrapper = preview.querySelector('[data-field-id="' + rowId + '"]');
-		if (!wrapper || !builder.isStyle1OrGridMetaListPreviewRow(wrapper, preview)) {
-			return;
-		}
+		var preview = ctx.preview;
+		var wrapper = ctx.wrapper;
 
 		var li = wrapper.closest("li");
 		if (!li) {
@@ -1128,73 +1271,14 @@
 		}
 
 		var icon = li.querySelector(":scope > .ecbb-event-card__meta-icon");
-		var bg = builder.readColorControlValue(builder.getRepeaterControlInner(repeaterItem, "ecbb_background"));
-		var typoColor = builder.readTypographyControlColor(
+		builder.applyUnifiedMetaListRowPreviewChrome(
 			repeaterItem,
+			li,
 			wrapper,
-			preview,
-			icon ? [icon] : null
+			icon,
+			preview
 		);
-		var typoOverrides = builder.readTypographyControlSnapshot(
-			repeaterItem,
-			wrapper,
-			preview,
-			icon ? [icon] : null
-		);
-		if (!typoColor && typoOverrides.color) {
-			typoColor = typoOverrides.color;
-		}
-		var pad = builder.readSpacingControlValue(builder.getRepeaterControlInner(repeaterItem, "ecbb_padding"));
-
-		li.style.setProperty("gap", "8px", "important");
-		li.style.setProperty("align-items", "center", "important");
-
-		if (bg) {
-			li.style.setProperty("background-color", bg, "important");
-			li.style.setProperty("width", "fit-content", "important");
-			li.style.setProperty("max-width", "100%", "important");
-			wrapper.style.setProperty("background-color", "transparent", "important");
-			if (icon) {
-				icon.style.setProperty("background-color", "transparent", "important");
-			}
-		} else {
-			li.style.removeProperty("background-color");
-			li.style.removeProperty("width");
-			li.style.removeProperty("max-width");
-		}
-
-		if (typoColor) {
-			li.style.setProperty("color", typoColor, "important");
-			wrapper.style.setProperty("color", typoColor, "important");
-			if (icon) {
-				icon.style.setProperty("color", typoColor, "important");
-			}
-		} else {
-			li.style.removeProperty("color");
-			if (icon) {
-				icon.style.removeProperty("color");
-			}
-		}
-
-		if (icon) {
-			if (typoOverrides.fontSize) {
-				icon.style.setProperty("font-size", typoOverrides.fontSize, "important");
-			} else {
-				icon.style.removeProperty("font-size");
-			}
-			if (typoOverrides.lineHeight) {
-				icon.style.setProperty("line-height", typoOverrides.lineHeight, "important");
-			} else {
-				icon.style.removeProperty("line-height");
-			}
-		}
-
-		if (pad) {
-			li.style.setProperty("padding", pad, "important");
-			wrapper.style.setProperty("padding", "0", "important");
-		} else {
-			li.style.removeProperty("padding");
-		}
+		builder.mirrorMetaRowIconColorFromText(wrapper, preview);
 	}
 
 	builder.repeaterHasCustomHoverColors = function(repeaterItem) {
@@ -1402,21 +1486,16 @@
 	}
 
 	builder.syncLayoutButtonTypographyPreviewRule = function(repeaterItem, typoOverrides) {
-		var preview = builder.getBricksPreviewDocument();
-		if (!preview || !repeaterItem) {
+		var ctx = builder.resolvePreviewRowContext(repeaterItem);
+		if (!ctx) {
+			return;
+		}
+		if (builder.isStyle2CardActionButtonContext(ctx.preview, ctx.wrapper)) {
 			return;
 		}
 
-		var rowId = builder.readRepeaterRowId(repeaterItem);
-		if (!rowId) {
-			return;
-		}
-
-		var wrapper = preview.querySelector('[data-field-id="' + rowId + '"]');
-		if (wrapper && builder.isStyle2CardActionButtonContext(preview, wrapper)) {
-			return;
-		}
-
+		var rowId = ctx.rowId;
+		var preview = ctx.preview;
 		var rule = builder.buildLayoutButtonTypographyPreviewRule(rowId, typoOverrides || {});
 		if (builder.hover.layoutBtnTypoRulesByItem) {
 			if (rule) {

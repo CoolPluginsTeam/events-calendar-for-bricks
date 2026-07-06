@@ -624,6 +624,29 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 		}
 
 		/**
+		 * Parent meta list for a scoped Style 1 / grid meta part (spacing targets the list block).
+		 *
+		 * @param string $scope_sel Scoped part selector.
+		 * @return string
+		 */
+		public static function ecbb_meta_list_selector( $scope_sel ) {
+			$scope_sel = trim( (string) $scope_sel );
+			if ( $scope_sel === '' ) {
+				return '';
+			}
+			if ( preg_match( '#^(\.[a-zA-Z0-9\-_]+)\s+(.+)$#', $scope_sel, $matches ) ) {
+				$root   = $matches[1];
+				$part   = $matches[2];
+				$needle = '> li > ' . $part;
+
+				return $root . ' ul.event-meta:has(' . $needle . '),'
+					. $root . ' ul.ecbb-event-card__meta:has(' . $needle . ')';
+			}
+
+			return '';
+		}
+
+		/**
 		* Event parts whose hover styles target inner links/terms (not the wrapper).
 		*
 		* @return string[]
@@ -811,6 +834,10 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 		*/
 
 		public static function ecbb_clean_part( array $item ) {
+			if ( ! empty( $item['_ecbb_clean'] ) ) {
+				return $item;
+			}
+
 			$part = isset( $item['part'] ) ? (string) $item['part'] : 'title';
 
 			$legacy_parts = [
@@ -822,6 +849,7 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 			];
 
 			if ( in_array( $part, $legacy_parts, true ) ) {
+				$item['_ecbb_clean'] = true;
 				return $item;
 			}
 
@@ -892,6 +920,7 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 			}
 		}
 
+		$item['_ecbb_clean'] = true;
 		return $item;
 		}
 
@@ -1452,6 +1481,24 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 		}
 
 		/**
+		 * Meta parts whose outer list block should receive part margin (Style 1 / grid / Style 2).
+		 *
+		 * @param array<string,mixed> $ctx
+		 * @return bool
+		 */
+		private static function ecbb_ctx_meta_list_block_margin( array $ctx ) {
+			if ( self::ecbb_ctx_meta_list_unified_row( $ctx ) ) {
+				return true;
+			}
+			$list = (string) ( $ctx['list_item_style'] ?? '' );
+			if ( $list !== 'style-2' || ! class_exists( 'ECBB_Markup', false ) ) {
+				return false;
+			}
+
+			return \ECBB_Markup::ecbb_part_shows_style2_meta_icon( (string) ( $ctx['part_type'] ?? '' ) );
+		}
+
+		/**
 		 * @param array<string,mixed> $ctx
 		 * @return string[]
 		 */
@@ -1463,27 +1510,32 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 			$p         = $ctx['part'];
 			$scope_sel = $ctx['scope_sel'];
 			$color_fn  = $ctx['color_fn'];
-			$row_sel   = self::ecbb_meta_row_selector( $scope_sel );
-			$icon_sel  = self::ecbb_meta_icon_selector( $scope_sel );
+			$row_sel  = self::ecbb_meta_row_selector( $scope_sel );
+			$icon_sel = self::ecbb_meta_icon_selector( $scope_sel );
 			if ( $row_sel === '' ) {
 				return [];
 			}
 
+			$inherit_reset = $scope_sel . '{margin:0!important;padding:0!important;background-color:transparent!important;}';
+			$icon_reset    = $icon_sel !== ''
+				? $icon_sel . '{width:auto!important;height:auto!important;flex:0 0 auto!important;padding:0!important;background:transparent!important;border-radius:0!important;color:inherit!important;font-size:inherit!important;line-height:inherit!important;}'
+				: '';
+
 			$rules = [];
 			foreach ( self::ecbb_breakpoints() as $device => $mq ) {
-				$row_decls = [ 'gap:8px' ];
+				$row_decls = [
+					'display:inline-flex',
+					'align-items:center',
+					'gap:8px',
+					'width:fit-content',
+					'max-width:100%',
+					'border-radius:10px',
+				];
 
 				$bg_raw = self::ecbb_device_value( $p['ecbb_background'] ?? '', $device );
 				$bg     = $bg_raw !== '' && $bg_raw !== null ? $color_fn( $bg_raw ) : '';
 				if ( $bg !== '' ) {
 					$row_decls[] = 'background-color:' . $bg . ' !important';
-					$row_decls[] = 'align-items:center';
-					$row_decls[] = 'width:fit-content';
-					$row_decls[] = 'max-width:100%';
-					$rules[]     = self::ecbb_mq_css_rule( $mq, $scope_sel . '{background-color:transparent!important;}' );
-					if ( $icon_sel !== '' ) {
-						$rules[] = self::ecbb_mq_css_rule( $mq, $icon_sel . '{background-color:transparent!important;}' );
-					}
 				}
 
 				if ( ! empty( $p['ecbb_typography'] ) && is_array( $p['ecbb_typography'] ) ) {
@@ -1493,9 +1545,13 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 						: $color_fn( $typo_color_raw );
 					if ( $typo_color !== '' ) {
 						$row_decls[] = 'color:' . $typo_color . ' !important';
-						if ( $icon_sel !== '' ) {
-							$rules[] = self::ecbb_mq_css_rule( $mq, $icon_sel . '{color:' . $typo_color . ' !important;}' );
+					}
+					$typo_decls = self::ecbb_type_decls( $p['ecbb_typography'], $device );
+					foreach ( $typo_decls as $decl ) {
+						if ( strpos( (string) $decl, 'color:' ) === 0 ) {
+							continue;
 						}
+						$row_decls[] = $decl;
 					}
 				}
 
@@ -1503,9 +1559,12 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 				$padding = ! empty( $pad_raw ) ? self::ecbb_spacing_css( $pad_raw ) : '';
 				if ( $padding !== '' ) {
 					$row_decls[] = 'padding:' . $padding . ' !important';
-					$rules[]     = self::ecbb_mq_css_rule( $mq, $scope_sel . '{padding:0!important;}' );
 				}
 
+				$rules[] = self::ecbb_mq_css_rule( $mq, $inherit_reset );
+				if ( $icon_reset !== '' ) {
+					$rules[] = self::ecbb_mq_css_rule( $mq, $icon_reset );
+				}
 				$rules[] = self::ecbb_mq_css_rule( $mq, $row_sel . '{' . implode( ';', $row_decls ) . '}' );
 			}
 
@@ -1584,17 +1643,10 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 				if ( empty( $p['ecbb_typography'] ) || ! is_array( $p['ecbb_typography'] ) ) {
 					continue;
 				}
-				$typo_decls = self::ecbb_type_decls( $p['ecbb_typography'], $device );
 				if ( $meta_unified ) {
-					$typo_decls = array_values(
-						array_filter(
-							$typo_decls,
-							static function ( $decl ) {
-								return strpos( (string) $decl, 'color:' ) !== 0;
-							}
-						)
-					);
+					continue;
 				}
+				$typo_decls = self::ecbb_type_decls( $p['ecbb_typography'], $device );
 				if ( empty( $typo_decls ) ) {
 					continue;
 				}
@@ -1625,15 +1677,25 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 			$layout_btn_part = $ctx['layout_btn_part'];
 			$btn_style_on    = $ctx['btn_style_on'];
 			$meta_unified    = self::ecbb_ctx_meta_list_unified_row( $ctx );
-			$row_sel         = $meta_unified ? self::ecbb_meta_row_selector( $scope_sel ) : '';
+			$meta_list_block = self::ecbb_ctx_meta_list_block_margin( $ctx );
+			$row_sel         = $meta_list_block ? self::ecbb_meta_row_selector( $scope_sel ) : '';
+			$list_sel        = $meta_list_block ? self::ecbb_meta_list_selector( $scope_sel ) : '';
 			$rules           = [];
 
 			foreach ( self::ecbb_breakpoints() as $device => $mq ) {
 				$margin_raw = self::ecbb_responsive_spacing( $p, 'ecbb_margin', $device );
 				$margin     = ! empty( $margin_raw ) ? self::ecbb_spacing_css( $margin_raw ) : '';
 				if ( $margin !== '' ) {
-					$margin_sel = ( $meta_unified && $row_sel !== '' ) ? $row_sel : $scope_sel;
-					$rules[]    = self::ecbb_mq_css_rule( $mq, $margin_sel . '{margin:' . $margin . ' !important;}' );
+					if ( $meta_list_block && $list_sel !== '' ) {
+						$rules[] = self::ecbb_mq_css_rule( $mq, $list_sel . '{margin:' . $margin . ' !important;}' );
+						if ( $row_sel !== '' ) {
+							$rules[] = self::ecbb_mq_css_rule( $mq, $row_sel . '{margin:0!important;}' );
+						}
+						$rules[] = self::ecbb_mq_css_rule( $mq, $scope_sel . '{margin:0!important;}' );
+					} else {
+						$margin_sel = ( $meta_list_block && $row_sel !== '' ) ? $row_sel : $scope_sel;
+						$rules[]    = self::ecbb_mq_css_rule( $mq, $margin_sel . '{margin:' . $margin . ' !important;}' );
+					}
 				}
 				if ( $chip_surface || $meta_unified ) {
 					continue;

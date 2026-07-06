@@ -13,6 +13,9 @@ if ( ! class_exists( 'ECBB_Date_Formatter', false ) ) {
 
 	final class ECBB_Date_Formatter {
 
+		/** @var array<int,array{day:string,time:string}> */
+		private static $day_time_parts_cache = [];
+
 		/** PHP date() format string for a part row (preset, custom, or site default). */
 		public static function ecbb_part_date_php_fmt( $part, array $item ): string {
 			$preset = isset( $item['date_format_preset'] ) ? (string) $item['date_format_preset'] : '';
@@ -79,11 +82,24 @@ if ( ! class_exists( 'ECBB_Date_Formatter', false ) ) {
 
 		/** Day name + time range for the “day & time” part. */
 		public static function ecbb_build_day_time_parts( $post_id, array $item ): array {
+			unset( $item );
 			$post_id = (int) $post_id;
-			$dates   = ECBB_Event_Data::ecbb_event_meta_dates( $post_id );
-			$start   = $dates['start'] ? strtotime( $dates['start'] ) : false;
-			if ( ! $start ) {
+			if ( $post_id < 1 ) {
 				return [ 'day' => '', 'time' => '' ];
+			}
+			if ( isset( self::$day_time_parts_cache[ $post_id ] ) ) {
+				return self::$day_time_parts_cache[ $post_id ];
+			}
+
+			$store = static function ( array $result ) use ( $post_id ) {
+				self::$day_time_parts_cache[ $post_id ] = $result;
+				return $result;
+			};
+
+			$dates = ECBB_Event_Data::ecbb_event_meta_dates( $post_id );
+			$start = $dates['start'] ? strtotime( $dates['start'] ) : false;
+			if ( ! $start ) {
+				return $store( [ 'day' => '', 'time' => '' ] );
 			}
 			$end = $dates['end'] ? strtotime( $dates['end'] ) : $start;
 			if ( ! $end ) {
@@ -91,13 +107,13 @@ if ( ! class_exists( 'ECBB_Date_Formatter', false ) ) {
 			}
 			if ( function_exists( 'tribe_event_is_all_day' ) && tribe_event_is_all_day( $post_id ) ) {
 				$day = trim( wp_strip_all_tags( date_i18n( 'l', $start ) ) );
-				return [ 'day' => $day, 'time' => '' ];
+				return $store( [ 'day' => $day, 'time' => '' ] );
 			}
 
-			$fmt   = self::ecbb_time_fmt_lower( (string) get_option( 'time_format' ) );
-			$day   = trim( wp_strip_all_tags( date_i18n( 'l', $start ) ) );
+			$fmt = self::ecbb_time_fmt_lower( (string) get_option( 'time_format' ) );
+			$day = trim( wp_strip_all_tags( date_i18n( 'l', $start ) ) );
 			if ( $day === '' ) {
-				return [ 'day' => '', 'time' => '' ];
+				return $store( [ 'day' => '', 'time' => '' ] );
 			}
 
 			$t0 = function_exists( 'tribe_get_start_time' ) ? (string) tribe_get_start_time( $post_id, $fmt ) : '';
@@ -117,12 +133,12 @@ if ( ! class_exists( 'ECBB_Date_Formatter', false ) ) {
 			$t0 = self::ecbb_time_lower_am( trim( wp_strip_all_tags( $t0 ) ) );
 			$t1 = self::ecbb_time_lower_am( trim( wp_strip_all_tags( $t1 ) ) );
 			if ( $t0 === '' ) {
-				return [ 'day' => $day, 'time' => '' ];
+				return $store( [ 'day' => $day, 'time' => '' ] );
 			}
 			if ( $t1 === '' || $t0 === $t1 ) {
-				return [ 'day' => $day, 'time' => $t0 ];
+				return $store( [ 'day' => $day, 'time' => $t0 ] );
 			}
-			return [ 'day' => $day, 'time' => $t0 . ' - ' . $t1 ];
+			return $store( [ 'day' => $day, 'time' => $t0 . ' - ' . $t1 ] );
 		}
 	}
 }

@@ -29,7 +29,6 @@ if ( ! class_exists( 'ECBB_Grid', false ) ) {
 				],
 				[
 					'part'        => 'description',
-					'desc_source' => 'content',
 					'desc_length' => 'custom',
 					'desc_words'  => 20,
 				],

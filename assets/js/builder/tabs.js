@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Panel CONTENT/STYLE tabs, hover panel state, DOM helpers, row scanning.
  * Adds functions to window.ECBB.builder (see core.js).
  */
@@ -309,7 +309,16 @@
 		builder.runAllPreviewSyncHandlers(true);
 	}
 
+	builder.isRepeaterSortActive = function() {
+		return !!document.querySelector(
+			".repeater-item.ui-sortable-helper, .repeater-item.sortable-ghost, .repeater.ui-sortable-dragging, .sortable-fallback"
+		);
+	}
+
 	builder.scheduleRepeaterRowScan = function() {
+		if (builder.isRepeaterSortActive()) {
+			return;
+		}
 		if (builder.tabs.scanTimer) {
 			clearTimeout(builder.tabs.scanTimer);
 		}
@@ -361,6 +370,36 @@
 			}
 		}
 		return null;
+	}
+
+	/** Shared preview row lookup: preview doc, row id, and [data-field-id] wrapper. */
+	builder.resolvePreviewRowContext = function(repeaterItem, opts) {
+		opts = opts || {};
+		if (!repeaterItem) {
+			return null;
+		}
+		if (opts.matches && !opts.matches(repeaterItem)) {
+			return null;
+		}
+		var preview = builder.getBricksPreviewDocument();
+		if (!preview) {
+			return null;
+		}
+		if (opts.needView && !preview.defaultView) {
+			return null;
+		}
+		var rowId = builder.readRepeaterRowId(repeaterItem);
+		if (!rowId) {
+			return null;
+		}
+		var wrapper = preview.querySelector('[data-field-id="' + rowId + '"]');
+		if (!wrapper) {
+			return null;
+		}
+		if (opts.wrapperTest && !opts.wrapperTest(wrapper, preview, repeaterItem)) {
+			return null;
+		}
+		return { preview: preview, rowId: rowId, wrapper: wrapper };
 	}
 
 	builder.getBricksBuilderPanelRoot = function() {

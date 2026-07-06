@@ -235,7 +235,6 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 			}
 
 			$meta_rows = [];
-			$read_more = null;
 
 			$flush_meta = static function () use ( $post, $layout, $skin, &$meta_rows, $emit_meta ) {
 				if ( $meta_rows === [] ) {
@@ -257,7 +256,9 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 
 				if ( $ui === 'read_more' ) {
 					$flush_meta();
-					$read_more = [ 'idx' => (int) $i, 'item' => $item ];
+					$rm_skin = $layout === 'grid' ? 'grid' : (string) $skin;
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+					echo self::ecbb_render_layout_read_more_shell( $post, $item, (int) $i, $rm_skin, $emit_part );
 					continue;
 				}
 
@@ -295,12 +296,6 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 			}
 
 			$flush_meta();
-
-			if ( $read_more !== null ) {
-				$rm_skin = $layout === 'grid' ? 'grid' : (string) $skin;
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-				echo self::ecbb_render_layout_read_more_shell( $post, $read_more['item'], $read_more['idx'], $rm_skin, $emit_part );
-			}
 		}
 
 		public static function ecbb_render_meta_li( $post, array $item, $idx, $skin, $layout, $price = false ) {
@@ -321,7 +316,11 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 				return '<li class="ecbb-event-card__meta-item">' . $icon . $html . '</li>';
 			}
 
-			$li_class = $price ? ' class="price"' : '';
+			$li_classes = [ 'ecbb-meta-list-row' ];
+			if ( $price ) {
+				$li_classes[] = 'price';
+			}
+			$li_class = ' class="' . esc_attr( implode( ' ', $li_classes ) ) . '"';
 			return '<li' . $li_class . '>' . $icon . $html . '</li>';
 		}
 
@@ -329,13 +328,13 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 			if ( $layout === 'style1' && ( $meta_primary !== [] || $meta_price !== [] ) ) {
 				if ( $meta_primary !== [] ) {
 					echo '<ul class="event-meta event-meta--list">';
-			foreach ( $meta_primary as $row ) {
-					$emit_li( $post, $row['item'], $row['idx'], false );
-				}
+					foreach ( $meta_primary as $row ) {
+						$emit_li( $post, $row['item'], $row['idx'], false );
+					}
 					echo '</ul>';
 				}
 				if ( $meta_price !== [] ) {
-					echo '<ul class="event-meta event-meta--list">';
+					echo '<ul class="event-meta event-meta--list event-meta--list-price">';
 					foreach ( $meta_price as $row ) {
 						$emit_li( $post, $row['item'], $row['idx'], true );
 					}
@@ -349,10 +348,16 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 				return;
 			}
 
-			$ul_class = ( $layout === 'grid' ) ? 'event-meta event-meta--grid' : 'ecbb-event-card__meta';
+			if ( $layout === 'grid' ) {
+				$ul_class = 'event-meta event-meta--grid';
+			} else {
+				$ul_class = 'ecbb-event-card__meta';
+			}
+
 			echo '<ul class="' . esc_attr( $ul_class ) . '">';
 			foreach ( $all as $row ) {
-				$emit_li( $post, $row['item'], $row['idx'], false );
+				$is_price = ! empty( $row['price'] );
+				$emit_li( $post, $row['item'], $row['idx'], $is_price );
 			}
 			echo '</ul>';
 		}
@@ -381,12 +386,9 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 				return;
 			}
 
-			$ul_class = ( $layout === 'grid' ) ? 'event-meta event-meta--grid' : 'ecbb-event-card__meta';
-			echo '<ul class="' . esc_attr( $ul_class ) . '">';
-			foreach ( $rows as $row ) {
-				$emit_meta( $post, $row['item'], $row['idx'], false );
-			}
-			echo '</ul>';
+			self::ecbb_render_meta_lists( $post, $rows, [], $skin, $layout, static function ( $ev, $item, $idx, $is_price ) use ( $emit_meta ) {
+				$emit_meta( $ev, $item, $idx, (bool) $is_price );
+			} );
 		}
 
 		public static function ecbb_shell_featured_image( $post, $layout, $link = true, $include_wrap = true ) {
@@ -541,10 +543,10 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 		}
 
 		/**
-		 * Plain-text event description for length checks (excerpt / content).
+		 * Plain-text event description from full post content.
 		 *
 		 * @param \WP_Post            $post Event post.
-		 * @param array<string,mixed> $item Repeater row.
+		 * @param array<string,mixed> $item Repeater row (unused; kept for callers).
 		 * @return string
 		 */
 		public static function ecbb_description_plain_text( $post, array $item ) {
@@ -552,25 +554,13 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 				return '';
 			}
 
-			$source = isset( $item['desc_source'] ) ? (string) $item['desc_source'] : 'auto';
-			$source = in_array( $source, [ 'auto', 'excerpt', 'content' ], true ) ? $source : 'auto';
-
-			$html = '';
-			if ( $source === 'excerpt' ) {
-				$html = (string) $post->post_excerpt;
-			} elseif ( $source === 'content' || ( $source === 'auto' && $post->post_excerpt === '' ) ) {
-				$raw  = (string) $post->post_content;
-				$html = has_blocks( $raw ) ? do_blocks( $raw ) : wpautop( $raw );
-				$html = do_shortcode( $html );
-			} elseif ( $post->post_excerpt !== '' ) {
-				$html = wpautop( (string) $post->post_excerpt );
+			$raw = (string) $post->post_content;
+			if ( $raw === '' ) {
+				return '';
 			}
 
-			if ( $html === '' && $post->post_content !== '' ) {
-				$raw  = (string) $post->post_content;
-				$html = has_blocks( $raw ) ? do_blocks( $raw ) : wpautop( $raw );
-				$html = do_shortcode( $html );
-			}
+			$html = has_blocks( $raw ) ? do_blocks( $raw ) : wpautop( $raw );
+			$html = do_shortcode( $html );
 
 			return trim( preg_replace( '/\s+/u', ' ', wp_strip_all_tags( $html ) ) );
 		}

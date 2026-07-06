@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Styled-button paint mirroring in the builder preview.
  */
 (function (builder) {
@@ -123,24 +123,81 @@
 		});
 	}
 
+	builder.readStyledButtonPaintInputs = function(repeaterItem, wrapper, preview, surface) {
+		var surfaces = surface ? [surface] : null;
+		var typoColor = builder.readTypographyControlColor(
+			repeaterItem,
+			wrapper,
+			preview,
+			surfaces
+		);
+		var typoOverrides = builder.readTypographyControlSnapshot(
+			repeaterItem,
+			wrapper,
+			preview,
+			surfaces
+		);
+		if (!typoColor && typoOverrides.color) {
+			typoColor = typoOverrides.color;
+		}
+		var computed =
+			preview.defaultView && wrapper
+				? preview.defaultView.getComputedStyle(wrapper)
+				: null;
+		return { typoColor: typoColor, typoOverrides: typoOverrides, computed: computed };
+	}
+
+	builder.paintStyledButtonSurface = function(repeaterItem, wrapper, preview, surface, inputs) {
+		builder.setWrapperTypographyFlags(
+			wrapper,
+			repeaterItem,
+			inputs.typoColor,
+			inputs.typoOverrides
+		);
+		builder.collapseRepeaterWrapperTypographyShell(wrapper);
+
+		[
+			"backgroundColor",
+			"background",
+			"color",
+			"padding",
+			"border",
+			"borderRadius",
+		].forEach(function (prop) {
+			if (wrapper.style[prop]) {
+				wrapper.style[prop] = "";
+			}
+		});
+
+		builder.applyStyledButtonBorderToSurface(repeaterItem, surface);
+		builder.applyStyledButtonCssVariables(repeaterItem, surface, preview, wrapper);
+		if (inputs.computed) {
+			builder.applyTypographyToButtonPreviewSurface(
+				surface,
+				inputs.computed,
+				inputs.typoColor,
+				inputs.typoOverrides
+			);
+		}
+
+		surface.style.setProperty("display", "inline-flex");
+		surface.style.setProperty("align-items", "center");
+		surface.style.setProperty("justify-content", "center");
+		surface.style.setProperty("width", "auto");
+		surface.style.setProperty("max-width", "100%");
+		surface.style.setProperty("box-sizing", "border-box");
+	}
+
 	/**
 	 * Bricks repeater live CSS paints the row wrapper; keep button paint on the inner surface.
 	 */
 	builder.syncStyledButtonPreviewPaint = function(repeaterItem) {
-		var preview = builder.getBricksPreviewDocument();
-		if (!preview || !repeaterItem) {
+		var ctx = builder.resolvePreviewRowContext(repeaterItem);
+		if (!ctx) {
 			return;
 		}
-
-		var rowId = builder.readRepeaterRowId(repeaterItem);
-		if (!rowId) {
-			return;
-		}
-
-		var wrapper = preview.querySelector('[data-field-id="' + rowId + '"]');
-		if (!wrapper) {
-			return;
-		}
+		var preview = ctx.preview;
+		var wrapper = ctx.wrapper;
 
 		var btnStyleOn = builder.isStyledButtonModeEnabled(repeaterItem);
 		if (!btnStyleOn) {
@@ -180,61 +237,9 @@
 			return;
 		}
 
-		var typoColor = builder.readTypographyControlColor(
-			repeaterItem,
-			wrapper,
-			preview,
-			surface ? [surface] : null
-		);
-		var typoOverrides = builder.readTypographyControlSnapshot(
-			repeaterItem,
-			wrapper,
-			preview,
-			surface ? [surface] : null
-		);
-		if (!typoColor && typoOverrides.color) {
-			typoColor = typoOverrides.color;
-		}
-		var computed =
-			preview.defaultView && wrapper
-				? preview.defaultView.getComputedStyle(wrapper)
-				: null;
-
-		builder.setWrapperTypographyFlags(wrapper, repeaterItem, typoColor, typoOverrides);
-		builder.collapseRepeaterWrapperTypographyShell(wrapper);
-
-		[
-			"backgroundColor",
-			"background",
-			"color",
-			"padding",
-			"border",
-			"borderRadius",
-		].forEach(function (prop) {
-			if (wrapper.style[prop]) {
-				wrapper.style[prop] = "";
-			}
-		});
-
-		builder.applyStyledButtonBorderToSurface(repeaterItem, surface);
-		builder.applyStyledButtonCssVariables(repeaterItem, surface, preview, wrapper);
-		if (computed) {
-			builder.applyTypographyToButtonPreviewSurface(
-				surface,
-				computed,
-				typoColor,
-				typoOverrides
-			);
-		}
-
+		var inputs = builder.readStyledButtonPaintInputs(repeaterItem, wrapper, preview, surface);
+		builder.paintStyledButtonSurface(repeaterItem, wrapper, preview, surface, inputs);
 		builder.scheduleHoverPreviewStyleSync(repeaterItem);
-
-		surface.style.setProperty("display", "inline-flex");
-		surface.style.setProperty("align-items", "center");
-		surface.style.setProperty("justify-content", "center");
-		surface.style.setProperty("width", "auto");
-		surface.style.setProperty("max-width", "100%");
-		surface.style.setProperty("box-sizing", "border-box");
 	}
 
 	builder.scheduleStyledButtonPreviewSync = function(repeaterItem) {

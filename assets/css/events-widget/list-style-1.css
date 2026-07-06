@@ -83,6 +83,14 @@
 	display: flex;
 	flex-direction: column;
 	align-items: flex-start;
+	gap: 12px;
+}
+
+/* Meta lists are flex children; keep block spacing when a row is moved (e.g. after title). */
+.ecbb-ev .event-list-card__body > .event-meta {
+	width: 100%;
+	max-width: 100%;
+	margin: 0;
 }
 
 .ecbb-ev .event-list-card__body > .ecbb-event-part--title {
@@ -105,7 +113,7 @@
 }
 
 .ecbb-ev .event-list-card__description {
-	margin: 10px 0 17px;
+	margin: 0;
 	color: var(--color-text);
 	font-size: 15px;
 	line-height: 1.65;
@@ -113,19 +121,67 @@
 
 .ecbb-ev .event-meta--list {
 	gap: 12px 18px;
-	margin-bottom: 22px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
 	font-size: 14px;
 	line-height: 1.4;
 }
 
+/* Style 1 meta row: icon + text are one styled unit (the <li>). */
+.ecbb-ev .event-meta--list > li.ecbb-meta-list-row {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	width: fit-content;
+	max-width: 100%;
+	border-radius: 10px;
+}
+
+.ecbb-ev .event-meta--list > li.ecbb-meta-list-row > .ecbb-event-card__meta-icon {
+	width: auto;
+	height: auto;
+	min-width: 0;
+	flex: 0 0 auto;
+	padding: 0;
+	background: transparent;
+	border-radius: 0;
+	color: inherit;
+	font-size: inherit;
+	line-height: inherit;
+}
+
+.ecbb-ev .event-meta--list > li.ecbb-meta-list-row > .ecbb-event-card__meta-icon svg {
+	width: 1.2em;
+	height: 1.2em;
+}
+
+.ecbb-ev .event-meta--list > li.ecbb-meta-list-row > [data-field-id] {
+	margin: 0;
+	padding: 0;
+	background: transparent;
+	color: inherit;
+	font-size: inherit;
+	line-height: inherit;
+}
+
+/* Style 1: venue / time share a row; cost is always on its own line below. */
+.ecbb-ev .event-meta--list-price {
+	width: 100%;
+}
+
 .ecbb-ev .event-meta--list .price {
-	font-size: 14px;
 	font-weight: 500;
 	color: var(--badge-blue);
 }
 
-.ecbb-ev .event-meta--list .price .ecbb-event-card__meta-icon {
+.ecbb-ev .event-meta--list .price.ecbb-meta-list-row {
 	color: var(--badge-blue);
+}
+
+.ecbb-ev .event-meta--list .price.ecbb-meta-list-row > .ecbb-event-card__meta-icon,
+.ecbb-ev .event-meta--list .price.ecbb-meta-list-row > [data-field-id] {
+	color: inherit;
 }
 
 @media (max-width: 1024px) {
@@ -201,7 +257,7 @@
 	}
 
 	.ecbb-ev .event-list-card__description {
-		margin: 8px 0 14px;
+		margin: 0;
 		font-size: 14px;
 		line-height: 1.6;
 	}
@@ -209,7 +265,7 @@
 	.ecbb-ev .event-meta--list {
 		flex-direction: column;
 		gap: 8px;
-		margin-bottom: 18px;
+		margin: 0;
 	}
 
 	.ecbb-ev .event-list-card .event-button--outline {

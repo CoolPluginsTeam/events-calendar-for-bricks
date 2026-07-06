@@ -130,8 +130,33 @@ if ( ! class_exists( 'ECBB_Markup', false ) ) {
 			throw new BadMethodCallException( 'ECBB_Markup::' . $name . ' is not defined.' );
 		}
 
-		/** True for 1, yes, on, true (string or scalar). */
-		public static function ecbb_is_truthy( $value, $default = false ) {
+		/** Shared bool coercion for generic values and Bricks checkbox controls. */
+		private static function ecbb_to_bool( $value, $default = false, $mode = 'generic' ) {
+			if ( $mode === 'checkbox' ) {
+				if ( $value === false || $value === 0 || $value === '0' || $value === 'no' || $value === 'off' ) {
+					return false;
+				}
+				if ( $value === true || $value === 1 || $value === '1' || $value === 'yes' || $value === 'on' ) {
+					return true;
+				}
+				if ( is_array( $value ) && $value === [] ) {
+					return false;
+				}
+				if ( $value === null || $value === '' ) {
+					return false;
+				}
+				if ( is_string( $value ) ) {
+					$s = strtolower( sanitize_text_field( $value ) );
+					if ( in_array( $s, [ 'no', 'off', 'false', '0', 'hide', 'hidden' ], true ) ) {
+						return false;
+					}
+					if ( in_array( $s, [ 'yes', 'true', '1', 'show', 'on' ], true ) ) {
+						return true;
+					}
+				}
+				return (bool) $value;
+			}
+
 			if ( $value === null ) {
 				return $default;
 			}
@@ -154,6 +179,11 @@ if ( ! class_exists( 'ECBB_Markup', false ) ) {
 				}
 			}
 			return (bool) $value;
+		}
+
+		/** True for 1, yes, on, true (string or scalar). */
+		public static function ecbb_is_truthy( $value, $default = false ) {
+			return self::ecbb_to_bool( $value, $default, 'generic' );
 		}
 
 		/** Bricks color control value → CSS color string, or empty. */
@@ -257,28 +287,7 @@ if ( ! class_exists( 'ECBB_Markup', false ) ) {
 
 		/** Bricks checkbox / show-hide saved value → bool. */
 		public static function ecbb_parse_bricks_checkbox( $value ) {
-			if ( $value === false || $value === 0 || $value === '0' || $value === 'no' || $value === 'off' ) {
-				return false;
-			}
-			if ( $value === true || $value === 1 || $value === '1' || $value === 'yes' || $value === 'on' ) {
-				return true;
-			}
-			if ( is_array( $value ) && $value === [] ) {
-				return false;
-			}
-			if ( $value === null || $value === '' ) {
-				return false;
-			}
-			if ( is_string( $value ) ) {
-				$s = strtolower( sanitize_text_field( $value ) );
-				if ( in_array( $s, [ 'no', 'off', 'false', '0', 'hide', 'hidden' ], true ) ) {
-					return false;
-				}
-				if ( in_array( $s, [ 'yes', 'true', '1', 'show', 'on' ], true ) ) {
-					return true;
-				}
-			}
-			return (bool) $value;
+			return self::ecbb_to_bool( $value, false, 'checkbox' );
 		}
 	}
 }

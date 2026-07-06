@@ -22,6 +22,30 @@ if ( ! class_exists( 'ECBB_Event_Data', false ) ) {
 		/** @var array<int,array{start:string,end:string}> */
 		private static $date_cache = [];
 
+		private static function venue_tribe_meta_map() {
+			return [
+				'venue_street'  => [ 'tribe_get_address', '_VenueAddress' ],
+				'venue_city'    => [ 'tribe_get_city', '_VenueCity' ],
+				'venue_zip'     => [ 'tribe_get_zip', '_VenueZip' ],
+				'venue_country' => [ 'tribe_get_country', '_VenueCountry' ],
+				'venue_phone'   => [ 'tribe_get_phone', '_VenuePhone' ],
+			];
+		}
+
+		private static function ecbb_resolve_venue_tribe_meta( $event_id, $tribe_fn, $meta_key ) {
+			if ( is_string( $tribe_fn ) && $tribe_fn !== '' && function_exists( $tribe_fn ) ) {
+				$t = trim( (string) call_user_func( $tribe_fn, $event_id ) );
+				if ( $t !== '' ) {
+					return $t;
+				}
+			}
+			$vid = self::ecbb_event_meta_venue_id( $event_id );
+			if ( $vid < 1 ) {
+				return '';
+			}
+			return trim( (string) get_post_meta( $vid, $meta_key, true ) );
+		}
+
 		/** Detail part slug → callable resolver. */
 		private static function detail_resolvers() {
 			static $map = null;
@@ -31,12 +55,7 @@ if ( ! class_exists( 'ECBB_Event_Data', false ) ) {
 
 			$map = [
 				'venue_full_address'  => [ self::class, 'ecbb_resolve_detail_venue_full_address' ],
-				'venue_street'        => [ self::class, 'ecbb_resolve_detail_venue_street' ],
-				'venue_city'          => [ self::class, 'ecbb_resolve_detail_venue_city' ],
 				'venue_state'         => [ self::class, 'ecbb_resolve_detail_venue_state' ],
-				'venue_zip'           => [ self::class, 'ecbb_resolve_detail_venue_zip' ],
-				'venue_country'       => [ self::class, 'ecbb_resolve_detail_venue_country' ],
-				'venue_phone'         => [ self::class, 'ecbb_resolve_detail_venue_phone' ],
 				'venue_website'       => [ self::class, 'ecbb_resolve_detail_venue_website' ],
 				'event_map_link'      => [ self::class, 'ecbb_resolve_detail_event_map_link' ],
 				'event_website'       => [ self::class, 'ecbb_resolve_detail_event_website' ],
@@ -46,39 +65,17 @@ if ( ! class_exists( 'ECBB_Event_Data', false ) ) {
 				'organizer_website'   => [ self::class, 'ecbb_resolve_detail_organizer_website' ],
 			];
 
+			foreach ( self::venue_tribe_meta_map() as $slug => $cfg ) {
+				$map[ $slug ] = static function ( $event_id ) use ( $cfg ) {
+					return self::ecbb_resolve_venue_tribe_meta( $event_id, $cfg[0], $cfg[1] );
+				};
+			}
+
 			return $map;
 		}
 
 		private static function ecbb_resolve_detail_venue_full_address( $event_id ) {
 			return self::ecbb_venue_full_address_text( $event_id );
-		}
-
-		private static function ecbb_resolve_detail_venue_street( $event_id ) {
-			if ( function_exists( 'tribe_get_address' ) ) {
-				$t = trim( (string) \tribe_get_address( $event_id ) );
-				if ( $t !== '' ) {
-					return $t;
-				}
-			}
-			$vid = self::ecbb_event_meta_venue_id( $event_id );
-			if ( $vid < 1 ) {
-				return '';
-			}
-			return trim( (string) get_post_meta( $vid, '_VenueAddress', true ) );
-		}
-
-		private static function ecbb_resolve_detail_venue_city( $event_id ) {
-			if ( function_exists( 'tribe_get_city' ) ) {
-				$t = trim( (string) \tribe_get_city( $event_id ) );
-				if ( $t !== '' ) {
-					return $t;
-				}
-			}
-			$vid = self::ecbb_event_meta_venue_id( $event_id );
-			if ( $vid < 1 ) {
-				return '';
-			}
-			return trim( (string) get_post_meta( $vid, '_VenueCity', true ) );
 		}
 
 		private static function ecbb_resolve_detail_venue_state( $event_id ) {
@@ -103,48 +100,6 @@ if ( ! class_exists( 'ECBB_Event_Data', false ) ) {
 				$s = get_post_meta( $vid, '_VenueState', true );
 			}
 			return trim( (string) $s );
-		}
-
-		private static function ecbb_resolve_detail_venue_zip( $event_id ) {
-			if ( function_exists( 'tribe_get_zip' ) ) {
-				$t = trim( (string) \tribe_get_zip( $event_id ) );
-				if ( $t !== '' ) {
-					return $t;
-				}
-			}
-			$vid = self::ecbb_event_meta_venue_id( $event_id );
-			if ( $vid < 1 ) {
-				return '';
-			}
-			return trim( (string) get_post_meta( $vid, '_VenueZip', true ) );
-		}
-
-		private static function ecbb_resolve_detail_venue_country( $event_id ) {
-			if ( function_exists( 'tribe_get_country' ) ) {
-				$t = trim( (string) \tribe_get_country( $event_id ) );
-				if ( $t !== '' ) {
-					return $t;
-				}
-			}
-			$vid = self::ecbb_event_meta_venue_id( $event_id );
-			if ( $vid < 1 ) {
-				return '';
-			}
-			return trim( (string) get_post_meta( $vid, '_VenueCountry', true ) );
-		}
-
-		private static function ecbb_resolve_detail_venue_phone( $event_id ) {
-			if ( function_exists( 'tribe_get_phone' ) ) {
-				$t = trim( (string) \tribe_get_phone( $event_id ) );
-				if ( $t !== '' ) {
-					return $t;
-				}
-			}
-			$vid = self::ecbb_event_meta_venue_id( $event_id );
-			if ( $vid < 1 ) {
-				return '';
-			}
-			return trim( (string) get_post_meta( $vid, '_VenuePhone', true ) );
 		}
 
 		private static function ecbb_resolve_detail_venue_website( $event_id ) {

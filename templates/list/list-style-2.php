@@ -32,8 +32,7 @@ if ( ! class_exists( 'ECBB_List_2', false ) ) {
 					'link' => true,
 				],
 				[
-					'part'        => 'description',
-					'desc_source' => 'content',
+					'part' => 'description',
 				],
 				[
 					'part'          => 'venue',
@@ -111,14 +110,6 @@ if ( ! class_exists( 'ECBB_List_2', false ) ) {
 
 		protected static function ecbb_no_image_class() {
 			return 'ecbb-event-card--no-image';
-		}
-
-		protected static function ecbb_part_skin() {
-			return 'style2';
-		}
-
-		protected static function ecbb_layout_skin() {
-			return 'style2';
 		}
 
 		protected static function ecbb_render_image_shell( $post, array $settings ) {

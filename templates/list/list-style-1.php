@@ -24,8 +24,7 @@ if ( ! class_exists( 'ECBB_List_1', false ) ) {
 					'link' => true,
 				],
 				[
-					'part'        => 'description',
-					'desc_source' => 'content',
+					'part' => 'description',
 				],
 				[
 					'part'         => 'date',
@@ -70,14 +69,6 @@ if ( ! class_exists( 'ECBB_List_1', false ) ) {
 
 		protected static function ecbb_no_image_class() {
 			return 'event-list-card--no-image';
-		}
-
-		protected static function ecbb_part_skin() {
-			return 'style1';
-		}
-
-		protected static function ecbb_layout_skin() {
-			return 'style1';
 		}
 
 		protected static function ecbb_render_image_shell( $post, array $settings ) {

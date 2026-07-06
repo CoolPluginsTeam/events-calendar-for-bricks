@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Registry init, event listeners, and startup.
  * Runs last; wires everything together.
  */
@@ -31,6 +31,7 @@
 			controlKeys: [
 				"ecbb_meta_icon_color",
 				"ecbb_meta_icon_background",
+				"ecbb_margin",
 				"ecbb_typography",
 			],
 			sync: builder.syncStyle2MetaIconPreviewStyle,
@@ -38,8 +39,23 @@
 
 		builder.sync.style1GridMetaListRow = builder.createPreviewSyncHandler({
 			id: "style1GridMetaListRowPreview",
-			controlKeys: ["ecbb_background", "ecbb_padding", "ecbb_typography"],
+			controlKeys: [
+				"ecbb_background",
+				"ecbb_margin",
+				"ecbb_padding",
+				"ecbb_typography",
+			],
 			sync: builder.syncStyle1GridMetaListRowPreviewStyle,
+			run: function (item) {
+				if (
+					builder.getRepeaterControlInner(item, "ecbb_typography") &&
+					builder.readRepeaterPartSlug(item)
+				) {
+					builder.scheduleStyle1GridMetaListRowPreviewStyle(item);
+					return;
+				}
+				builder.syncStyle1GridMetaListRowPreviewStyle(item);
+			},
 		});
 
 		builder.sync.titleInnerBackground = builder.createPreviewSyncHandler({
@@ -216,6 +232,17 @@
 		true
 	);
 	document.addEventListener("pointerup", builder.stopTypographyColorPickerDragWatch, true);
+	document.addEventListener(
+		"pointerup",
+		function () {
+			setTimeout(function () {
+				if (!builder.isRepeaterSortActive()) {
+					builder.scanRepeaterRowsAndSyncPreview();
+				}
+			}, 120);
+		},
+		true
+	);
 
 	document.addEventListener(
 		"click",

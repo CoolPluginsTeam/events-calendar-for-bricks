@@ -1,6 +1,6 @@
-<?php
+﻿<?php
 /**
- * Bricks element controls for ecbb-events-loop (layouts → query → elements → messages → style).
+ * Bricks element controls for ecbb-events-loop (layouts -> query -> elements -> messages -> style).
  *
  * @package ECBB
  */
@@ -63,7 +63,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 		}
 
 		/**
-		 * Hover fields for interactive parts only (title, chips, buttons — not image).
+		 * Hover fields for interactive parts only (title, chips, buttons - not image).
 		 *
 		 * @return array<int,array{0:string,1:string,2:mixed>>
 		 */
@@ -137,7 +137,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 		}
 
 		/**
-		 * Style tab — category badge on image (List Style 1).
+		 * Style tab - category badge on image (List Style 1).
 		 *
 		 * @return array<int,array{0:string,1:string,2:mixed}>
 		 */
@@ -151,7 +151,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 		}
 
 		/**
-		 * Style tab — category badge on image (Grid).
+		 * Style tab - category badge on image (Grid).
 		 *
 		 * @return array<int,array{0:string,1:string,2:mixed}>
 		 */
@@ -164,7 +164,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 		}
 
 		/**
-		 * Style tab — date badge on image (List Style 2).
+		 * Style tab - date badge on image (List Style 2).
 		 *
 		 * @return array<int,array{0:string,1:string,2:mixed}>
 		 */
@@ -198,11 +198,26 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 		 * @return array<string,array<string,mixed>>
 		 */
 		public static function ecbb_part_fields() {
+			return array_merge(
+				self::ecbb_part_content_fields(),
+				self::ecbb_part_typography_fields(),
+				self::ecbb_part_button_fields(),
+				self::ecbb_part_hover_fields(),
+				self::ecbb_part_image_border_fields()
+			);
+		}
+
+		/**
+		 * Content-tab repeater sub-fields (part picker, labels, image options).
+		 *
+		 * @return array<string,array<string,mixed>>
+		 */
+		private static function ecbb_part_content_fields() {
 			$date_format_options = class_exists( 'ECBB_Styles', false )
 				? \ECBB_Styles::ecbb_date_options()
 				: [];
 
-		return [
+			return [
 			'part' => [
 				'label'   => esc_html__( 'Part', 'events-calendar-for-bricks' ),
 				'type'    => 'select',
@@ -285,17 +300,6 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 				'label'    => esc_html__( 'Link title to event', 'events-calendar-for-bricks' ),
 				'type'     => 'checkbox',
 				'required' => [ 'part', '=', 'title' ],
-			],
-			'desc_source' => [
-				'label'    => esc_html__( 'Description source', 'events-calendar-for-bricks' ),
-				'type'     => 'select',
-				'options'  => [
-					'auto'    => esc_html__( 'Auto (excerpt → content)', 'events-calendar-for-bricks' ),
-					'excerpt' => esc_html__( 'Excerpt', 'events-calendar-for-bricks' ),
-					'content' => esc_html__( 'Full content', 'events-calendar-for-bricks' ),
-				],
-				'default'  => 'auto',
-				'required' => [ 'part', '=', 'description' ],
 			],
 			'date_format_preset' => [
 				'label'       => esc_html__( 'Date Format', 'events-calendar-for-bricks' ),
@@ -460,6 +464,16 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 					'.ecbb-event__image'
 				),
 			],
+			];
+		}
+
+		/**
+		 * Style-tab typography, background, and spacing sub-fields.
+		 *
+		 * @return array<string,array<string,mixed>>
+		 */
+		private static function ecbb_part_typography_fields() {
+			return [
 			'ecbb_sep_style' => [
 				'type'  => 'separator',
 				'label' => esc_html__( 'Style', 'events-calendar-for-bricks' ),
@@ -508,6 +522,16 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 				'type'  => 'spacing',
 				'css'   => self::ecbb_field_css( 'padding' ),
 			],
+			];
+		}
+
+		/**
+		 * Styled button sub-fields (read more, tickets, RSVP).
+		 *
+		 * @return array<string,array<string,mixed>>
+		 */
+		private static function ecbb_part_button_fields() {
+			return [
 			'btn_style' => [
 				'label'    => esc_html__( 'Button styles', 'events-calendar-for-bricks' ),
 				'type'     => 'checkbox',
@@ -570,6 +594,16 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 				// No Bricks `css` rule: child selectors are ignored on repeater fieldId targets.
 				// Frontend: ecbb_button_decls() + build_parts_scoped_css(). Builder: assets/js/builder/*.js.
 			],
+			];
+		}
+
+		/**
+		 * Hover styling sub-fields.
+		 *
+		 * @return array<string,array<string,mixed>>
+		 */
+		private static function ecbb_part_hover_fields() {
+			return [
 			'ecbb_use_hover' => [
 				'label'    => esc_html__( 'Enable hover Styling', 'events-calendar-for-bricks' ),
 				'type'     => 'select',
@@ -644,6 +678,16 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 				'default'  => '',
 				'required' => self::ecbb_req_hover_controls(),
 			],
+			];
+		}
+
+		/**
+		 * Image border and radius sub-fields.
+		 *
+		 * @return array<string,array<string,mixed>>
+		 */
+		private static function ecbb_part_image_border_fields() {
+			return [
 			'ecbb_image_border' => [
 				'label'      => esc_html__( 'Image border', 'events-calendar-for-bricks' ),
 				'type'       => 'border',
@@ -665,8 +709,8 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 					'.ecbb-event__image'
 				),
 			],
-		];
-	}
+			];
+		}
 
 	/**
 	 * @return array<string,string>
@@ -710,7 +754,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 				'background_key'  => 'ecbb_shell_category_background',
 				'typography_key'  => 'ecbb_shell_category_typography',
 				'style_required'  => self::ecbb_req_shell_category_style_list1(),
-				'bg_description'  => esc_html__( 'List Style 1 — category pill over the featured image.', 'events-calendar-for-bricks' ),
+				'bg_description'  => esc_html__( 'List Style 1 - category pill over the featured image.', 'events-calendar-for-bricks' ),
 			],
 			'grid'  => [
 				'toggle_key'      => 'grid_show_category_badge',
@@ -722,7 +766,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 				'background_key'  => 'ecbb_shell_category_background_grid',
 				'typography_key'  => 'ecbb_shell_category_typography_grid',
 				'style_required'  => self::ecbb_req_shell_category_style_grid(),
-				'bg_description'  => esc_html__( 'Grid — category pill over the featured image.', 'events-calendar-for-bricks' ),
+				'bg_description'  => esc_html__( 'Grid - category pill over the featured image.', 'events-calendar-for-bricks' ),
 			],
 		];
 	}
@@ -818,6 +862,17 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 	 * @return void
 	 */
 	private static function ecbb_register_layout_controls( $element ) {
+		self::ecbb_register_template_controls( $element );
+		self::ecbb_register_layout_display_controls( $element );
+	}
+
+	/**
+	 * Layout template and list style selector.
+	 *
+	 * @param \ECBB\ECBB_Widget $element Element instance.
+	 * @return void
+	 */
+	private static function ecbb_register_template_controls( $element ) {
 		$element->controls['layout_template'] = [
 			'tab'     => 'content',
 			'group'   => 'layouts',
@@ -843,7 +898,15 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			'default'  => 'style-1',
 			'required' => [ 'layout_template', '=', 'list' ],
 		];
+	}
 
+	/**
+	 * Featured image, shell badges, grid columns, and list gap.
+	 *
+	 * @param \ECBB\ECBB_Widget $element Element instance.
+	 * @return void
+	 */
+	private static function ecbb_register_layout_display_controls( $element ) {
 		$element->controls['show_event_image'] = [
 			'tab'      => 'content',
 			'group'    => 'layouts',
@@ -1088,7 +1151,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 	}
 
 	/**
-	 * Style 2 only — meta icon color/background (venue, date, event cost rows).
+	 * Style 2 only - meta icon color/background (venue, date, event cost rows).
 	 *
 	 * @return array<string,array<string,mixed>>
 	 */
@@ -1177,7 +1240,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			'label'       => esc_html__( 'Date badge background', 'events-calendar-for-bricks' ),
 			'type'        => 'color',
 			'responsive'  => true,
-			'description' => esc_html__( 'List Style 2 — date badge over the featured image.', 'events-calendar-for-bricks' ),
+			'description' => esc_html__( 'List Style 2 - date badge over the featured image.', 'events-calendar-for-bricks' ),
 			'required'    => self::ecbb_req_shell_date_badge_style(),
 			'css'         => [
 				[
@@ -1205,69 +1268,69 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 	}
 
 	/**
+	 * Shared Bricks repeater keys for event-parts controls.
+	 *
+	 * @param string                         $label    Repeater label.
+	 * @param array<int,array{0:string,1:string,2:mixed}>|array{0:string,1:string,2:mixed} $required Bricks required rule(s).
+	 * @param array<int,array<string,mixed>> $default  Default repeater rows.
+	 * @param array<string,array<string,mixed>> $fields Repeater sub-fields.
+	 * @return array<string,mixed>
+	 */
+	private static function ecbb_parts_repeater_config( $label, $required, array $default, array $fields ) {
+		return array_merge(
+			[
+				'tab'           => 'content',
+				'group'         => 'elements',
+				'type'          => 'repeater',
+				'selector'      => 'fieldId',
+				'description'   => esc_html__( 'Drag rows to reorder. Expand a row to edit content and style.', 'events-calendar-for-bricks' ),
+				'titleProperty' => 'part',
+				'placeholder'   => esc_html__( 'Add event part', 'events-calendar-for-bricks' ),
+				'rerender'      => true,
+			],
+			[
+				'label'    => $label,
+				'required' => $required,
+				'default'  => $default,
+				'fields'   => $fields,
+			]
+		);
+	}
+
+	/**
 	 * @param \ECBB\ECBB_Widget $element Element instance.
 	 * @return void
 	 */
 	private static function ecbb_register_parts_repeaters( $element ) {
-		$part_repeater_fields         = self::ecbb_part_fields();
-		$part_repeater_fields_style2  = self::ecbb_part_fields_for_style2();
+		$part_repeater_fields        = self::ecbb_part_fields();
+		$part_repeater_fields_style2 = self::ecbb_part_fields_for_style2();
 
-		$element->controls['parts_style1'] = [
-			'tab'           => 'content',
-			'group'         => 'elements',
-			'type'          => 'repeater',
-			'selector'      => 'fieldId',
-			'label'         => esc_html__( 'Event parts — Style 1 (list)', 'events-calendar-for-bricks' ),
-			'description'   => esc_html__( 'Drag rows to reorder. Expand a row to edit content and style.', 'events-calendar-for-bricks' ),
-			'titleProperty' => 'part',
-			'placeholder'   => esc_html__( 'Add event part', 'events-calendar-for-bricks' ),
-			'rerender'      => true,
-			'required'      => [
+		$element->controls['parts_style1'] = self::ecbb_parts_repeater_config(
+			esc_html__( 'Event parts — Style 1 (list)', 'events-calendar-for-bricks' ),
+			[
 				[ 'layout_template', '=', 'list' ],
 				[ 'list_item_style', '=', 'style-1' ],
 			],
-			'default'       => class_exists( 'ECBB_List_1', false )
-				? \ECBB_List_1::ecbb_default_parts()
-				: [],
-			'fields'        => $part_repeater_fields,
-		];
+			class_exists( 'ECBB_List_1', false ) ? \ECBB_List_1::ecbb_default_parts() : [],
+			$part_repeater_fields
+		);
 
-		$element->controls['parts_style2'] = [
-			'tab'           => 'content',
-			'group'         => 'elements',
-			'type'          => 'repeater',
-			'selector'      => 'fieldId',
-			'label'         => esc_html__( 'Event parts — Style 2 (list)', 'events-calendar-for-bricks' ),
-			'description'   => esc_html__( 'Drag rows to reorder. Expand a row to edit content and style.', 'events-calendar-for-bricks' ),
-			'titleProperty' => 'part',
-			'placeholder'   => esc_html__( 'Add event part', 'events-calendar-for-bricks' ),
-			'rerender'      => true,
-			'required'      => [
+		$element->controls['parts_style2'] = self::ecbb_parts_repeater_config(
+			esc_html__( 'Event parts — Style 2 (list)', 'events-calendar-for-bricks' ),
+			[
 				[ 'layout_template', '=', 'list' ],
 				[ 'list_item_style', '=', 'style-2' ],
 			],
-			'default'       => class_exists( 'ECBB_List_2', false )
-				? \ECBB_List_2::ecbb_default_parts()
-				: [],
-			'fields'        => $part_repeater_fields_style2,
-		];
+			class_exists( 'ECBB_List_2', false ) ? \ECBB_List_2::ecbb_default_parts() : [],
+			$part_repeater_fields_style2
+		);
 
-		$element->controls['parts_grid'] = [
-			'tab'           => 'content',
-			'group'         => 'elements',
-			'type'          => 'repeater',
-			'selector'      => 'fieldId',
-			'label'         => esc_html__( 'Event parts — Grid', 'events-calendar-for-bricks' ),
-			'description'   => esc_html__( 'Drag rows to reorder. Expand a row to edit content and style.', 'events-calendar-for-bricks' ),
-			'titleProperty' => 'part',
-			'placeholder'   => esc_html__( 'Add event part', 'events-calendar-for-bricks' ),
-			'rerender'      => true,
-			'required'      => [ 'layout_template', '=', 'grid' ],
-			'default'       => class_exists( 'ECBB_Grid', false )
-				? \ECBB_Grid::ecbb_default_parts()
-				: [],
-			'fields'        => $part_repeater_fields,
-		];
+		$element->controls['parts_grid'] = self::ecbb_parts_repeater_config(
+			esc_html__( 'Event parts — Grid', 'events-calendar-for-bricks' ),
+			[ 'layout_template', '=', 'grid' ],
+			class_exists( 'ECBB_Grid', false ) ? \ECBB_Grid::ecbb_default_parts() : [],
+			$part_repeater_fields
+		);
 	}
 
 	/**
