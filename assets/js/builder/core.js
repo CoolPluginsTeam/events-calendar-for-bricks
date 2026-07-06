@@ -32,7 +32,9 @@
 		hoverCapableParts: Array.isArray(fromPhp.hoverParts)
 			? fromPhp.hoverParts
 			: ["title", "categories", "tags", "read_more", "event_tickets", "event_rsvp", "image"],
-		style2MetaIconParts: ["venue", "date", "event_cost", "venue_time_cost"],
+		style2MetaIconParts: Array.isArray(fromPhp.style2MetaIconParts)
+			? fromPhp.style2MetaIconParts
+			: ["venue", "date", "event_cost", "venue_time_cost"],
 		layoutActionButtonParts: ["read_more", "event_tickets", "event_rsvp"],
 		styledButtonBackgroundKeys: ["ecbb_background"],
 		styledButtonBorderKeys: Array.isArray(fromPhp.btnBorderKeys)
@@ -51,7 +53,7 @@
 
 	// Shared state buckets (other files read/write these).
 	builder.sync = { registry: [] };
-	builder.tabs = { scanTimer: null };
+	builder.tabs = { scanTimer: null, sortEndRaf: 0 };
 	builder.preview = { typographyPickerRaf: 0 };
 	builder.hover = {
 		rulesByItem: typeof WeakMap !== "undefined" ? new WeakMap() : null,

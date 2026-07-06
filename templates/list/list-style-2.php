@@ -52,33 +52,28 @@ if ( ! class_exists( 'ECBB_List_2', false ) ) {
 		}
 
 		protected static function ecbb_filter_parts( array $clean ) {
-			$blocked = [ 'image', 'venue_time' ];
-
-			return array_values(
-				array_filter(
-					$clean,
-					static function ( $row ) use ( $blocked ) {
-						if ( ! is_array( $row ) ) {
-							return true;
-						}
-						return ! in_array( (string) ( $row['part'] ?? '' ), $blocked, true );
-					}
-				)
-			);
+			return static::ecbb_filter_blocked_parts( $clean, [ 'image' ] );
 		}
 
 		protected static function ecbb_normalize_row( array $row ) {
+			if ( class_exists( 'ECBB_Styles', false ) ) {
+				$row = \ECBB_Styles::ecbb_normalize_meta_combo_row( $row );
+			}
+
 			$part = (string) ( $row['part'] ?? '' );
-			if ( $part === 'venue' || $part === 'venue_time_cost' ) {
+			if ( $part === 'venue' ) {
 				$display = (string) ( $row['venue_display'] ?? '' );
 				if ( $display === '' || $display === 'name_and_address' || $display === 'name_and_state' ) {
 					$row['venue_display'] = 'name_and_city';
 				}
 			}
-			if ( in_array( $part, [ 'date', 'venue_time_cost' ], true ) && ! isset( $row['date_display'] ) ) {
-				$row['date_display'] = 'time';
+			if ( $part === 'date' ) {
+				$date_display = (string) ( $row['date_display'] ?? '' );
+				if ( $date_display === '' ) {
+					$row['date_display'] = 'time';
+				}
 			}
-			if ( in_array( $part, [ 'event_cost', 'venue_time_cost' ], true ) && ( ! isset( $row['cost_currency'] ) || (string) $row['cost_currency'] === '' ) ) {
+			if ( $part === 'event_cost' && ( ! isset( $row['cost_currency'] ) || (string) $row['cost_currency'] === '' ) ) {
 				$row['cost_currency'] = 'default';
 			}
 

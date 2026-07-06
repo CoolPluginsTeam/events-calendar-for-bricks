@@ -425,43 +425,6 @@ if ( ! class_exists( 'ECBB_Part_Chrome', false ) ) {
 		return $fallback;
 		}
 
-		public static function ecbb_image_align_opts()
-		{
-			return [
-			''   => esc_html__('Default', 'events-calendar-for-bricks'),
-			'tl' => esc_html__('Top left', 'events-calendar-for-bricks'),
-			'tc' => esc_html__('Top center', 'events-calendar-for-bricks'),
-			'tr' => esc_html__('Top right', 'events-calendar-for-bricks'),
-			'ml' => esc_html__('Middle left', 'events-calendar-for-bricks'),
-			'mc' => esc_html__('Middle center', 'events-calendar-for-bricks'),
-			'mr' => esc_html__('Middle right', 'events-calendar-for-bricks'),
-			'bl' => esc_html__('Bottom left', 'events-calendar-for-bricks'),
-			'bc' => esc_html__('Bottom center', 'events-calendar-for-bricks'),
-			'br' => esc_html__('Bottom right', 'events-calendar-for-bricks'),
-			];
-		}
-
-		public static function ecbb_align_to_position($key)
-		{
-			$key = is_string($key) ? strtolower(trim($key)) : '';
-			$map = [
-			'tl' => 'left top',
-			'tc' => 'center top',
-			'tr' => 'right top',
-			'ml' => 'left center',
-			'mc' => 'center center',
-			'mr' => 'right center',
-			'bl' => 'left bottom',
-			'bc' => 'center bottom',
-			'br' => 'right bottom',
-			];
-			return isset($map[$key]) ? $map[$key] : '';
-		}
-
-		public static function ecbb_image_dual_layer( array $item ) {
-			return false;
-		}
-
 		public static function ecbb_action_link_html( array $item, $href, $label, $link_attr = '', $extra_attrs = '' ) {
 			$part       = isset( $item['part'] ) ? (string) $item['part'] : '';
 			$force_link = in_array( $part, [ 'read_more', 'event_tickets', 'event_rsvp' ], true );

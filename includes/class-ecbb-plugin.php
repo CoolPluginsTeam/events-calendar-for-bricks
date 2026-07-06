@@ -390,11 +390,12 @@ if ( ! class_exists( 'ECBB_Plugin', false ) ) {
 			}
 
 			wp_localize_script( $localize_on, 'ECBBBuilder', [
-				'tabContent'    => __( 'CONTENT', 'events-calendar-for-bricks' ),
-				'tabStyle'      => __( 'STYLE', 'events-calendar-for-bricks' ),
-				'hoverParts'    => \ECBB_Controls::ecbb_hover_part_types(),
-				'hoverKeys'     => \ECBB_Controls::ecbb_hover_field_keys(),
-				'btnBorderKeys' => \ECBB_Controls::ecbb_btn_border_keys(),
+				'tabContent'          => __( 'CONTENT', 'events-calendar-for-bricks' ),
+				'tabStyle'            => __( 'STYLE', 'events-calendar-for-bricks' ),
+				'hoverParts'          => \ECBB_Controls::ecbb_hover_part_types(),
+				'hoverKeys'           => \ECBB_Controls::ecbb_hover_field_keys(),
+				'btnBorderKeys'       => \ECBB_Controls::ecbb_btn_border_keys(),
+				'style2MetaIconParts' => \ECBB_Controls::ecbb_style2_meta_icon_ui_parts(),
 			] );
 		}
 	}

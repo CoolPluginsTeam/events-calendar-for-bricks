@@ -112,9 +112,6 @@ if ( ! class_exists( 'ECBB_Date_Formatter', false ) ) {
 
 			$fmt = self::ecbb_time_fmt_lower( (string) get_option( 'time_format' ) );
 			$day = trim( wp_strip_all_tags( date_i18n( 'l', $start ) ) );
-			if ( $day === '' ) {
-				return $store( [ 'day' => '', 'time' => '' ] );
-			}
 
 			$t0 = function_exists( 'tribe_get_start_time' ) ? (string) tribe_get_start_time( $post_id, $fmt ) : '';
 			if ( $t0 === '' && function_exists( 'tribe_get_start_date' ) ) {
@@ -139,6 +136,91 @@ if ( ! class_exists( 'ECBB_Date_Formatter', false ) ) {
 				return $store( [ 'day' => $day, 'time' => $t0 ] );
 			}
 			return $store( [ 'day' => $day, 'time' => $t0 . ' - ' . $t1 ] );
+		}
+
+		/**
+		 * Plain text for a part row's Visibility (date_display) setting.
+		 *
+		 * @param int                 $post_id Event post ID.
+		 * @param array<string,mixed> $item    Repeater row.
+		 * @return string
+		 */
+		public static function ecbb_part_visibility_plain_text( $post_id, array $item ) {
+			$post_id = (int) $post_id;
+			if ( $post_id < 1 ) {
+				return '';
+			}
+
+			$fmt = isset( $item['date_display'] ) ? (string) $item['date_display'] : 'day_time_range';
+			if ( $fmt === '' ) {
+				$fmt = 'day_time_range';
+			}
+
+			if ( $fmt === 'range' && class_exists( 'ECBB_Layout_Shell', false ) ) {
+				$post = get_post( $post_id );
+				return $post instanceof \WP_Post
+					? ECBB_Layout_Shell::ecbb_grid_date_range_text( $post, $item )
+					: '';
+			}
+
+			if ( $fmt === 'date' ) {
+				$format = self::ecbb_part_date_php_fmt( 'event_date', $item );
+				$php    = $format !== '' ? $format : (string) get_option( 'date_format' );
+				if ( function_exists( 'tribe_get_start_date' ) ) {
+					$html = (string) tribe_get_start_date( $post_id, false, $php );
+				} else {
+					$raw  = ECBB_Event_Data::ecbb_event_start_date_raw( $post_id );
+					$ts   = $raw ? strtotime( $raw ) : false;
+					$html = $ts ? date_i18n( $php, $ts ) : '';
+				}
+
+				return trim( wp_strip_all_tags( $html ) );
+			}
+
+			$tp = self::ecbb_build_day_time_parts( $post_id, $item );
+
+			if ( $fmt === 'time' ) {
+				$html = isset( $tp['time'] ) ? trim( (string) $tp['time'] ) : '';
+				if ( $html !== '' ) {
+					return $html;
+				}
+
+				$format = self::ecbb_part_date_php_fmt( 'event_time', $item );
+				$php    = self::ecbb_time_fmt_lower( $format !== '' ? $format : (string) get_option( 'time_format' ) );
+				if ( function_exists( 'tribe_get_start_time' ) ) {
+					$html = (string) tribe_get_start_time( $post_id, $php );
+				} elseif ( function_exists( 'tribe_get_start_date' ) ) {
+					$html = (string) tribe_get_start_date( $post_id, true, $php );
+				} else {
+					$raw  = ECBB_Event_Data::ecbb_event_start_date_raw( $post_id );
+					$ts   = $raw ? strtotime( $raw ) : false;
+					$html = $ts ? date_i18n( $php, $ts ) : '';
+				}
+
+				return self::ecbb_time_lower_am( trim( wp_strip_all_tags( $html ) ) );
+			}
+
+			if ( $fmt === 'day' ) {
+				$html = isset( $tp['day'] ) ? trim( (string) $tp['day'] ) : '';
+				if ( $html !== '' ) {
+					return $html;
+				}
+				$raw = ECBB_Event_Data::ecbb_event_start_date_raw( $post_id );
+				$ts  = $raw ? strtotime( $raw ) : false;
+
+				return $ts ? trim( wp_strip_all_tags( date_i18n( 'l', $ts ) ) ) : '';
+			}
+
+			$day  = isset( $tp['day'] ) ? trim( (string) $tp['day'] ) : '';
+			$time = isset( $tp['time'] ) ? trim( (string) $tp['time'] ) : '';
+			if ( $day !== '' && $time !== '' ) {
+				return $day . ', ' . $time;
+			}
+			if ( $time !== '' ) {
+				return $time;
+			}
+
+			return $day;
 		}
 	}
 }

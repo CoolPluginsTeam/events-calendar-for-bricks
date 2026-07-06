@@ -78,19 +78,11 @@ if ( ! class_exists( 'ECBB_Grid', false ) ) {
 		}
 
 		protected static function ecbb_filter_parts( array $clean ) {
-			$blocked = [ 'venue_time', 'venue_time_cost' ];
+			$blocked = class_exists( 'ECBB_Styles', false )
+				? \ECBB_Styles::ecbb_meta_combo_all_slugs()
+				: [ 'venue_time', 'venue_time_cost' ];
 
-			return array_values(
-				array_filter(
-					$clean,
-					static function ( $row ) use ( $blocked ) {
-						if ( ! is_array( $row ) ) {
-							return true;
-						}
-						return ! in_array( (string) ( $row['part'] ?? '' ), $blocked, true );
-					}
-				)
-			);
+			return static::ecbb_filter_blocked_parts( $clean, $blocked );
 		}
 
 		protected static function ecbb_card_base_class() {

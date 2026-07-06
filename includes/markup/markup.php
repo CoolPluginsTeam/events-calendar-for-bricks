@@ -52,7 +52,7 @@ if ( ! class_exists( 'ECBB_Markup', false ) ) {
 						'ecbb_migrate_cost_currency', 'ecbb_layout_settings', 'ecbb_norm_layout_shell_settings',
 						'ecbb_shell_hover_root_classes',
 						'ecbb_shell_select_on', 'ecbb_show_event_image', 'ecbb_show_shell_category_badge',
-						'ecbb_show_style2_date_badge', 'ecbb_style2_date_badge_order', 'ecbb_list1_date_column_order',
+						'ecbb_show_style2_date_badge', 'ecbb_show_list1_date_column', 'ecbb_style2_date_badge_order', 'ecbb_list1_date_column_order',
 					],
 					'ECBB_Settings_Normalizer'
 				),
@@ -114,8 +114,7 @@ if ( ! class_exists( 'ECBB_Markup', false ) ) {
 						'ecbb_hover_has_custom_styles', 'ecbb_hover_anim_css', 'ecbb_hover_inline_vars',
 						'ecbb_hover_state_selectors', 'ecbb_hover_style_active', 'ecbb_title_link_active',
 						'ecbb_btn_style_active', 'ecbb_layout_read_more_btn_class', 'ecbb_image_size_opts',
-						'ecbb_sanitize_image_size', 'ecbb_image_align_opts', 'ecbb_align_to_position',
-						'ecbb_image_dual_layer', 'ecbb_action_link_html', 'ecbb_terms_html',
+						'ecbb_sanitize_image_size', 'ecbb_action_link_html', 'ecbb_terms_html',
 					],
 					'ECBB_Part_Chrome'
 				)

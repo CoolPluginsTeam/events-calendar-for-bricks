@@ -326,21 +326,62 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 			return '<li' . $li_class . '>' . $icon . $html . '</li>';
 		}
 
-		public static function ecbb_render_meta_lists( $post, array $meta_primary, array $meta_price, $skin, $layout, callable $emit_li ) {
-			if ( $layout === 'style1' && ( $meta_primary !== [] || $meta_price !== [] ) ) {
-				if ( $meta_primary !== [] ) {
-					echo '<ul class="event-meta event-meta--list">';
-					foreach ( $meta_primary as $row ) {
-						$emit_li( $post, $row['item'], $row['idx'], false );
+		/**
+		 * Style 1 meta lists: keep repeater drag order; only split adjacent primary vs price runs.
+		 *
+		 * @param \WP_Post $post
+		 * @param array<int,array{idx:int,item:array,price:bool}> $rows
+		 * @param callable $emit_li function( $post, $item, $idx, $is_price )
+		 * @return void
+		 */
+		public static function ecbb_render_style1_meta_lists( $post, array $rows, callable $emit_li ) {
+			if ( $rows === [] ) {
+				return;
+			}
+
+			$segments = [];
+			$current  = null;
+
+			foreach ( $rows as $row ) {
+				$is_price = ! empty( $row['price'] );
+				if ( $current === null || $current['price'] !== $is_price ) {
+					if ( $current !== null ) {
+						$segments[] = $current;
 					}
-					echo '</ul>';
+					$current = [
+						'price' => $is_price,
+						'rows'  => [ $row ],
+					];
+					continue;
 				}
-				if ( $meta_price !== [] ) {
-					echo '<ul class="event-meta event-meta--list event-meta--list-price">';
-					foreach ( $meta_price as $row ) {
-						$emit_li( $post, $row['item'], $row['idx'], true );
-					}
-					echo '</ul>';
+				$current['rows'][] = $row;
+			}
+
+			if ( $current !== null ) {
+				$segments[] = $current;
+			}
+
+			foreach ( $segments as $segment ) {
+				$ul_class = 'event-meta event-meta--list';
+				if ( $segment['price'] ) {
+					$ul_class .= ' event-meta--list-price';
+				}
+				echo '<ul class="' . esc_attr( $ul_class ) . '">';
+				foreach ( $segment['rows'] as $row ) {
+					$emit_li( $post, $row['item'], $row['idx'], $segment['price'] );
+				}
+				echo '</ul>';
+			}
+		}
+
+		public static function ecbb_render_meta_lists( $post, array $meta_primary, array $meta_price, $skin, $layout, callable $emit_li ) {
+			if ( $layout === 'style1' ) {
+				$rows = $meta_primary;
+				if ( $rows === [] ) {
+					$rows = $meta_price;
+				}
+				if ( $rows !== [] ) {
+					self::ecbb_render_style1_meta_lists( $post, $rows, $emit_li );
 				}
 				return;
 			}
@@ -373,18 +414,13 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 			}
 
 			if ( $layout === 'style1' ) {
-				$primary = [];
-				$price   = [];
-				foreach ( $rows as $row ) {
-					if ( ! empty( $row['price'] ) ) {
-						$price[] = $row;
-					} else {
-						$primary[] = $row;
+				self::ecbb_render_style1_meta_lists(
+					$post,
+					$rows,
+					static function ( $ev, $item, $idx, $is_price ) use ( $emit_meta ) {
+						$emit_meta( $ev, $item, $idx, (bool) $is_price );
 					}
-				}
-				self::ecbb_render_meta_lists( $post, $primary, $price, $skin, $layout, static function ( $ev, $item, $idx, $is_price ) use ( $emit_meta ) {
-					$emit_meta( $ev, $item, $idx, (bool) $is_price );
-				} );
+				);
 				return;
 			}
 
@@ -673,14 +709,16 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 
 			$row   = class_exists( 'ECBB_Styles', false ) ? \ECBB_Styles::ecbb_clean_part( $item ) : $item;
 			$slug  = (string) ( $row['part'] ?? $ui );
-			$slugs = [
-				'date', 'event_date', 'event_time', 'event_day', 'venue', 'organizer', 'event_cost',
-				'venue_time', 'venue_time_cost',
-				'tags', 'event_link', 'event_tickets', 'event_rsvp',
-				'venue_full_address', 'venue_street', 'venue_city', 'venue_state', 'venue_zip',
-				'venue_country', 'venue_phone', 'venue_website', 'event_map_link',
-				'organizer_email', 'organizer_phone', 'organizer_website',
-			];
+			$slugs = array_merge(
+				[
+					'date', 'event_date', 'event_time', 'event_day', 'venue', 'organizer', 'event_cost',
+					'tags', 'event_link', 'event_tickets', 'event_rsvp',
+					'venue_full_address', 'venue_street', 'venue_city', 'venue_state', 'venue_zip',
+					'venue_country', 'venue_phone', 'venue_website', 'event_map_link',
+					'organizer_email', 'organizer_phone', 'organizer_website',
+				],
+				class_exists( 'ECBB_Styles', false ) ? \ECBB_Styles::ecbb_meta_combo_all_slugs() : [ 'venue_time', 'venue_time_cost' ]
+			);
 
 			return in_array( $slug, $slugs, true ) || in_array( $ui, $slugs, true );
 		}
@@ -702,12 +740,16 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 		public static function ecbb_meta_icon_for_part( $slug ) {
 			$slug = (string) $slug;
 			if (
-				in_array( $slug, [ 'venue', 'organizer', 'venue_time', 'venue_time_cost', 'venue_full_address', 'venue_street', 'venue_city', 'venue_state', 'venue_zip', 'venue_country', 'venue_phone' ], true )
+				$slug === 'event_cost'
+				|| ( class_exists( 'ECBB_Styles', false ) && \ECBB_Styles::ecbb_is_meta_combo_slug( $slug ) && \ECBB_Styles::ecbb_meta_combo_has_segment( $slug, 'cost' ) )
+			) {
+				return self::ecbb_meta_icon( 'cost' );
+			}
+			if (
+				in_array( $slug, [ 'venue', 'organizer', 'venue_full_address', 'venue_street', 'venue_city', 'venue_state', 'venue_zip', 'venue_country', 'venue_phone' ], true )
+				|| ( class_exists( 'ECBB_Styles', false ) && \ECBB_Styles::ecbb_is_meta_combo_slug( $slug ) && \ECBB_Styles::ecbb_meta_combo_has_segment( $slug, 'venue' ) )
 			) {
 				return self::ecbb_meta_icon( 'pin' );
-			}
-			if ( $slug === 'event_cost' ) {
-				return self::ecbb_meta_icon( 'cost' );
 			}
 			return self::ecbb_meta_icon( 'clock' );
 		}
@@ -718,33 +760,38 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 		 * @return string[]
 		 */
 		public static function ecbb_meta_list_icon_part_slugs() {
-			return [
-				'date',
-				'event_date',
-				'event_time',
-				'event_day',
-				'venue',
-				'venue_time',
-				'venue_time_cost',
-				'organizer',
-				'event_cost',
-				'tags',
-				'event_link',
-				'event_tickets',
-				'event_rsvp',
-				'venue_full_address',
-				'venue_street',
-				'venue_city',
-				'venue_state',
-				'venue_zip',
-				'venue_country',
-				'venue_phone',
-				'venue_website',
-				'event_map_link',
-				'organizer_email',
-				'organizer_phone',
-				'organizer_website',
-			];
+			$combo = class_exists( 'ECBB_Styles', false )
+				? \ECBB_Styles::ecbb_meta_combo_all_slugs()
+				: [ 'venue_time', 'venue_time_cost' ];
+
+			return array_merge(
+				[
+					'date',
+					'event_date',
+					'event_time',
+					'event_day',
+					'venue',
+					'organizer',
+					'event_cost',
+					'tags',
+					'event_link',
+					'event_tickets',
+					'event_rsvp',
+					'venue_full_address',
+					'venue_street',
+					'venue_city',
+					'venue_state',
+					'venue_zip',
+					'venue_country',
+					'venue_phone',
+					'venue_website',
+					'event_map_link',
+					'organizer_email',
+					'organizer_phone',
+					'organizer_website',
+				],
+				$combo
+			);
 		}
 
 		/**
@@ -754,11 +801,9 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 		 * @return bool
 		 */
 		public static function ecbb_part_uses_composite_inline_meta_icons( $part_slug ) {
-			return in_array(
-				(string) $part_slug,
-				[ 'venue_time', 'venue_time_cost' ],
-				true
-			);
+			return class_exists( 'ECBB_Styles', false )
+				? \ECBB_Styles::ecbb_is_meta_combo_slug( (string) $part_slug )
+				: in_array( (string) $part_slug, [ 'venue_time', 'venue_time_cost' ], true );
 		}
 
 		/**
@@ -769,7 +814,7 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 		 */
 		public static function ecbb_part_shows_style2_meta_icon( $part_slug ) {
 			$part_slug = (string) $part_slug;
-			if ( $part_slug === 'venue_time_cost' ) {
+			if ( class_exists( 'ECBB_Styles', false ) && \ECBB_Styles::ecbb_is_meta_combo_slug( $part_slug ) ) {
 				return true;
 			}
 			if ( $part_slug === 'event_cost' ) {

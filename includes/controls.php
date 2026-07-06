@@ -163,12 +163,14 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 		 */
 		public static function ecbb_style2_meta_icon_ui_parts() {
 			if ( class_exists( 'ECBB_Styles', false ) ) {
-				return [
-					'venue',
-					'date',
-					'event_cost',
-					\ECBB_Styles::ecbb_part_slug_venue_time_cost(),
-				];
+				return array_values(
+					array_unique(
+						array_merge(
+							[ 'venue', 'date', 'event_cost' ],
+							\ECBB_Styles::ecbb_meta_combo_slugs_style2()
+						)
+					)
+				);
 			}
 
 			return [ 'venue', 'date', 'event_cost', 'venue_time_cost' ];
@@ -254,6 +256,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			return [
 				[ 'layout_template', '=', 'list' ],
 				[ 'list_item_style', '=', 'style-1' ],
+				[ 'list1_show_date_column', '!=', 'hide' ],
 			];
 		}
 
@@ -344,11 +347,9 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			$date_parts  = [ 'date' ];
 			$cost_parts  = [ 'event_cost' ];
 			if ( class_exists( 'ECBB_Styles', false ) ) {
-				$venue_parts[] = \ECBB_Styles::ecbb_part_slug_venue_time();
-				$venue_parts[] = \ECBB_Styles::ecbb_part_slug_venue_time_cost();
-				$date_parts[]  = \ECBB_Styles::ecbb_part_slug_venue_time();
-				$date_parts[]  = \ECBB_Styles::ecbb_part_slug_venue_time_cost();
-				$cost_parts[]  = \ECBB_Styles::ecbb_part_slug_venue_time_cost();
+				$venue_parts = array_merge( $venue_parts, \ECBB_Styles::ecbb_meta_combo_slugs_with_segment( 'venue' ) );
+				$date_parts  = array_merge( $date_parts, \ECBB_Styles::ecbb_meta_combo_slugs_with_segment( 'time' ) );
+				$cost_parts  = array_merge( $cost_parts, \ECBB_Styles::ecbb_meta_combo_slugs_with_segment( 'cost' ) );
 			}
 
 			return [
@@ -369,6 +370,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 					'day'            => esc_html__( 'Day name', 'events-calendar-for-bricks' ),
 				],
 				'default'  => 'day_time_range',
+				'rerender' => true,
 				'required' => [ 'part', '=', $date_parts ],
 			],
 			'venue_display' => [
@@ -982,6 +984,24 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			'day_month' => esc_html__( 'Date above, month below', 'events-calendar-for-bricks' ),
 		];
 
+		$element->controls['list1_show_date_column'] = [
+			'tab'      => 'content',
+			'group'    => 'layouts',
+			'label'    => esc_html__( 'Show date column', 'events-calendar-for-bricks' ),
+			'type'     => 'select',
+			'options'  => [
+				'show' => esc_html__( 'Show', 'events-calendar-for-bricks' ),
+				'hide' => esc_html__( 'Hide', 'events-calendar-for-bricks' ),
+			],
+			'default'  => 'show',
+			'inline'   => true,
+			'rerender' => true,
+			'required' => [
+				[ 'layout_template', '=', 'list' ],
+				[ 'list_item_style', '=', 'style-1' ],
+			],
+		];
+
 		$element->controls['list1_date_column_order'] = [
 			'tab'      => 'content',
 			'group'    => 'layouts',
@@ -994,6 +1014,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			'required' => [
 				[ 'layout_template', '=', 'list' ],
 				[ 'list_item_style', '=', 'style-1' ],
+				[ 'list1_show_date_column', '!=', 'hide' ],
 			],
 		];
 

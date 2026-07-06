@@ -142,14 +142,6 @@ class ECBB_Widget extends \Bricks\Element
 		}
 	}
 
-	/**
-	 * @param mixed $value Bricks color control value.
-	 * @return string Normalized CSS color or empty string.
-	 */
-	private function ecbb_norm_color( $value ) {
-		return \ECBB_Markup::ecbb_norm_color( $value );
-	}
-
 	private function ecbb_get_instance_scope_class()
 	{
 		$id = property_exists($this, 'id') && $this->id ? (string) $this->id : '';
@@ -245,9 +237,6 @@ class ECBB_Widget extends \Bricks\Element
 				break;
 			case 'description':
 				$this->ecbb_render_part_description( $post, $ctx['item'], $ctx['idx'], $ctx['wrap'], $ctx['skin'] );
-				break;
-			case 'date':
-				$this->ecbb_render_part_date( $post, $ctx['item'], $ctx['idx'], $ctx['wrap'] );
 				break;
 			default:
 				$this->ecbb_render_part_title( $post, $ctx['item'], $ctx['idx'], $ctx['wrap'], $ctx['skin'] );
@@ -384,35 +373,6 @@ class ECBB_Widget extends \Bricks\Element
 	 * @param string              $wrap
 	 * @return void
 	 */
-	private function ecbb_render_part_date( $post, array $item, $idx, $wrap ) {
-		$parts_out = \ECBB_Markup::ecbb_build_day_time_parts( $post->ID, $item );
-		$day       = isset( $parts_out['day'] ) ? (string) $parts_out['day'] : '';
-		$time      = isset( $parts_out['time'] ) ? (string) $parts_out['time'] : '';
-
-		$day  = trim( wp_strip_all_tags( (string) $day ) );
-		$time = trim( wp_strip_all_tags( (string) $time ) );
-
-		if ( $day === '' && $time === '' ) {
-			return;
-		}
-
-		$row_icon = ( $time !== '' ) ? ' ecbb-has-row-icon' : '';
-		$this->ecbb_print_part_open_tag( 'div', $wrap . $row_icon, $item, $idx );
-		echo '<span class="ecbb-event__date-day">' . esc_html( $day ) . '</span>';
-		if ( $time !== '' ) {
-			echo '<span class="ecbb-event__date-sep">,</span>';
-			echo '<span class="ecbb-event__date-time">' . esc_html( $time ) . '</span>';
-		}
-		echo '</div>';
-	}
-
-	/**
-	 * @param \WP_Post            $post
-	 * @param array<string,mixed> $item
-	 * @param int                 $idx
-	 * @param string              $wrap
-	 * @return void
-	 */
 	private function ecbb_render_part_title( $post, array $item, $idx, $wrap, $skin = '' ) {
 		$hover = \ECBB_Markup::ecbb_hover_style_active( $item );
 		$link  = \ECBB_Markup::ecbb_title_link_active( $item ) && $hover;
@@ -515,9 +475,7 @@ class ECBB_Widget extends \Bricks\Element
 			list( $style_css, $hover_css ) = \ECBB_Styles::ecbb_parts_css(
 				$parts_effective,
 				$scope_class,
-				function ( $value ) {
-					return $this->ecbb_norm_color( $value );
-				},
+				[ \ECBB_Markup::class, 'ecbb_norm_color' ],
 				$layout['use_grid_shell'] ? 'grid' : $layout['item_chrome']
 			);
 		}
@@ -534,9 +492,7 @@ class ECBB_Widget extends \Bricks\Element
 			? \ECBB_Styles::ecbb_layout_shell_css(
 				$settings,
 				$scope_class,
-				function ( $value ) {
-					return $this->ecbb_norm_color( $value );
-				}
+				[ \ECBB_Markup::class, 'ecbb_norm_color' ]
 			)
 			: '';
 

@@ -193,14 +193,14 @@
 		}
 		builder.syncOpenRepeaterTypographyPreview();
 		builder.preview.typographyPickerRaf = requestAnimationFrame(
-			watchTypographyColorPickerDrag
+			builder.watchTypographyColorPickerDrag
 		);
 	}
 
 	builder.startTypographyColorPickerDragWatch = function() {
 		if (!builder.preview.typographyPickerRaf) {
 			builder.preview.typographyPickerRaf = requestAnimationFrame(
-				watchTypographyColorPickerDrag
+				builder.watchTypographyColorPickerDrag
 			);
 		}
 	}
@@ -234,7 +234,17 @@
 	document.addEventListener("pointerup", builder.stopTypographyColorPickerDragWatch, true);
 	document.addEventListener(
 		"pointerup",
-		function () {
+		function (e) {
+			if (
+				e.target &&
+				e.target.closest &&
+				e.target.closest(
+					'#bricks-panel-element [data-control-key="parts_style1"] .repeater-item > .drag, #bricks-panel-element [data-control-key="parts_style2"] .repeater-item > .drag, #bricks-panel-element [data-control-key="parts_grid"] .repeater-item > .drag'
+				)
+			) {
+				builder.scheduleRepeaterSortEndResync();
+				return;
+			}
 			setTimeout(function () {
 				if (!builder.isRepeaterSortActive()) {
 					builder.scanRepeaterRowsAndSyncPreview();

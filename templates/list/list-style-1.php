@@ -43,17 +43,21 @@ if ( ! class_exists( 'ECBB_List_1', false ) ) {
 		}
 
 		protected static function ecbb_normalize_row( array $row ) {
-		$part = (string) ( $row['part'] ?? '' );
-			if ( $part === 'venue' || $part === 'venue_time' || $part === 'venue_time_cost' ) {
-			$display = (string) ( $row['venue_display'] ?? '' );
+			if ( class_exists( 'ECBB_Styles', false ) ) {
+				$row = \ECBB_Styles::ecbb_normalize_meta_combo_row( $row );
+			}
+
+			$part = (string) ( $row['part'] ?? '' );
+			if ( $part === 'venue' ) {
+				$display = (string) ( $row['venue_display'] ?? '' );
 				if ( $display === '' || $display === 'name_and_address' || $display === 'full_details' ) {
 					$row['venue_display'] = 'name_and_city';
 				}
 			}
-			if ( in_array( $part, [ 'date', 'venue_time', 'venue_time_cost' ], true ) && ! isset( $row['date_display'] ) ) {
+			if ( $part === 'date' && ! isset( $row['date_display'] ) ) {
 				$row['date_display'] = 'time';
 			}
-			if ( in_array( $part, [ 'event_cost', 'venue_time_cost' ], true ) && ( ! isset( $row['cost_currency'] ) || (string) $row['cost_currency'] === '' ) ) {
+			if ( $part === 'event_cost' && ( ! isset( $row['cost_currency'] ) || (string) $row['cost_currency'] === '' ) ) {
 				$row['cost_currency'] = 'default';
 			}
 
@@ -61,19 +65,11 @@ if ( ! class_exists( 'ECBB_List_1', false ) ) {
 		}
 
 		protected static function ecbb_filter_parts( array $clean ) {
-			$blocked = [ 'venue_time_cost' ];
+			$blocked = class_exists( 'ECBB_Styles', false )
+				? array_values( array_diff( \ECBB_Styles::ecbb_meta_combo_all_slugs(), \ECBB_Styles::ecbb_meta_combo_slugs_style1() ) )
+				: [ 'venue_time_cost' ];
 
-			return array_values(
-				array_filter(
-					$clean,
-					static function ( $row ) use ( $blocked ) {
-						if ( ! is_array( $row ) ) {
-							return true;
-						}
-						return ! in_array( (string) ( $row['part'] ?? '' ), $blocked, true );
-					}
-				)
-			);
+			return static::ecbb_filter_blocked_parts( $clean, $blocked );
 		}
 
 		protected static function ecbb_card_base_class() {
@@ -82,6 +78,10 @@ if ( ! class_exists( 'ECBB_List_1', false ) ) {
 
 		protected static function ecbb_no_image_class() {
 			return 'event-list-card--no-image';
+		}
+
+		protected static function ecbb_no_date_class() {
+			return 'event-list-card--no-date';
 		}
 
 		protected static function ecbb_render_image_shell( $post, array $settings ) {
@@ -98,9 +98,14 @@ if ( ! class_exists( 'ECBB_List_1', false ) ) {
 		}
 
 		protected static function ecbb_open_content( $post, array $settings, $show_image ) {
+			unset( $show_image );
+			$show_date = \ECBB_Markup::ecbb_show_list1_date_column( $settings );
+
 			echo '<div class="event-list-card__content">';
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-			echo \ECBB_Markup::ecbb_list1_date_column( $post, $settings );
+			if ( $show_date ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				echo \ECBB_Markup::ecbb_list1_date_column( $post, $settings );
+			}
 			echo '<div class="event-list-card__body">';
 		}
 

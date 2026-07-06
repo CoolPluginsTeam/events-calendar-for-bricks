@@ -328,6 +328,22 @@
 		}, 80);
 	}
 
+	builder.watchRepeaterSortEnd = function() {
+		if (builder.isRepeaterSortActive()) {
+			builder.tabs.sortEndRaf = requestAnimationFrame(builder.watchRepeaterSortEnd);
+			return;
+		}
+		builder.tabs.sortEndRaf = 0;
+		builder.scanRepeaterRowsAndSyncPreview();
+	}
+
+	builder.scheduleRepeaterSortEndResync = function() {
+		if (builder.tabs.sortEndRaf) {
+			cancelAnimationFrame(builder.tabs.sortEndRaf);
+		}
+		builder.tabs.sortEndRaf = requestAnimationFrame(builder.watchRepeaterSortEnd);
+	}
+
 	builder.readRepeaterRowId = function(item) {
 		if (!item) {
 			return "";

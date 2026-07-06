@@ -63,6 +63,8 @@ if ( ! class_exists( 'ECBB_Settings_Normalizer', false ) ) {
 				'ecbb_margin', 'ecbb_padding', 'ecbb_use_hover', 'ecbb_hover_color', 'ecbb_hover_background',
 				'ecbb_hover_text_decoration', 'ecbb_hover_animation', 'btn_style', 'btn_bg', 'btn_text_color',
 				'btn_border_type', 'btn_border_width', 'btn_border_color', 'btn_padding', 'btn_border_radius',
+				'date_display', 'venue_display', 'cost_currency', 'organizer_display', 'event_link_display',
+				'date_format_preset', 'date_format_custom',
 			];
 			foreach ( $defaults as $i => $row ) {
 				if ( ! is_array( $row ) || ! isset( $saved[ $i ] ) || ! is_array( $saved[ $i ] ) ) {
@@ -78,6 +80,59 @@ if ( ! class_exists( 'ECBB_Settings_Normalizer', false ) ) {
 					}
 				}
 			}
+			return $defaults;
+		}
+
+		/**
+		 * Carry date/venue/cost display settings from legacy Style 2 rows onto combo defaults.
+		 *
+		 * @param array<int,array<string,mixed>> $saved
+		 * @param array<int,array<string,mixed>> $defaults
+		 * @return array<int,array<string,mixed>>
+		 */
+		public static function ecbb_migrate_legacy_style2_combo_display( array $saved, array $defaults ) {
+			if ( ! class_exists( 'ECBB_Styles', false ) ) {
+				return $defaults;
+			}
+
+			$date_display  = '';
+			$venue_display = '';
+			$cost_currency = '';
+			foreach ( $saved as $row ) {
+				if ( ! is_array( $row ) ) {
+					continue;
+				}
+				$part = (string) ( $row['part'] ?? '' );
+				if ( $part === 'date' && isset( $row['date_display'] ) ) {
+					$date_display = (string) $row['date_display'];
+				}
+				if ( $part === 'venue' && isset( $row['venue_display'] ) ) {
+					$venue_display = (string) $row['venue_display'];
+				}
+				if ( $part === 'event_cost' && isset( $row['cost_currency'] ) ) {
+					$cost_currency = (string) $row['cost_currency'];
+				}
+			}
+
+			foreach ( $defaults as $index => $row ) {
+				if ( ! is_array( $row ) ) {
+					continue;
+				}
+				$part = (string) ( $row['part'] ?? '' );
+				if ( ! \ECBB_Styles::ecbb_is_meta_combo_slug( $part ) ) {
+					continue;
+				}
+				if ( $date_display !== '' && \ECBB_Styles::ecbb_meta_combo_has_segment( $part, 'time' ) ) {
+					$defaults[ $index ]['date_display'] = $date_display;
+				}
+				if ( $venue_display !== '' && \ECBB_Styles::ecbb_meta_combo_has_segment( $part, 'venue' ) ) {
+					$defaults[ $index ]['venue_display'] = $venue_display;
+				}
+				if ( $cost_currency !== '' && \ECBB_Styles::ecbb_meta_combo_has_segment( $part, 'cost' ) ) {
+					$defaults[ $index ]['cost_currency'] = $cost_currency;
+				}
+			}
+
 			return $defaults;
 		}
 
@@ -104,7 +159,11 @@ if ( ! class_exists( 'ECBB_Settings_Normalizer', false ) ) {
 			if ( isset( $legacy_by_layout[ $layout ] ) ) {
 				foreach ( $legacy_by_layout[ $layout ] as $signature ) {
 					if ( $slugs === $signature ) {
-						return self::ecbb_parts_preserve_bricks_rows( $parts, $default_fn() );
+						$defaults = self::ecbb_parts_preserve_bricks_rows( $parts, $default_fn() );
+						if ( $layout === 'style2' ) {
+							$defaults = self::ecbb_migrate_legacy_style2_combo_display( $parts, $defaults );
+						}
+						return $defaults;
 					}
 				}
 			}
@@ -255,7 +314,9 @@ if ( ! class_exists( 'ECBB_Settings_Normalizer', false ) ) {
 						continue;
 					}
 					$part = (string) ( $row['part'] ?? '' );
-					if ( $part !== 'event_cost' && $part !== 'venue_time_cost' ) {
+					$needs_cost = $part === 'event_cost'
+						|| ( class_exists( 'ECBB_Styles', false ) && \ECBB_Styles::ecbb_is_meta_combo_slug( $part ) && \ECBB_Styles::ecbb_meta_combo_has_segment( $part, 'cost' ) );
+					if ( ! $needs_cost ) {
 						continue;
 					}
 					if ( ! isset( $row['cost_currency'] ) || (string) $row['cost_currency'] === '' ) {
@@ -301,7 +362,7 @@ if ( ! class_exists( 'ECBB_Settings_Normalizer', false ) ) {
 				}
 			}
 
-			foreach ( [ 'list1_show_category_badge', 'grid_show_category_badge', 'style2_show_date_badge' ] as $key ) {
+			foreach ( [ 'list1_show_category_badge', 'grid_show_category_badge', 'style2_show_date_badge', 'list1_show_date_column' ] as $key ) {
 				if ( ! array_key_exists( $key, $settings ) ) {
 					continue;
 				}
@@ -394,6 +455,15 @@ if ( ! class_exists( 'ECBB_Settings_Normalizer', false ) ) {
 				return false;
 			}
 			return self::ecbb_shell_select_on( $settings, 'style2_show_date_badge', 'show' );
+		}
+
+		public static function ecbb_show_list1_date_column( $settings ) {
+			$settings = self::ecbb_layout_settings( is_array( $settings ) ? $settings : [] );
+			$layout   = self::ecbb_sanitize_layout_template( $settings );
+			if ( $layout['template'] !== 'list' || $layout['item_chrome'] !== 'style-1' ) {
+				return false;
+			}
+			return self::ecbb_shell_select_on( $settings, 'list1_show_date_column', 'show' );
 		}
 
 		public static function ecbb_style2_date_badge_order( $settings ) {

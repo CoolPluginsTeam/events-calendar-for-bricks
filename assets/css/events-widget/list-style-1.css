@@ -152,7 +152,7 @@
 	line-height: inherit;
 }
 
-/* Style 1: venue / time share a row; cost is always on its own line below. */
+/* Style 1: venue/time and cost can each sit on their own line; order follows the parts repeater. */
 .ecbb-ev .event-meta--list-price {
 	width: 100%;
 }
@@ -171,10 +171,19 @@
 	color: inherit;
 }
 
+/* No date column: single-column content grid. */
+.ecbb-ev .event-list-card--no-date .event-list-card__content {
+	grid-template-columns: 1fr;
+}
+
 /* No featured image: keep date column + body; only drop the image column. */
 .ecbb-ev .event-list-card--no-image .event-list-card__content {
 	grid-template-columns: 58px 1fr;
 	min-height: auto;
+}
+
+.ecbb-ev .event-list-card--no-image.event-list-card--no-date .event-list-card__content {
+	grid-template-columns: 1fr;
 }
 
 @media (max-width: 1024px) {

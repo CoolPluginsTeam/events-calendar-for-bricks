@@ -63,6 +63,31 @@ if ( ! class_exists( 'ECBB_Layout_Base', false ) ) {
 		}
 
 		/**
+		 * Drop repeater rows whose part slug is in the blocked list.
+		 *
+		 * @param array<int,mixed>   $clean   Cleaned repeater rows.
+		 * @param array<int,string>  $blocked Part slugs to remove.
+		 * @return array<int,mixed>
+		 */
+		protected static function ecbb_filter_blocked_parts( array $clean, array $blocked ) {
+			if ( $blocked === [] ) {
+				return $clean;
+			}
+
+			return array_values(
+				array_filter(
+					$clean,
+					static function ( $row ) use ( $blocked ) {
+						if ( ! is_array( $row ) ) {
+							return true;
+						}
+						return ! in_array( (string) ( $row['part'] ?? '' ), $blocked, true );
+					}
+				)
+			);
+		}
+
+		/**
 		 * Skin slug for part rendering and meta rows.
 		 *
 		 * @return string
@@ -95,6 +120,15 @@ if ( ! class_exists( 'ECBB_Layout_Base', false ) ) {
 		 * @return string
 		 */
 		protected static function ecbb_no_image_class() {
+			return '';
+		}
+
+		/**
+		 * Modifier class when the layout date column is hidden.
+		 *
+		 * @return string
+		 */
+		protected static function ecbb_no_date_class() {
 			return '';
 		}
 
@@ -176,6 +210,15 @@ if ( ! class_exists( 'ECBB_Layout_Base', false ) ) {
 				if ( $no_image_class !== '' ) {
 					$card_class .= ' ' . $no_image_class;
 				}
+			}
+
+			$no_date_class = static::ecbb_no_date_class();
+			if (
+				$no_date_class !== ''
+				&& class_exists( 'ECBB_Markup', false )
+				&& ! \ECBB_Markup::ecbb_show_list1_date_column( $settings )
+			) {
+				$card_class .= ' ' . $no_date_class;
 			}
 
 			ob_start();
