@@ -10,12 +10,7 @@
 	background: var(--ecbb-card-bg, var(--color-card-bg));
 	border: 1px solid var(--color-border);
 	border-radius: 20px;
-	transition: transform var(--transition-base);
 	width: 100%;
-}
-
-.ecbb-ev .event-list-card:hover {
-	transform: none;
 }
 
 .ecbb-ev .event-list-card__image-wrap {
@@ -26,10 +21,6 @@
 	background: #d9e0ea;
 }
 
-.ecbb-ev .event-list-card:hover .event-list-card__image {
-	transform: none;
-}
-
 .ecbb-ev .event-list-card__content {
 	display: grid;
 	grid-template-columns: 58px 1fr;
@@ -37,10 +28,6 @@
 	min-height: 268px;
 	padding: 30px 34px 28px 28px;
 	border-radius: 0 20px 20px;
-}
-
-.ecbb-ev .event-list-card:hover .event-list-card__content {
-	box-shadow: var(--shadow-card-hover);
 }
 
 .ecbb-ev .event-list-card__date {
@@ -184,6 +171,12 @@
 	color: inherit;
 }
 
+/* No featured image: keep date column + body; only drop the image column. */
+.ecbb-ev .event-list-card--no-image .event-list-card__content {
+	grid-template-columns: 58px 1fr;
+	min-height: auto;
+}
+
 @media (max-width: 1024px) {
 	.ecbb-ev .event-list-card {
 		grid-template-columns: minmax(260px, 360px) minmax(0, 1fr);
@@ -216,10 +209,6 @@
 		min-height: auto;
 		box-shadow: none;
 		border-radius: 0 0 20px 20px;
-	}
-
-	.ecbb-ev .event-list-card:hover .event-list-card__content {
-		box-shadow: none;
 	}
 }
 
@@ -285,16 +274,6 @@
 
 	.ecbb-ev .event-list-card__title {
 		font-size: 17px;
-	}
-}
-
-@media (hover: hover) and (pointer: fine) {
-	.ecbb-ev .event-list-card:hover {
-		transform: translateY(-4px);
-	}
-
-	.ecbb-ev .event-list-card:hover .event-list-card__image {
-		transform: scale(1.055);
 	}
 }
 

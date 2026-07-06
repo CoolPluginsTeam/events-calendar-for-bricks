@@ -284,8 +284,7 @@ class ECBB_Widget extends \Bricks\Element
 		}
 
 		$link         = isset( $item['image_link'] ) ? (bool) $item['image_link'] : true;
-		$dual         = \ECBB_Markup::ecbb_image_dual_layer( $item );
-		$part_classes = $dual ? $wrap . ' ecbb-is-dual-img' : $wrap;
+		$part_classes = $wrap;
 
 		$this->ecbb_print_part_open_tag( 'div', $part_classes, $item, $idx );
 		if ( $link ) {
@@ -680,6 +679,15 @@ class ECBB_Widget extends \Bricks\Element
 		$this->set_attribute( '_root', 'class', $scope_class );
 
 		$settings = is_array( $this->settings ) ? $this->settings : [];
+		$vignette = isset( $settings['ecbb_featured_image_vignette'] ) ? (string) $settings['ecbb_featured_image_vignette'] : 'none';
+		if ( $vignette !== '' && $vignette !== 'none' ) {
+			$this->set_attribute( '_root', 'class', 'ecbb-vig--' . sanitize_html_class( $vignette ) );
+		}
+
+		foreach ( \ECBB_Markup::ecbb_shell_hover_root_classes( $settings ) as $hover_class ) {
+			$this->set_attribute( '_root', 'class', $hover_class );
+		}
+
 		$layout   = $this->ecbb_get_layout_context();
 		$parts    = $this->ecbb_get_parts_effective( $layout['template'], $layout['item_chrome'], $layout );
 

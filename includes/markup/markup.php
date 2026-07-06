@@ -50,6 +50,7 @@ if ( ! class_exists( 'ECBB_Markup', false ) ) {
 						'ecbb_hover_on_values', 'ecbb_hover_is_on', 'ecbb_norm_hover_row',
 						'ecbb_norm_parts_hover', 'ecbb_norm_settings_hover', 'ecbb_resolve_parts',
 						'ecbb_migrate_cost_currency', 'ecbb_layout_settings', 'ecbb_norm_layout_shell_settings',
+						'ecbb_shell_hover_root_classes',
 						'ecbb_shell_select_on', 'ecbb_show_event_image', 'ecbb_show_shell_category_badge',
 						'ecbb_show_style2_date_badge', 'ecbb_style2_date_badge_order', 'ecbb_list1_date_column_order',
 					],
@@ -102,7 +103,7 @@ if ( ! class_exists( 'ECBB_Markup', false ) ) {
 						'ecbb_grid_description_html', 'ecbb_grid_description_word_limit', 'ecbb_layout_surface_class',
 						'ecbb_shell_skip_part', 'ecbb_is_layout_meta_row', 'ecbb_meta_icon', 'ecbb_meta_icon_for_part',
 						'ecbb_meta_list_icon_part_slugs', 'ecbb_part_shows_style2_meta_icon',
-						'ecbb_part_renders_meta_list_icon',
+						'ecbb_part_renders_meta_list_icon', 'ecbb_part_uses_composite_inline_meta_icons',
 					],
 					'ECBB_Layout_Shell'
 				),
@@ -161,24 +162,24 @@ if ( ! class_exists( 'ECBB_Markup', false ) ) {
 				return $default;
 			}
 			if ( is_bool( $value ) ) {
-				return $value;
-			}
+			return $value;
+		}
 			if ( is_numeric( $value ) ) {
-				return (int) $value === 1;
-			}
+			return (int) $value === 1;
+		}
 			if ( is_string( $value ) ) {
 				$value = strtolower( trim( $value ) );
 				if ( $value === '' ) {
-					return false;
-				}
-				if ( in_array( $value, [ '1', 'true', 'yes', 'on' ], true ) ) {
-					return true;
-				}
-				if ( in_array( $value, [ '0', 'false', 'no', 'off' ], true ) ) {
-					return false;
-				}
+				return false;
 			}
-			return (bool) $value;
+				if ( in_array( $value, [ '1', 'true', 'yes', 'on' ], true ) ) {
+			return true;
+		}
+				if ( in_array( $value, [ '0', 'false', 'no', 'off' ], true ) ) {
+			return false;
+		}
+		}
+		return (bool) $value;
 		}
 
 		/** True for 1, yes, on, true (string or scalar). */
@@ -192,9 +193,9 @@ if ( ! class_exists( 'ECBB_Markup', false ) ) {
 				return '';
 			}
 			if ( is_object( $value ) ) {
-				$value = (array) $value;
-			}
-			$color = '';
+			$value = (array) $value;
+		}
+		$color = '';
 			if ( is_array( $value ) ) {
 				if (
 					class_exists( '\Bricks\Assets' ) && method_exists( '\Bricks\Assets', 'generate_css_color' )
@@ -210,20 +211,20 @@ if ( ! class_exists( 'ECBB_Markup', false ) ) {
 					$g = isset( $value['rgb']['g'] ) ? (int) $value['rgb']['g'] : 0;
 					$b = isset( $value['rgb']['b'] ) ? (int) $value['rgb']['b'] : 0;
 					$a = isset( $value['rgb']['a'] ) ? (float) $value['rgb']['a'] : 1.0;
-					$color = 'rgba(' . $r . ',' . $g . ',' . $b . ',' . $a . ')';
-				}
+			$color = 'rgba(' . $r . ',' . $g . ',' . $b . ',' . $a . ')';
+		}
 				if ( $color === '' ) {
 					$tmp   = $value['raw'] ?? $value['rgba'] ?? $value['hex'] ?? $value['value'] ?? '';
 					$color = is_string( $tmp ) ? trim( $tmp ) : '';
 				}
 			} elseif ( is_string( $value ) ) {
 				$color = trim( $value );
-			} else {
-				return '';
-			}
+		} else {
+		return '';
+		}
 			if ( $color === '' ) {
-				return '';
-			}
+			return '';
+		}
 			if ( isset( $color[0] ) && ( $color[0] === '{' || $color[0] === '[' ) ) {
 				$decoded = json_decode( $color, true );
 				if ( is_array( $decoded ) ) {
@@ -233,22 +234,22 @@ if ( ! class_exists( 'ECBB_Markup', false ) ) {
 			$color = preg_replace( '/\s*!important\s*$/i', '', $color );
 			$color = rtrim( trim( $color ), ';' );
 			if ( preg_match( '/^var\\(--[a-zA-Z0-9\\-_]+(\\s*,\\s*[^\\)]+)?\\)$/', $color ) ) {
-				return $color;
-			}
+			return $color;
+		}
 			$lower = strtolower( $color );
 			if ( in_array( $lower, [ 'transparent', 'currentcolor', 'inherit', 'initial', 'unset' ], true ) ) {
-				return $color;
-			}
+			return $color;
+		}
 			if ( preg_match( '/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', $color ) ) {
-				return $color;
-			}
+			return $color;
+		}
 			if ( preg_match( '/^rgba?\\(([^\\)]+)\\)$/', $color ) ) {
-				return $color;
-			}
+			return $color;
+		}
 			if ( preg_match( '/^hsla?\\(([^\\)]+)\\)$/', $color ) ) {
-				return $color;
-			}
-			return '';
+			return $color;
+		}
+		return '';
 		}
 
 		/** Visible hover paint only (drops transparent / inherit / zero-alpha). */

@@ -1,0 +1,268 @@
+/**
+ * Events Widget — featured image shell (sizing, card/image hover presets, vignette).
+ * Controlled via Style tab hover animation selects on the widget root (.ecbb-ev--*).
+ */
+
+.ecbb-ev {
+	--ecbb-card-hover-lift-default: 4;
+	--ecbb-image-hover-scale-default: 105.5;
+	--ecbb-shell-transition: 280ms;
+}
+
+.ecbb-ev .event-grid-card {
+	--ecbb-card-hover-lift-default: 6;
+	--ecbb-image-hover-scale-default: 106;
+}
+
+.ecbb-ev .event-list-card__image-wrap,
+.ecbb-ev .ecbb-event-card__image-wrap,
+.ecbb-ev .event-grid-card__image-wrap {
+	min-height: var(--ecbb-featured-image-min-height);
+	height: var(--ecbb-featured-image-height);
+}
+
+.ecbb-ev .event-list-card__image,
+.ecbb-ev .ecbb-event-card__image,
+.ecbb-ev .event-grid-card__image {
+	object-fit: cover;
+	object-position: center;
+	transition:
+		transform var(--ecbb-shell-transition) ease,
+		filter var(--ecbb-shell-transition) ease;
+}
+
+.ecbb-ev .event-list-card,
+.ecbb-ev .ecbb-event-card,
+.ecbb-ev .event-grid-card {
+	transition:
+		transform var(--ecbb-shell-transition) ease,
+		box-shadow var(--ecbb-shell-transition) ease,
+		border-color var(--ecbb-shell-transition) ease;
+}
+
+.ecbb-ev .event-list-card__content {
+	transition: box-shadow var(--ecbb-shell-transition) ease;
+}
+
+/* Vignette / color overlay (below badges, above image; non-interactive). */
+.ecbb-ev[class*="ecbb-vig--"] .event-list-card__image-wrap::after,
+.ecbb-ev[class*="ecbb-vig--"] .ecbb-event-card__image-wrap::after,
+.ecbb-ev[class*="ecbb-vig--"] .event-grid-card__image-wrap::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	z-index: 1;
+	pointer-events: none;
+	opacity: calc(var(--ecbb-vignette-opacity, 45) / 100);
+	transition: opacity var(--ecbb-shell-transition) ease;
+}
+
+.ecbb-vig--radial-center .event-list-card__image-wrap::after,
+.ecbb-vig--radial-center .ecbb-event-card__image-wrap::after,
+.ecbb-vig--radial-center .event-grid-card__image-wrap::after {
+	background: radial-gradient(
+		ellipse at center,
+		transparent 32%,
+		var(--ecbb-vignette-color, rgba(15, 23, 42, 0.82)) 100%
+	);
+}
+
+.ecbb-vig--bottom-fade .event-list-card__image-wrap::after,
+.ecbb-vig--bottom-fade .ecbb-event-card__image-wrap::after,
+.ecbb-vig--bottom-fade .event-grid-card__image-wrap::after {
+	background: linear-gradient(
+		to top,
+		var(--ecbb-vignette-color, rgba(15, 23, 42, 0.72)) 0%,
+		transparent 58%
+	);
+}
+
+.ecbb-vig--top-fade .event-list-card__image-wrap::after,
+.ecbb-vig--top-fade .ecbb-event-card__image-wrap::after,
+.ecbb-vig--top-fade .event-grid-card__image-wrap::after {
+	background: linear-gradient(
+		to bottom,
+		var(--ecbb-vignette-color, rgba(15, 23, 42, 0.72)) 0%,
+		transparent 58%
+	);
+}
+
+.ecbb-vig--left-fade .event-list-card__image-wrap::after,
+.ecbb-vig--left-fade .ecbb-event-card__image-wrap::after,
+.ecbb-vig--left-fade .event-grid-card__image-wrap::after {
+	background: linear-gradient(
+		to right,
+		var(--ecbb-vignette-color, rgba(15, 23, 42, 0.72)) 0%,
+		transparent 58%
+	);
+}
+
+.ecbb-vig--right-fade .event-list-card__image-wrap::after,
+.ecbb-vig--right-fade .ecbb-event-card__image-wrap::after,
+.ecbb-vig--right-fade .event-grid-card__image-wrap::after {
+	background: linear-gradient(
+		to left,
+		var(--ecbb-vignette-color, rgba(15, 23, 42, 0.72)) 0%,
+		transparent 58%
+	);
+}
+
+.ecbb-vig--tint .event-list-card__image-wrap::after,
+.ecbb-vig--tint .ecbb-event-card__image-wrap::after,
+.ecbb-vig--tint .event-grid-card__image-wrap::after {
+	background: var(--ecbb-vignette-color, rgba(33, 71, 199, 0.28));
+	mix-blend-mode: multiply;
+}
+
+@media (hover: hover) and (pointer: fine) {
+	/* Default card hover (lift + shadow) when no preset is selected. */
+	.ecbb-ev:not([class*="ecbb-card-hover--"]) .event-list-card:hover,
+	.ecbb-ev:not([class*="ecbb-card-hover--"]) .ecbb-event-card:hover,
+	.ecbb-ev:not([class*="ecbb-card-hover--"]) .event-grid-card:hover {
+		transform: translateY(
+			calc(-1 * var(--ecbb-card-hover-lift-default) * 1px)
+		);
+		border-color: var(--ecbb-card-hover-border-color);
+		box-shadow: var(--shadow-card-hover, 0 16px 40px rgba(15, 23, 42, 0.12));
+	}
+
+	/* Default image zoom on card hover. */
+	.ecbb-ev:not([class*="ecbb-img-hover--"]) .event-list-card:hover .event-list-card__image,
+	.ecbb-ev:not([class*="ecbb-img-hover--"]) .ecbb-event-card:hover .ecbb-event-card__image,
+	.ecbb-ev:not([class*="ecbb-img-hover--"]) .event-grid-card:hover .event-grid-card__image {
+		transform: scale(calc(var(--ecbb-image-hover-scale-default) / 100));
+	}
+
+	/* Card hover presets. */
+	.ecbb-ev.ecbb-card-hover--none .event-list-card:hover,
+	.ecbb-ev.ecbb-card-hover--none .ecbb-event-card:hover,
+	.ecbb-ev.ecbb-card-hover--none .event-grid-card:hover {
+		transform: none;
+		box-shadow: none;
+	}
+
+	.ecbb-ev.ecbb-card-hover--fade_in_up .event-list-card:hover,
+	.ecbb-ev.ecbb-card-hover--fade_in_up .ecbb-event-card:hover,
+	.ecbb-ev.ecbb-card-hover--fade_in_up .event-grid-card:hover {
+		transform: translateY(-8px);
+		border-color: var(--ecbb-card-hover-border-color);
+		box-shadow: var(--shadow-card-hover, 0 16px 40px rgba(15, 23, 42, 0.12));
+	}
+
+	.ecbb-ev.ecbb-card-hover--fade_in_right .event-list-card:hover,
+	.ecbb-ev.ecbb-card-hover--fade_in_right .ecbb-event-card:hover,
+	.ecbb-ev.ecbb-card-hover--fade_in_right .event-grid-card:hover {
+		transform: translateX(8px);
+		border-color: var(--ecbb-card-hover-border-color);
+		box-shadow: var(--shadow-card-hover, 0 16px 40px rgba(15, 23, 42, 0.12));
+	}
+
+	.ecbb-ev.ecbb-card-hover--fade_in_down .event-list-card:hover,
+	.ecbb-ev.ecbb-card-hover--fade_in_down .ecbb-event-card:hover,
+	.ecbb-ev.ecbb-card-hover--fade_in_down .event-grid-card:hover {
+		transform: translateY(8px);
+		border-color: var(--ecbb-card-hover-border-color);
+		box-shadow: var(--shadow-card-hover, 0 16px 40px rgba(15, 23, 42, 0.12));
+	}
+
+	.ecbb-ev.ecbb-card-hover--fade_in_left .event-list-card:hover,
+	.ecbb-ev.ecbb-card-hover--fade_in_left .ecbb-event-card:hover,
+	.ecbb-ev.ecbb-card-hover--fade_in_left .event-grid-card:hover {
+		transform: translateX(-8px);
+		border-color: var(--ecbb-card-hover-border-color);
+		box-shadow: var(--shadow-card-hover, 0 16px 40px rgba(15, 23, 42, 0.12));
+	}
+
+	.ecbb-ev.ecbb-card-hover--zoom_in .event-list-card:hover,
+	.ecbb-ev.ecbb-card-hover--zoom_in .ecbb-event-card:hover,
+	.ecbb-ev.ecbb-card-hover--zoom_in .event-grid-card:hover {
+		transform: scale(1.03);
+		border-color: var(--ecbb-card-hover-border-color);
+		box-shadow: var(--shadow-card-hover, 0 16px 40px rgba(15, 23, 42, 0.12));
+	}
+
+	.ecbb-ev.ecbb-card-hover--zoom_out .event-list-card:hover,
+	.ecbb-ev.ecbb-card-hover--zoom_out .ecbb-event-card:hover,
+	.ecbb-ev.ecbb-card-hover--zoom_out .event-grid-card:hover {
+		transform: scale(0.97);
+		border-color: var(--ecbb-card-hover-border-color);
+		box-shadow: var(--shadow-card-hover, 0 16px 40px rgba(15, 23, 42, 0.12));
+	}
+
+	/* Image hover presets (on card hover). */
+	.ecbb-ev.ecbb-img-hover--none .event-list-card:hover .event-list-card__image,
+	.ecbb-ev.ecbb-img-hover--none .ecbb-event-card:hover .ecbb-event-card__image,
+	.ecbb-ev.ecbb-img-hover--none .event-grid-card:hover .event-grid-card__image {
+		transform: none;
+		filter: none;
+	}
+
+	.ecbb-ev.ecbb-img-hover--fade_in_up .event-list-card:hover .event-list-card__image,
+	.ecbb-ev.ecbb-img-hover--fade_in_up .ecbb-event-card:hover .ecbb-event-card__image,
+	.ecbb-ev.ecbb-img-hover--fade_in_up .event-grid-card:hover .event-grid-card__image {
+		transform: translateY(-8px);
+	}
+
+	.ecbb-ev.ecbb-img-hover--fade_in_right .event-list-card:hover .event-list-card__image,
+	.ecbb-ev.ecbb-img-hover--fade_in_right .ecbb-event-card:hover .ecbb-event-card__image,
+	.ecbb-ev.ecbb-img-hover--fade_in_right .event-grid-card:hover .event-grid-card__image {
+		transform: translateX(8px);
+	}
+
+	.ecbb-ev.ecbb-img-hover--fade_in_down .event-list-card:hover .event-list-card__image,
+	.ecbb-ev.ecbb-img-hover--fade_in_down .ecbb-event-card:hover .ecbb-event-card__image,
+	.ecbb-ev.ecbb-img-hover--fade_in_down .event-grid-card:hover .event-grid-card__image {
+		transform: translateY(8px);
+	}
+
+	.ecbb-ev.ecbb-img-hover--fade_in_left .event-list-card:hover .event-list-card__image,
+	.ecbb-ev.ecbb-img-hover--fade_in_left .ecbb-event-card:hover .ecbb-event-card__image,
+	.ecbb-ev.ecbb-img-hover--fade_in_left .event-grid-card:hover .event-grid-card__image {
+		transform: translateX(-8px);
+	}
+
+	.ecbb-ev.ecbb-img-hover--zoom_in .event-list-card:hover .event-list-card__image,
+	.ecbb-ev.ecbb-img-hover--zoom_in .ecbb-event-card:hover .ecbb-event-card__image,
+	.ecbb-ev.ecbb-img-hover--zoom_in .event-grid-card:hover .event-grid-card__image {
+		transform: scale(1.06);
+	}
+
+	.ecbb-ev.ecbb-img-hover--zoom_out .event-list-card:hover .event-list-card__image,
+	.ecbb-ev.ecbb-img-hover--zoom_out .ecbb-event-card:hover .ecbb-event-card__image,
+	.ecbb-ev.ecbb-img-hover--zoom_out .event-grid-card:hover .event-grid-card__image {
+		transform: scale(0.94);
+	}
+
+	/* Style 1 split layout: shadow on content panel instead of the outer grid on wide screens. */
+	@media (min-width: 861px) {
+		.ecbb-ev:not([class*="ecbb-card-hover--"]) .event-list-card:hover {
+			box-shadow: none;
+		}
+
+		.ecbb-ev:not([class*="ecbb-card-hover--"]) .event-list-card:hover .event-list-card__content {
+			box-shadow: var(--shadow-card-hover, 0 16px 40px rgba(15, 23, 42, 0.12));
+		}
+
+		.ecbb-ev.ecbb-card-hover--fade_in_up .event-list-card:hover,
+		.ecbb-ev.ecbb-card-hover--fade_in_right .event-list-card:hover,
+		.ecbb-ev.ecbb-card-hover--fade_in_down .event-list-card:hover,
+		.ecbb-ev.ecbb-card-hover--fade_in_left .event-list-card:hover,
+		.ecbb-ev.ecbb-card-hover--zoom_in .event-list-card:hover,
+		.ecbb-ev.ecbb-card-hover--zoom_out .event-list-card:hover {
+			box-shadow: none;
+		}
+
+		.ecbb-ev.ecbb-card-hover--fade_in_up .event-list-card:hover .event-list-card__content,
+		.ecbb-ev.ecbb-card-hover--fade_in_right .event-list-card:hover .event-list-card__content,
+		.ecbb-ev.ecbb-card-hover--fade_in_down .event-list-card:hover .event-list-card__content,
+		.ecbb-ev.ecbb-card-hover--fade_in_left .event-list-card:hover .event-list-card__content,
+		.ecbb-ev.ecbb-card-hover--zoom_in .event-list-card:hover .event-list-card__content,
+		.ecbb-ev.ecbb-card-hover--zoom_out .event-list-card:hover .event-list-card__content {
+			box-shadow: var(--shadow-card-hover, 0 16px 40px rgba(15, 23, 42, 0.12));
+		}
+
+		.ecbb-ev.ecbb-card-hover--none .event-list-card:hover .event-list-card__content {
+			box-shadow: none;
+		}
+	}
+}

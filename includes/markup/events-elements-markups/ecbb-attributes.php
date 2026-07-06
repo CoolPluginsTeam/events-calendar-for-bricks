@@ -167,6 +167,9 @@ if ( ! class_exists( 'ECBB_Part_Chrome', false ) ) {
 			}
 
 			$hover_anim = isset( $item['ecbb_hover_animation'] ) ? (string) $item['ecbb_hover_animation'] : '';
+			if ( $hover_anim === 'none' ) {
+				return false;
+			}
 			return $hover_anim !== '';
 		}
 
@@ -455,18 +458,8 @@ if ( ! class_exists( 'ECBB_Part_Chrome', false ) ) {
 			return isset($map[$key]) ? $map[$key] : '';
 		}
 
-		public static function ecbb_image_dual_layer(array $item)
-		{
-			if (! self::ecbb_hover_style_active($item)) {
-				return false;
-			}
-		$base = self::ecbb_sanitize_image_size($item['image_size'] ?? '', 'large');
-		$raw  = isset($item['image_size_hover']) ? trim((string) $item['image_size_hover']) : '';
-		if ($raw === '') {
+		public static function ecbb_image_dual_layer( array $item ) {
 			return false;
-		}
-		$hover = self::ecbb_sanitize_image_size($raw, $base);
-		return $hover !== $base;
 		}
 
 		public static function ecbb_action_link_html( array $item, $href, $label, $link_attr = '', $extra_attrs = '' ) {

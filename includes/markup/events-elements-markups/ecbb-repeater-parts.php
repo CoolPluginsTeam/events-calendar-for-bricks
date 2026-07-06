@@ -51,32 +51,17 @@ if ( ! class_exists( 'ECBB_Part_Renderer', false ) ) {
 			return '<div class="' . $shell['wrap'] . '"' . $shell['attr'] . '>' . esc_html( $text ) . '</div>';
 		}
 
-		/** Featured image (single size or dual-size hover stack). */
+		/** Featured image (single size; hover via premade animation). */
 		public static function ecbb_render_featured_img( $thumb_id, array $item ) {
 			$thumb_id = (int) $thumb_id;
 			if ( ! $thumb_id ) {
 				return '';
 			}
-			if ( ! ECBB_Part_Chrome::ecbb_hover_style_active( $item ) ) {
-				$item['image_size_hover']              = '';
-				$item['ecbb_image_object_align_hover'] = '';
-			}
-			$size_base  = ECBB_Part_Chrome::ecbb_sanitize_image_size( $item['image_size'] ?? '', 'large' );
-			$raw_hover  = isset( $item['image_size_hover'] ) ? trim( (string) $item['image_size_hover'] ) : '';
-			$size_hover = $raw_hover !== '' ? ECBB_Part_Chrome::ecbb_sanitize_image_size( $raw_hover, $size_base ) : '';
-			$dual       = ( $raw_hover !== '' && $size_hover !== $size_base );
 
-			if ( ! $dual ) {
-				$html = wp_get_attachment_image( $thumb_id, $size_base, false, [ 'class' => 'ecbb-event__image' ] );
-				return is_string( $html ) ? $html : '';
-			}
+			$size_base = ECBB_Part_Chrome::ecbb_sanitize_image_size( $item['image_size'] ?? '', 'large' );
+			$html      = wp_get_attachment_image( $thumb_id, $size_base, false, [ 'class' => 'ecbb-event__image' ] );
 
-			$img_base  = wp_get_attachment_image( $thumb_id, $size_base, false, [ 'class' => 'ecbb-event__image ecbb-event__image--base' ] );
-			$img_hover = wp_get_attachment_image( $thumb_id, $size_hover, false, [ 'class' => 'ecbb-event__image ecbb-event__image--hover' ] );
-			if ( ! is_string( $img_base ) || ! is_string( $img_hover ) || $img_base === '' || $img_hover === '' ) {
-				return is_string( $img_base ) ? $img_base : '';
-			}
-			return '<span class="ecbb-event__img-stack">' . $img_base . $img_hover . '</span>';
+			return is_string( $html ) ? $html : '';
 		}
 
 		/** Detail-field part slugs handled by ecbb_render_part_detail(). */
@@ -106,6 +91,13 @@ if ( ! class_exists( 'ECBB_Part_Renderer', false ) ) {
 				'event_rsvp'    => [ self::class, 'ecbb_render_part_event_rsvp' ],
 				'read_more'     => [ self::class, 'ecbb_render_part_read_more' ],
 			];
+			if ( class_exists( 'ECBB_Styles', false ) ) {
+				$map[ \ECBB_Styles::ecbb_part_slug_venue_time() ]       = [ self::class, 'ecbb_render_venue_time' ];
+				$map[ \ECBB_Styles::ecbb_part_slug_venue_time_cost() ] = [ self::class, 'ecbb_render_venue_time_cost' ];
+			} else {
+				$map['venue_time']       = [ self::class, 'ecbb_render_venue_time' ];
+				$map['venue_time_cost'] = [ self::class, 'ecbb_render_venue_time_cost' ];
+			}
 			$detail = [ self::class, 'ecbb_render_part_detail' ];
 			foreach ( self::detail_slugs() as $slug ) {
 				$map[ $slug ] = $detail;
@@ -254,6 +246,167 @@ if ( ! class_exists( 'ECBB_Part_Renderer', false ) ) {
 			}
 			$shell = self::ecbb_part_shell( 'event_cost', $item, $idx, $style, $skin );
 			return '<div class="' . $shell['wrap'] . '"' . $shell['attr'] . '>' . esc_html( $cost ) . '</div>';
+		}
+
+		/** Plain event time string for composite meta rows. */
+		private static function ecbb_part_time_plain_text( $post, array $item ) {
+			if ( ! $post instanceof \WP_Post ) {
+				return '';
+			}
+
+			$time_item = $item;
+			if ( ! isset( $time_item['date_display'] ) || (string) $time_item['date_display'] === '' ) {
+				$time_item['date_display'] = 'time';
+			}
+
+			$format = ECBB_Date_Formatter::ecbb_part_date_php_fmt( 'event_time', $time_item );
+			$tp     = ECBB_Date_Formatter::ecbb_build_day_time_parts( $post->ID, $time_item );
+			$html   = isset( $tp['time'] ) ? trim( (string) $tp['time'] ) : '';
+
+			if ( $html === '' ) {
+				$php = ECBB_Date_Formatter::ecbb_time_fmt_lower( $format !== '' ? $format : get_option( 'time_format' ) );
+				if ( function_exists( 'tribe_get_start_time' ) ) {
+					$html = (string) \tribe_get_start_time( $post->ID, $php );
+				} elseif ( function_exists( 'tribe_get_start_date' ) ) {
+					$html = (string) \tribe_get_start_date( $post->ID, true, $php );
+				} else {
+					$raw  = ECBB_Event_Data::ecbb_event_start_date_raw( $post->ID );
+					$ts   = $raw ? strtotime( $raw ) : false;
+					$html = $ts ? date_i18n( $php, $ts ) : '';
+				}
+				$html = ECBB_Date_Formatter::ecbb_time_lower_am( trim( wp_strip_all_tags( $html ) ) );
+			}
+
+			return $html;
+		}
+
+		/**
+		 * Meta icon for a composite segment.
+		 *
+		 * @param string $type  Icon key.
+		 * @param bool   $boxed Use full Style 2 meta icon chrome (not inline).
+		 */
+		private static function ecbb_composite_segment_icon( $type, $boxed = false ) {
+			if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
+				return '';
+			}
+			$icon = ECBB_Layout_Shell::ecbb_meta_icon( (string) $type );
+			if ( $icon === '' ) {
+				return '';
+			}
+			if ( $boxed ) {
+				return $icon;
+			}
+
+			return str_replace(
+				'class="ecbb-event-card__meta-icon"',
+				'class="ecbb-event-card__meta-icon ecbb-event-card__meta-icon--inline"',
+				$icon
+			);
+		}
+
+		/**
+		 * @param array<int,array{class:string,text:string,icon?:string}> $segments
+		 * @param string                                                  $skin     Layout skin (style1|style2|grid).
+		 */
+		private static function ecbb_render_composite_meta_segments( array $segments, $skin = '' ) {
+			$boxed_icons = ( (string) $skin === 'style2' );
+			$chunks      = [];
+			foreach ( $segments as $segment ) {
+				$text = isset( $segment['text'] ) ? trim( (string) $segment['text'] ) : '';
+				if ( $text === '' ) {
+					continue;
+				}
+				$class = isset( $segment['class'] ) ? (string) $segment['class'] : 'ecbb-event__meta-segment';
+				$icon  = isset( $segment['icon'] ) ? self::ecbb_composite_segment_icon( (string) $segment['icon'], $boxed_icons ) : '';
+				$chunks[] = '<span class="' . esc_attr( $class ) . ' ecbb-event__meta-segment">'
+					. $icon
+					. '<span class="ecbb-event__meta-text">' . esc_html( $text ) . '</span>'
+					. '</span>';
+			}
+
+			if ( $chunks === [] ) {
+				return '';
+			}
+
+			return '<span class="ecbb-event__meta-group">' . implode( '', $chunks ) . '</span>';
+		}
+
+		/** Style 1 composite: venue + time in one meta row. */
+		public static function ecbb_render_venue_time( $post, array $item, $idx, $style, $skin = '' ) {
+			if ( ! $post instanceof \WP_Post ) {
+				return '';
+			}
+
+			$venue = ECBB_Event_Data::ecbb_venue_text( $post->ID, $item, $skin );
+			$time  = self::ecbb_part_time_plain_text( $post, $item );
+			$inner = self::ecbb_render_composite_meta_segments(
+				[
+					[
+						'class' => 'ecbb-event__meta-venue',
+						'icon'  => 'pin',
+						'text'  => $venue,
+					],
+					[
+						'class' => 'ecbb-event__meta-time',
+						'icon'  => 'clock',
+						'text'  => $time,
+					],
+				],
+				$skin
+			);
+			if ( $inner === '' ) {
+				return '';
+			}
+
+			$part_slug = class_exists( 'ECBB_Styles', false )
+				? \ECBB_Styles::ecbb_part_slug_venue_time()
+				: 'venue_time';
+			$shell     = self::ecbb_part_shell( $part_slug, $item, $idx, $style, $skin );
+			$icon      = ( $shell['skin'] !== 'style2' ) ? ' ecbb-has-row-icon' : '';
+
+			return '<div class="' . $shell['wrap'] . $icon . '"' . $shell['attr'] . '>' . $inner . '</div>';
+		}
+
+		/** Style 2 composite: venue + time + cost in one meta row. */
+		public static function ecbb_render_venue_time_cost( $post, array $item, $idx, $style, $skin = '' ) {
+			if ( ! $post instanceof \WP_Post ) {
+				return '';
+			}
+
+			$venue = ECBB_Event_Data::ecbb_venue_text( $post->ID, $item, $skin );
+			$time  = self::ecbb_part_time_plain_text( $post, $item );
+			$cost  = ECBB_Cost_Formatter::ecbb_layout_cost_label( $post->ID, $item );
+			$inner = self::ecbb_render_composite_meta_segments(
+				[
+					[
+						'class' => 'ecbb-event__meta-venue',
+						'icon'  => 'pin',
+						'text'  => $venue,
+					],
+					[
+						'class' => 'ecbb-event__meta-time',
+						'icon'  => 'clock',
+						'text'  => $time,
+					],
+					[
+						'class' => 'ecbb-event__meta-cost',
+						'icon'  => 'cost',
+						'text'  => $cost,
+					],
+				],
+				$skin
+			);
+			if ( $inner === '' ) {
+				return '';
+			}
+
+			$part_slug = class_exists( 'ECBB_Styles', false )
+				? \ECBB_Styles::ecbb_part_slug_venue_time_cost()
+				: 'venue_time_cost';
+			$shell     = self::ecbb_part_shell( $part_slug, $item, $idx, $style, $skin );
+
+			return '<div class="' . $shell['wrap'] . '"' . $shell['attr'] . '>' . $inner . '</div>';
 		}
 
 		public static function ecbb_render_part_event_tickets( $post, array $item, $idx, $style, $skin = '' ) {

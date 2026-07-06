@@ -32,7 +32,7 @@
 		hoverCapableParts: Array.isArray(fromPhp.hoverParts)
 			? fromPhp.hoverParts
 			: ["title", "categories", "tags", "read_more", "event_tickets", "event_rsvp", "image"],
-		style2MetaIconParts: ["venue", "date", "event_date", "event_time", "event_day", "event_cost"],
+		style2MetaIconParts: ["venue", "date", "event_cost", "venue_time_cost"],
 		layoutActionButtonParts: ["read_more", "event_tickets", "event_rsvp"],
 		styledButtonBackgroundKeys: ["ecbb_background"],
 		styledButtonBorderKeys: Array.isArray(fromPhp.btnBorderKeys)

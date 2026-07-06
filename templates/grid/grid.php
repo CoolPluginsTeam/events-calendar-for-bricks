@@ -77,6 +77,22 @@ if ( ! class_exists( 'ECBB_Grid', false ) ) {
 			return $row;
 		}
 
+		protected static function ecbb_filter_parts( array $clean ) {
+			$blocked = [ 'venue_time', 'venue_time_cost' ];
+
+			return array_values(
+				array_filter(
+					$clean,
+					static function ( $row ) use ( $blocked ) {
+						if ( ! is_array( $row ) ) {
+							return true;
+						}
+						return ! in_array( (string) ( $row['part'] ?? '' ), $blocked, true );
+					}
+				)
+			);
+		}
+
 		protected static function ecbb_card_base_class() {
 			return 'event-grid-card ecbb-ev__item-inner ecbb-ev__item-inner--grid';
 		}

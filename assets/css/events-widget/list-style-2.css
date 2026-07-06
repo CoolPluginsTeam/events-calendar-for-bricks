@@ -12,14 +12,9 @@
 	border: 1px solid var(--color-border);
 	border-radius: 22px;
 	box-shadow: 0 14px 34px rgba(15, 23, 42, 0.06);
-	transition: transform var(--transition-base), box-shadow var(--transition-base), border-color var(--transition-base);
 	width: 100%;
-}
-
-.ecbb-ev .ecbb-event-card:hover {
-	transform: none;
-	border-color: rgba(13, 82, 210, 0.14);
-	box-shadow: 0 20px 46px rgba(15, 23, 42, 0.1);
+	--ecbb-card-hover-border-color: rgba(13, 82, 210, 0.14);
+	--ecbb-card-hover-shadow: 0 20px 46px rgba(15, 23, 42, 0.1);
 }
 
 .ecbb-ev .ecbb-event-card__image-wrap {
@@ -28,10 +23,6 @@
 	overflow: hidden;
 	border-radius: 12px;
 	background: #dbe4ef;
-}
-
-.ecbb-ev .ecbb-event-card:hover .ecbb-event-card__image {
-	transform: none;
 }
 
 .ecbb-ev .ecbb-event-card__date-badge {
@@ -172,6 +163,34 @@
 	white-space: nowrap;
 }
 
+/* Composite meta (venue + time + cost): spaced segments with boxed icons. */
+.ecbb-ev .ecbb-event-card__meta-item .ecbb-event__meta-group {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 44px;
+	width: 100%;
+}
+
+.ecbb-ev .ecbb-event-card__meta-item .ecbb-event__meta-segment {
+	display: inline-flex;
+	align-items: center;
+	gap: 13px;
+	min-width: 0;
+	flex: 0 1 auto;
+	max-width: 100%;
+}
+
+.ecbb-ev .ecbb-event-card__meta-item .ecbb-event__meta-text {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.ecbb-ev .ecbb-event-card__meta-item .ecbb-event__meta-segment > .ecbb-event-card__meta-icon {
+	flex-shrink: 0;
+}
+
 .ecbb-ev .ecbb-event-card__button {
 	display: inline-flex;
 	align-items: center;
@@ -296,16 +315,6 @@
 		top: 12px;
 		left: 12px;
 		padding: 8px 12px;
-	}
-}
-
-@media (hover: hover) and (pointer: fine) {
-	.ecbb-ev .ecbb-event-card:hover {
-		transform: translateY(-4px);
-	}
-
-	.ecbb-ev .ecbb-event-card:hover .ecbb-event-card__image {
-		transform: scale(1.055);
 	}
 }
 

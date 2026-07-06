@@ -19,20 +19,17 @@ if ( ! class_exists( 'ECBB_List_1', false ) ) {
 
 		protected static function ecbb_default_rows() {
 			return [
-				[
-					'part' => 'title',
-					'link' => true,
-				],
-				[
+			[
+			'part' => 'title',
+			'link' => true,
+			],
+			[
 					'part' => 'description',
 				],
 				[
-					'part'         => 'date',
-					'date_display' => 'time',
-				],
-				[
-					'part'          => 'venue',
+					'part'          => 'venue_time',
 					'venue_display' => 'name_and_city',
+					'date_display'  => 'time',
 				],
 				[
 					'part'          => 'event_cost',
@@ -41,26 +38,42 @@ if ( ! class_exists( 'ECBB_List_1', false ) ) {
 				[
 					'part'           => 'read_more',
 					'read_more_text' => __( 'View Details', 'events-calendar-for-bricks' ),
-				],
+			],
 			];
 		}
 
 		protected static function ecbb_normalize_row( array $row ) {
-			$part = (string) ( $row['part'] ?? '' );
-			if ( $part === 'venue' ) {
-				$display = (string) ( $row['venue_display'] ?? '' );
+		$part = (string) ( $row['part'] ?? '' );
+			if ( $part === 'venue' || $part === 'venue_time' || $part === 'venue_time_cost' ) {
+			$display = (string) ( $row['venue_display'] ?? '' );
 				if ( $display === '' || $display === 'name_and_address' || $display === 'full_details' ) {
 					$row['venue_display'] = 'name_and_city';
 				}
 			}
-			if ( $part === 'date' && ! isset( $row['date_display'] ) ) {
+			if ( in_array( $part, [ 'date', 'venue_time', 'venue_time_cost' ], true ) && ! isset( $row['date_display'] ) ) {
 				$row['date_display'] = 'time';
 			}
-			if ( $part === 'event_cost' && ( ! isset( $row['cost_currency'] ) || (string) $row['cost_currency'] === '' ) ) {
+			if ( in_array( $part, [ 'event_cost', 'venue_time_cost' ], true ) && ( ! isset( $row['cost_currency'] ) || (string) $row['cost_currency'] === '' ) ) {
 				$row['cost_currency'] = 'default';
 			}
 
 			return $row;
+		}
+
+		protected static function ecbb_filter_parts( array $clean ) {
+			$blocked = [ 'venue_time_cost' ];
+
+			return array_values(
+				array_filter(
+					$clean,
+					static function ( $row ) use ( $blocked ) {
+						if ( ! is_array( $row ) ) {
+							return true;
+						}
+						return ! in_array( (string) ( $row['part'] ?? '' ), $blocked, true );
+					}
+				)
+			);
 		}
 
 		protected static function ecbb_card_base_class() {
@@ -86,10 +99,8 @@ if ( ! class_exists( 'ECBB_List_1', false ) ) {
 
 		protected static function ecbb_open_content( $post, array $settings, $show_image ) {
 			echo '<div class="event-list-card__content">';
-			if ( $show_image ) {
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-				echo \ECBB_Markup::ecbb_list1_date_column( $post, $settings );
-			}
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			echo \ECBB_Markup::ecbb_list1_date_column( $post, $settings );
 			echo '<div class="event-list-card__body">';
 		}
 

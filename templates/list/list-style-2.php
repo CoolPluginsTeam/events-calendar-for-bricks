@@ -35,15 +35,9 @@ if ( ! class_exists( 'ECBB_List_2', false ) ) {
 					'part' => 'description',
 				],
 				[
-					'part'          => 'venue',
+					'part'          => 'venue_time_cost',
 					'venue_display' => 'name_and_city',
-				],
-				[
-					'part'         => 'date',
-					'date_display' => 'time',
-				],
-				[
-					'part'          => 'event_cost',
+					'date_display'  => 'time',
 					'cost_currency' => 'default',
 				],
 				[
@@ -58,11 +52,16 @@ if ( ! class_exists( 'ECBB_List_2', false ) ) {
 		}
 
 		protected static function ecbb_filter_parts( array $clean ) {
+			$blocked = [ 'image', 'venue_time' ];
+
 			return array_values(
 				array_filter(
 					$clean,
-					static function ( $row ) {
-						return ! is_array( $row ) || (string) ( $row['part'] ?? '' ) !== 'image';
+					static function ( $row ) use ( $blocked ) {
+						if ( ! is_array( $row ) ) {
+							return true;
+						}
+						return ! in_array( (string) ( $row['part'] ?? '' ), $blocked, true );
 					}
 				)
 			);
@@ -70,16 +69,16 @@ if ( ! class_exists( 'ECBB_List_2', false ) ) {
 
 		protected static function ecbb_normalize_row( array $row ) {
 			$part = (string) ( $row['part'] ?? '' );
-			if ( $part === 'venue' ) {
+			if ( $part === 'venue' || $part === 'venue_time_cost' ) {
 				$display = (string) ( $row['venue_display'] ?? '' );
 				if ( $display === '' || $display === 'name_and_address' || $display === 'name_and_state' ) {
 					$row['venue_display'] = 'name_and_city';
 				}
 			}
-			if ( $part === 'date' && ! isset( $row['date_display'] ) ) {
+			if ( in_array( $part, [ 'date', 'venue_time_cost' ], true ) && ! isset( $row['date_display'] ) ) {
 				$row['date_display'] = 'time';
 			}
-			if ( $part === 'event_cost' && ( ! isset( $row['cost_currency'] ) || (string) $row['cost_currency'] === '' ) ) {
+			if ( in_array( $part, [ 'event_cost', 'venue_time_cost' ], true ) && ( ! isset( $row['cost_currency'] ) || (string) $row['cost_currency'] === '' ) ) {
 				$row['cost_currency'] = 'default';
 			}
 

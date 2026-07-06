@@ -314,9 +314,10 @@ if ( ! class_exists( 'ECBB_Plugin', false ) ) {
 		public static function ecbb_register_events_widget_styles() {
 			$styles = [
 				[ 'ecbb-events-widget-base', 'assets/css/events-widget/ecbb-events-widget-base.css', [] ],
-				[ 'ecbb-list-1', 'assets/css/events-widget/list-style-1.css', [ 'ecbb-events-widget-base' ] ],
-				[ 'ecbb-list-2', 'assets/css/events-widget/list-style-2.css', [ 'ecbb-events-widget-base' ] ],
-				[ 'ecbb-events-widget-grid', 'assets/css/events-widget/ecbb-events-widget-grid.css', [ 'ecbb-events-widget-base' ] ],
+				[ 'ecbb-featured-image-shell', 'assets/css/events-widget/ecbb-featured-image-shell.css', [ 'ecbb-events-widget-base' ] ],
+				[ 'ecbb-list-1', 'assets/css/events-widget/list-style-1.css', [ 'ecbb-events-widget-base', 'ecbb-featured-image-shell' ] ],
+				[ 'ecbb-list-2', 'assets/css/events-widget/list-style-2.css', [ 'ecbb-events-widget-base', 'ecbb-featured-image-shell' ] ],
+				[ 'ecbb-events-widget-grid', 'assets/css/events-widget/ecbb-events-widget-grid.css', [ 'ecbb-events-widget-base', 'ecbb-featured-image-shell' ] ],
 			];
 
 			foreach ( $styles as $style ) {
@@ -337,7 +338,7 @@ if ( ! class_exists( 'ECBB_Plugin', false ) ) {
 		*/
 		public static function ecbb_enqueue_events_widget_styles() {
 			self::ecbb_register_events_widget_styles();
-			foreach ( [ 'ecbb-events-widget-base', 'ecbb-list-1', 'ecbb-list-2', 'ecbb-events-widget-grid' ] as $handle ) {
+			foreach ( [ 'ecbb-events-widget-base', 'ecbb-featured-image-shell', 'ecbb-list-1', 'ecbb-list-2', 'ecbb-events-widget-grid' ] as $handle ) {
 				if ( ! wp_style_is( $handle, 'enqueued' ) ) {
 					wp_enqueue_style( $handle );
 				}

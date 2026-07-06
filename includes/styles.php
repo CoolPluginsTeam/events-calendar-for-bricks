@@ -244,9 +244,9 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 			$style = $part;
 			continue;
 		}
-		$color = class_exists( 'ECBB_Markup', false ) ? \ECBB_Markup::ecbb_norm_color( $part ) : '';
-		if ( '' !== $color ) {
-			continue;
+			$color = class_exists( 'ECBB_Markup', false ) ? \ECBB_Markup::ecbb_norm_color( $part ) : '';
+			if ( '' !== $color ) {
+				continue;
 		}
 		return '';
 		}
@@ -322,7 +322,7 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 			$style = 'solid';
 		}
 
-		$color = class_exists( 'ECBB_Markup', false )
+			$color = class_exists( 'ECBB_Markup', false )
 			? \ECBB_Markup::ecbb_norm_color( $border['color'] ?? '' )
 			: trim( (string) ( $border['color'] ?? '' ) );
 		if ( $color === '' ) {
@@ -476,10 +476,10 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 
 		public static function ecbb_repeater_type_css() {
 			return [
-				[
-					'property' => 'typography',
+			[
+			'property' => 'typography',
 					'selector' => self::ecbb_repeater_type_selector(),
-				],
+			],
 			];
 		}
 
@@ -504,7 +504,7 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 			return '& .ecbb-event__term-chip:hover, & .ecbb-event__link:hover, & > .ecbb-event__link:hover, '
 				. '& a.event-button:hover, & > a.event-button:hover, & a.ecbb-event-card__button:hover, & > a.ecbb-event-card__button:hover, '
 				. '& .ecbb-event__term:hover, & .ecbb-event__title-text:hover, & .ecbb-event-card__category:hover, '
-				. 'li:has(> &):hover > .ecbb-event-card__meta-icon';
+				. 'li:has(> &):hover > .ecbb-event-card__meta-icon, li:has(> &):hover .ecbb-event-card__meta-icon--inline';
 		}
 
 		/**
@@ -603,6 +603,53 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 			}
 
 			return '';
+		}
+
+		/**
+		 * Inline meta icons inside composite venue/time/cost rows.
+		 *
+		 * @param string $scope_sel Scoped part selector.
+		 * @return string
+		 */
+		public static function ecbb_composite_inline_meta_icon_selector( $scope_sel ) {
+			$scope_sel = trim( (string) $scope_sel );
+			if ( $scope_sel === '' ) {
+				return '';
+			}
+
+			return $scope_sel . ' .ecbb-event-card__meta-icon--inline';
+		}
+
+		public static function ecbb_composite_boxed_meta_icon_selector( $scope_sel ) {
+			$scope_sel = trim( (string) $scope_sel );
+			if ( $scope_sel === '' ) {
+				return '';
+			}
+
+			return $scope_sel . ' .ecbb-event__meta-segment > .ecbb-event-card__meta-icon';
+		}
+
+		/**
+		 * Leading meta icon selector for a scoped part (row or inline composite).
+		 *
+		 * @param string $scope_sel        Scoped part selector.
+		 * @param string $part_type        Cleaned part slug.
+		 * @param string $list_item_style  style-1|style-2|grid.
+		 * @return string
+		 */
+		public static function ecbb_resolved_meta_icon_selector( $scope_sel, $part_type = '', $list_item_style = '' ) {
+			if (
+				class_exists( 'ECBB_Markup', false )
+				&& \ECBB_Markup::ecbb_part_uses_composite_inline_meta_icons( (string) $part_type )
+			) {
+				if ( (string) $list_item_style === 'style-2' ) {
+					return self::ecbb_composite_boxed_meta_icon_selector( $scope_sel );
+				}
+
+				return self::ecbb_composite_inline_meta_icon_selector( $scope_sel );
+			}
+
+			return self::ecbb_meta_icon_selector( $scope_sel );
 		}
 
 		/**
@@ -808,7 +855,15 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 		* @return array<string,string>
 		*/
 
-		public static function ecbb_part_options() {
+		public static function ecbb_part_slug_venue_time() {
+			return 'venue_time';
+		}
+
+		public static function ecbb_part_slug_venue_time_cost() {
+			return 'venue_time_cost';
+		}
+
+		public static function ecbb_part_options_shared() {
 			return [
 			'title'       => esc_html__( 'Title', 'events-calendar-for-bricks' ),
 			'description' => esc_html__( 'Description', 'events-calendar-for-bricks' ),
@@ -826,6 +881,32 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 			];
 		}
 
+		public static function ecbb_part_options_style1() {
+			$options = self::ecbb_part_options_shared();
+			$options[ self::ecbb_part_slug_venue_time() ] = esc_html__( 'Venue & time', 'events-calendar-for-bricks' );
+
+			return $options;
+		}
+
+		public static function ecbb_part_options_style2() {
+			$options = self::ecbb_part_options_shared();
+			$options[ self::ecbb_part_slug_venue_time_cost() ] = esc_html__( 'Venue, time & cost', 'events-calendar-for-bricks' );
+
+			return $options;
+		}
+
+		public static function ecbb_part_options_grid() {
+			return self::ecbb_part_options_shared();
+		}
+
+		public static function ecbb_part_options() {
+			$options = self::ecbb_part_options_shared();
+			$options[ self::ecbb_part_slug_venue_time() ]       = esc_html__( 'Venue & time', 'events-calendar-for-bricks' );
+			$options[ self::ecbb_part_slug_venue_time_cost() ] = esc_html__( 'Venue, time & cost', 'events-calendar-for-bricks' );
+
+			return $options;
+		}
+
 		/**
 		* Map consolidated UI part + display dropdown to legacy render slug (backward compatible).
 		*
@@ -840,9 +921,14 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 
 			$part = isset( $item['part'] ) ? (string) $item['part'] : 'title';
 
+			if ( in_array( $part, [ self::ecbb_part_slug_venue_time(), self::ecbb_part_slug_venue_time_cost() ], true ) ) {
+				$item['_ecbb_clean'] = true;
+				return $item;
+			}
+
 			$legacy_parts = [
-				'venue_full_address', 'venue_street', 'venue_city', 'venue_state',
-				'venue_zip', 'venue_country', 'venue_phone', 'venue_website', 'event_map_link',
+			'venue_full_address', 'venue_street', 'venue_city', 'venue_state',
+			'venue_zip', 'venue_country', 'venue_phone', 'venue_website', 'event_map_link',
 				'organizer_email', 'organizer_phone', 'organizer_website',
 				'event_date', 'event_time', 'event_day',
 				'event_website', 'event_phone',
@@ -1104,16 +1190,16 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 		 * @param array<string,mixed> $item
 		 * @param string              $device
 		 * @param callable            $color_fn
-		 * @return string[]
-		 */
+		* @return string[]
+		*/
 		private static function ecbb_btn_bg_decl( array $item, $device, callable $color_fn ) {
 			$bg_raw = self::ecbb_device_value( $item['ecbb_background'] ?? '', $device );
 			if ( $bg_raw === '' || $bg_raw === null ) {
 				$bg_raw = self::ecbb_device_value( $item['btn_bg'] ?? '', $device );
 			}
 			if ( $bg_raw === '' || $bg_raw === null ) {
-				return [];
-			}
+			return [];
+		}
 			$bg = $color_fn( $bg_raw );
 			return $bg !== '' ? [ 'background-color:' . $bg . ' !important' ] : [];
 		}
@@ -1129,8 +1215,8 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 		private static function ecbb_btn_text_decl( array $item, $device, callable $color_fn ) {
 			$tc_raw = '';
 			if ( ! empty( $item['ecbb_typography'] ) && is_array( $item['ecbb_typography'] ) ) {
-				$tc_raw = self::ecbb_device_value( $item['ecbb_typography']['color'] ?? '', $device );
-			}
+			$tc_raw = self::ecbb_device_value( $item['ecbb_typography']['color'] ?? '', $device );
+		}
 			if ( $tc_raw === '' || $tc_raw === null ) {
 				$tc_raw = self::ecbb_device_value( $item['btn_text_color'] ?? '', $device );
 			}
@@ -1150,47 +1236,47 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 		 * @return string[]
 		 */
 		private static function ecbb_btn_border_decls( array $item, $device, callable $color_fn ) {
-			$border_color_raw = self::ecbb_device_value( $item['btn_border_color'] ?? '', $device );
-			$border_style     = self::ecbb_device_value( $item['btn_border_type'] ?? '', $device );
-			$border_width_raw = self::ecbb_device_value( $item['btn_border_width'] ?? '', $device );
+		$border_color_raw = self::ecbb_device_value( $item['btn_border_color'] ?? '', $device );
+		$border_style     = self::ecbb_device_value( $item['btn_border_type'] ?? '', $device );
+		$border_width_raw = self::ecbb_device_value( $item['btn_border_width'] ?? '', $device );
 
-			if ( ( $border_color_raw === '' || $border_color_raw === null ) && ! empty( $item['btn_border'] ) ) {
-				$border_legacy = self::ecbb_device_value( $item['btn_border'], $device );
-				if ( is_array( $border_legacy ) ) {
-					if ( ! empty( $border_legacy['color'] ) ) {
-						$border_color_raw = $border_legacy['color'];
-					}
-					if ( ( $border_style === '' || $border_style === null ) && ! empty( $border_legacy['style'] ) ) {
-						$border_style = $border_legacy['style'];
-					}
-					if ( ( $border_width_raw === '' || $border_width_raw === null ) && isset( $border_legacy['width'] ) ) {
-						$border_width_raw = $border_legacy['width'];
-					}
+		if ( ( $border_color_raw === '' || $border_color_raw === null ) && ! empty( $item['btn_border'] ) ) {
+			$border_legacy = self::ecbb_device_value( $item['btn_border'], $device );
+			if ( is_array( $border_legacy ) ) {
+				if ( ! empty( $border_legacy['color'] ) ) {
+					$border_color_raw = $border_legacy['color'];
 				}
+			if ( ( $border_style === '' || $border_style === null ) && ! empty( $border_legacy['style'] ) ) {
+				$border_style = $border_legacy['style'];
 			}
+		if ( ( $border_width_raw === '' || $border_width_raw === null ) && isset( $border_legacy['width'] ) ) {
+			$border_width_raw = $border_legacy['width'];
+		}
+		}
+		}
 
-			if ( ! is_string( $border_style ) || $border_style === '' ) {
+		if ( ! is_string( $border_style ) || $border_style === '' ) {
 				$border_style = isset( $item['btn_border_type'] ) ? trim( (string) $item['btn_border_type'] ) : '';
-			}
-			if ( ! in_array( $border_style, [ 'solid', 'dashed', 'dotted', 'double', 'none' ], true ) ) {
-				$border_style = 'solid';
-			}
+		}
+		if ( ! in_array( $border_style, [ 'solid', 'dashed', 'dotted', 'double', 'none' ], true ) ) {
+			$border_style = 'solid';
+		}
 
-			$border_width = '';
-			if ( is_array( $border_width_raw ) ) {
-				$border_width = self::ecbb_spacing_css( $border_width_raw );
-			} elseif ( $border_width_raw !== '' && $border_width_raw !== null ) {
-				$border_width = self::ecbb_css_size( $border_width_raw, 'px' );
-			}
+		$border_width = '';
+		if ( is_array( $border_width_raw ) ) {
+			$border_width = self::ecbb_spacing_css( $border_width_raw );
+		} elseif ( $border_width_raw !== '' && $border_width_raw !== null ) {
+		$border_width = self::ecbb_css_size( $border_width_raw, 'px' );
+		}
 
-			if ( $border_style === 'none' ) {
+		if ( $border_style === 'none' ) {
 				return [ 'border:none', 'box-sizing:border-box' ];
 			}
 			if ( $border_color_raw === '' || $border_color_raw === null ) {
 				return [];
 			}
 
-			$border_color = $color_fn( $border_color_raw );
+		$border_color = $color_fn( $border_color_raw );
 			if ( $border_color === '' ) {
 				return [];
 			}
@@ -1212,15 +1298,15 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 		 * @return string[]
 		 */
 		private static function ecbb_btn_padding_decl( array $item, $device ) {
-			$padding_raw = self::ecbb_responsive_spacing( $item, 'btn_padding', $device );
+		$padding_raw = self::ecbb_responsive_spacing( $item, 'btn_padding', $device );
 			$padding_css = ! empty( $padding_raw ) ? self::ecbb_spacing_css( $padding_raw ) : '';
-			if ( $padding_css === '' ) {
+		if ( $padding_css === '' ) {
 				$py = self::ecbb_css_size( $item['btn_padding_y'] ?? '', 'px' );
 				$px = self::ecbb_css_size( $item['btn_padding_x'] ?? '', 'px' );
-				if ( $py !== '' || $px !== '' ) {
-					$padding_css = ( $py !== '' ? $py : '10px' ) . ' ' . ( $px !== '' ? $px : '14px' );
-				}
+			if ( $py !== '' || $px !== '' ) {
+				$padding_css = ( $py !== '' ? $py : '10px' ) . ' ' . ( $px !== '' ? $px : '14px' );
 			}
+		}
 			return $padding_css !== '' ? [ 'padding:' . $padding_css ] : [];
 		}
 
@@ -1232,16 +1318,16 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 		 * @return string[]
 		 */
 		private static function ecbb_btn_radius_decl( array $item, $device ) {
-			$radius_raw = self::ecbb_responsive_spacing( $item, 'btn_border_radius', $device );
+		$radius_raw = self::ecbb_responsive_spacing( $item, 'btn_border_radius', $device );
 			$radius_css = ! empty( $radius_raw ) ? self::ecbb_radius_css( $radius_raw ) : '';
-			if ( $radius_css === '' ) {
-				$radius_pick = self::ecbb_device_value( $item['btn_border_radius'] ?? '', $device );
-				if ( is_array( $radius_pick ) ) {
-					$radius_css = self::ecbb_radius_css( $radius_pick );
-				} elseif ( is_string( $radius_pick ) && $radius_pick !== '' ) {
-					$radius_css = self::ecbb_clean_css_box( $radius_pick );
-				}
-			}
+		if ( $radius_css === '' ) {
+			$radius_pick = self::ecbb_device_value( $item['btn_border_radius'] ?? '', $device );
+			if ( is_array( $radius_pick ) ) {
+				$radius_css = self::ecbb_radius_css( $radius_pick );
+			} elseif ( is_string( $radius_pick ) && $radius_pick !== '' ) {
+			$radius_css = self::ecbb_clean_css_box( $radius_pick );
+		}
+		}
 			return $radius_css !== '' ? [ 'border-radius:' . $radius_css ] : [];
 		}
 
@@ -1281,10 +1367,6 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 
 		public static function ecbb_image_decls( array $item, $device = 'desktop' ) {
 			$styles = [];
-
-			if ( ! empty( $item['image_aspect_ratio'] ) && is_string( $item['image_aspect_ratio'] ) && preg_match( '/^\d+\/\d+$/', $item['image_aspect_ratio'] ) ) {
-				$styles[] = 'aspect-ratio:' . $item['image_aspect_ratio'];
-			}
 
 		$border_css = '';
 		if ( ! empty( $item['ecbb_image_border'] ) ) {
@@ -1328,12 +1410,6 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 		);
 		if ( $h !== '' ) {
 			$styles[] = 'height:' . $h;
-		}
-
-		$fit = self::ecbb_device_value( $item['ecbb_image_fit'] ?? '', $device );
-		$fit = is_string( $fit ) ? $fit : '';
-		if ( $fit !== '' && in_array( $fit, [ 'cover', 'contain', 'fill', 'none', 'scale-down' ], true ) ) {
-			$styles[] = 'object-fit:' . $fit;
 		}
 
 		return $styles;
@@ -1511,7 +1587,11 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 			$scope_sel = $ctx['scope_sel'];
 			$color_fn  = $ctx['color_fn'];
 			$row_sel  = self::ecbb_meta_row_selector( $scope_sel );
-			$icon_sel = self::ecbb_meta_icon_selector( $scope_sel );
+			$icon_sel = self::ecbb_resolved_meta_icon_selector(
+				$scope_sel,
+				(string) ( $ctx['part_type'] ?? '' ),
+				(string) ( $ctx['list_item_style'] ?? '' )
+			);
 			if ( $row_sel === '' ) {
 				return [];
 			}
@@ -1657,7 +1737,7 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 						$scope_sel . '{font-size:0!important;line-height:0!important;}'
 					);
 				}
-				$typo_sel = self::ecbb_type_selectors( $scope_sel, $part_type );
+						$typo_sel = self::ecbb_type_selectors( $scope_sel, $part_type );
 				$rules[]  = self::ecbb_mq_css_rule( $mq, $typo_sel . '{' . implode( ';', $typo_decls ) . '}' );
 			}
 
@@ -1683,9 +1763,9 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 			$rules           = [];
 
 			foreach ( self::ecbb_breakpoints() as $device => $mq ) {
-				$margin_raw = self::ecbb_responsive_spacing( $p, 'ecbb_margin', $device );
-				$margin     = ! empty( $margin_raw ) ? self::ecbb_spacing_css( $margin_raw ) : '';
-				if ( $margin !== '' ) {
+		$margin_raw = self::ecbb_responsive_spacing( $p, 'ecbb_margin', $device );
+		$margin     = ! empty( $margin_raw ) ? self::ecbb_spacing_css( $margin_raw ) : '';
+		if ( $margin !== '' ) {
 					if ( $meta_list_block && $list_sel !== '' ) {
 						$rules[] = self::ecbb_mq_css_rule( $mq, $list_sel . '{margin:' . $margin . ' !important;}' );
 						if ( $row_sel !== '' ) {
@@ -1700,8 +1780,8 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 				if ( $chip_surface || $meta_unified ) {
 					continue;
 				}
-				$pad_raw = self::ecbb_responsive_spacing( $p, 'ecbb_padding', $device );
-				$padding = ! empty( $pad_raw ) ? self::ecbb_spacing_css( $pad_raw ) : '';
+			$pad_raw = self::ecbb_responsive_spacing( $p, 'ecbb_padding', $device );
+			$padding = ! empty( $pad_raw ) ? self::ecbb_spacing_css( $pad_raw ) : '';
 				if ( $padding === '' ) {
 					continue;
 				}
@@ -1730,7 +1810,7 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 			$rules     = [];
 
 			foreach ( self::ecbb_breakpoints() as $device => $mq ) {
-				$align_raw = self::ecbb_device_value( $p['ecbb_text_align'] ?? '', $device );
+		$align_raw = self::ecbb_device_value( $p['ecbb_text_align'] ?? '', $device );
 				if ( ! is_string( $align_raw ) || ! in_array( $align_raw, [ 'left', 'center', 'right', 'justify' ], true ) ) {
 					continue;
 				}
@@ -1772,22 +1852,22 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 			$btn_style_on = $ctx['btn_style_on'];
 			$color_fn     = $ctx['color_fn'];
 			$rules        = [];
-			foreach ( self::ecbb_breakpoints() as $device => $mq ) {
-				if ( $chip_surface ) {
-					$padding_raw = self::ecbb_responsive_spacing( $p, 'ecbb_padding', $device );
+		foreach ( self::ecbb_breakpoints() as $device => $mq ) {
+			if ( $chip_surface ) {
+				$padding_raw = self::ecbb_responsive_spacing( $p, 'ecbb_padding', $device );
 					$padding     = ! empty( $padding_raw ) ? self::ecbb_spacing_css( $padding_raw ) : '';
-					if ( $padding !== '' ) {
+				if ( $padding !== '' ) {
 						$wrapper_pad  = $scope_sel . '{padding:0!important;}';
 						$surface_rule = $chip_sel . '{padding:' . $padding . ' !important;}';
 						$rules[]      = self::ecbb_mq_css_rule( $mq, $wrapper_pad . $surface_rule );
-					}
 				}
-				if ( $btn_style_on ) {
-					$wrapper_reset = $scope_sel . '{padding:0!important;border:none!important;background-color:transparent!important}';
+		}
+		if ( $btn_style_on ) {
+			$wrapper_reset = $scope_sel . '{padding:0!important;border:none!important;background-color:transparent!important}';
 					$rules[]       = self::ecbb_mq_css_rule( $mq, $wrapper_reset );
-					$btn_decls = self::ecbb_button_decls( $p, $device, $color_fn );
-					if ( ! empty( $btn_decls ) ) {
-						$btn_sel = self::ecbb_button_inner_selectors( $scope_sel );
+			$btn_decls = self::ecbb_button_decls( $p, $device, $color_fn );
+			if ( ! empty( $btn_decls ) ) {
+				$btn_sel = self::ecbb_button_inner_selectors( $scope_sel );
 						$rules[] = self::ecbb_mq_css_rule( $mq, $btn_sel . '{' . implode( ';', $btn_decls ) . '}' );
 					}
 				}
@@ -1824,31 +1904,31 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 			$hover_bg = class_exists( 'ECBB_Markup', false )
 				? \ECBB_Markup::ecbb_norm_hover_paint_color( $p['ecbb_hover_background'] ?? '' )
 				: $color_fn( $p['ecbb_hover_background'] ?? '' );
-			if ( $hover_bg !== '' ) {
-				if ( in_array( $part_type, self::ecbb_link_hover_parts(), true ) ) {
+		if ( $hover_bg !== '' ) {
+			if ( in_array( $part_type, self::ecbb_link_hover_parts(), true ) ) {
 					$hover_rules[] = $hover_sel . '{background-color:' . $hover_bg . ' !important;}';
-				} elseif ( $part_type === 'title' ) {
+			} elseif ( $part_type === 'title' ) {
 					$hover_rules[] = $scope_sel . ' .ecbb-event__link:hover,' . $scope_sel . ' .ecbb-event__title-text:hover{background-color:' . $hover_bg . ' !important;}';
-				} else {
+		} else {
 					$hover_rules[] = $scope_sel . ':hover{background-color:' . $hover_bg . ' !important;}';
-				}
-			}
-			$hover_td = isset( $p['ecbb_hover_text_decoration'] ) ? (string) $p['ecbb_hover_text_decoration'] : '';
-			if ( $hover_td !== '' && in_array( $hover_td, [ 'none', 'underline', 'overline', 'line-through' ], true ) ) {
-				if ( in_array( $part_type, self::ecbb_link_hover_parts(), true ) ) {
+		}
+		}
+		$hover_td = isset( $p['ecbb_hover_text_decoration'] ) ? (string) $p['ecbb_hover_text_decoration'] : '';
+		if ( $hover_td !== '' && in_array( $hover_td, [ 'none', 'underline', 'overline', 'line-through' ], true ) ) {
+			if ( in_array( $part_type, self::ecbb_link_hover_parts(), true ) ) {
 					$hover_rules[] = $hover_sel . '{text-decoration:' . $hover_td . ' !important;}';
-				} else {
+			} else {
 					$hover_rules[] = $scope_sel . ':hover,' . $scope_sel . ' a:hover,' . $scope_sel . ' .ecbb-event__term:hover{text-decoration:' . $hover_td . ' !important;}';
-				}
-			}
-			$hover_anim = isset( $p['ecbb_hover_animation'] ) ? (string) $p['ecbb_hover_animation'] : '';
-			if ( $hover_anim !== '' && class_exists( 'ECBB_Markup', false ) ) {
-				$anim_scope  = self::ecbb_hover_anim_scope( $scope_sel, $part_type );
-				$anim_blocks = \ECBB_Markup::ecbb_hover_anim_css( $anim_scope, $hover_anim );
-				if ( ! empty( $anim_blocks['base'] ) ) {
+		}
+		}
+		$hover_anim = isset( $p['ecbb_hover_animation'] ) ? (string) $p['ecbb_hover_animation'] : '';
+			if ( $hover_anim !== '' && $hover_anim !== 'none' && class_exists( 'ECBB_Markup', false ) ) {
+			$anim_scope  = self::ecbb_hover_anim_scope( $scope_sel, $part_type );
+			$anim_blocks = \ECBB_Markup::ecbb_hover_anim_css( $anim_scope, $hover_anim );
+			if ( ! empty( $anim_blocks['base'] ) ) {
 					$style_rules[] = $anim_blocks['base'];
-				}
-				if ( ! empty( $anim_blocks['hover'] ) ) {
+			}
+		if ( ! empty( $anim_blocks['hover'] ) ) {
 					$hover_rules[] = $anim_blocks['hover'];
 				}
 			}
@@ -1869,24 +1949,24 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 			$layout_btn_part = $ctx['layout_btn_part'];
 			$color_fn        = $ctx['color_fn'];
 			$rules           = [];
-			if ( $part_type === 'title' ) {
-				foreach ( self::ecbb_breakpoints() as $device => $mq ) {
+		if ( $part_type === 'title' ) {
+			foreach ( self::ecbb_breakpoints() as $device => $mq ) {
 					$bg_raw = self::ecbb_device_value( $p['ecbb_background'] ?? '', $device );
 					if ( $bg_raw === '' || $bg_raw === null ) {
-						$bg_raw = self::ecbb_device_value( $p['ecbb_background_inner'] ?? '', $device );
+				$bg_raw = self::ecbb_device_value( $p['ecbb_background_inner'] ?? '', $device );
 					}
 					$bg_in = $bg_raw !== '' && $bg_raw !== null ? $color_fn( $bg_raw ) : '';
-					if ( $bg_in !== '' ) {
+				if ( $bg_in !== '' ) {
 						$inner_sel = self::ecbb_title_inner_selectors( $scope_sel );
 						$rules[]   = self::ecbb_mq_css_rule( $mq, $inner_sel . '{background-color:' . $bg_in . ' !important;}' );
-					}
 				}
-			}
-			foreach ( self::ecbb_breakpoints() as $device => $mq ) {
-				if ( $chip_surface ) {
-					$bg_raw = self::ecbb_device_value( $p['ecbb_background'] ?? '', $device );
-					$bg     = $bg_raw !== '' && $bg_raw !== null ? $color_fn( $bg_raw ) : '';
-					if ( $bg !== '' ) {
+		}
+		}
+		foreach ( self::ecbb_breakpoints() as $device => $mq ) {
+			if ( $chip_surface ) {
+				$bg_raw = self::ecbb_device_value( $p['ecbb_background'] ?? '', $device );
+				$bg     = $bg_raw !== '' && $bg_raw !== null ? $color_fn( $bg_raw ) : '';
+				if ( $bg !== '' ) {
 						$wrapper_reset = $scope_sel . '{background-color:transparent!important;}';
 						$chip_rule     = $chip_sel . '{background-color:' . $bg . ' !important;}';
 						$rules[]       = self::ecbb_mq_css_rule( $mq, $wrapper_reset . $chip_rule );
@@ -1895,9 +1975,9 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 					if ( self::ecbb_ctx_meta_list_unified_row( $ctx ) ) {
 						continue;
 					}
-					$bg_raw = self::ecbb_device_value( $p['ecbb_background'] ?? '', $device );
-					$bg     = $bg_raw !== '' && $bg_raw !== null ? $color_fn( $bg_raw ) : '';
-					if ( $bg !== '' ) {
+		$bg_raw = self::ecbb_device_value( $p['ecbb_background'] ?? '', $device );
+		$bg     = $bg_raw !== '' && $bg_raw !== null ? $color_fn( $bg_raw ) : '';
+		if ( $bg !== '' ) {
 						if ( $layout_btn_part && ! $btn_style_on ) {
 							$inner_sel  = self::ecbb_button_inner_selectors( $scope_sel );
 							$bg_rule    = $inner_sel . '{background-color:' . $bg . ' !important;}';
@@ -1920,47 +2000,18 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 			$p              = $ctx['part'];
 			$part_type      = $ctx['part_type'];
 			$scope_sel      = $ctx['scope_sel'];
-			$hover_style_on = $ctx['hover_style_on'];
 			$style_rules    = [];
 			$hover_rules    = [];
 			if ( $part_type !== 'image' ) {
 				return [ 'style' => $style_rules, 'hover' => $hover_rules ];
 			}
-			$dual = class_exists( 'ECBB_Markup', false ) && \ECBB_Markup::ecbb_image_dual_layer( $p );
 			foreach ( self::ecbb_breakpoints() as $device => $mq ) {
 				$img_decls = self::ecbb_image_decls( $p, $device );
 				if ( ! empty( $img_decls ) ) {
-					$img_sel = $dual
-						? $scope_sel . ' .ecbb-event__image--base,' . $scope_sel . ' .ecbb-event__image--hover'
-						: $scope_sel . ' .ecbb-event__image';
-					$style_rules[] = self::ecbb_mq_css_rule( $mq, $img_sel . '{' . implode( ';', $img_decls ) . '}' );
-				}
-				if ( ! class_exists( 'ECBB_Markup', false ) ) {
-					continue;
-				}
-				if ( $dual ) {
-					$op_b = \ECBB_Markup::ecbb_align_to_position( self::ecbb_device_value( $p['ecbb_image_object_align'] ?? '', $device ) );
-					$op_h = \ECBB_Markup::ecbb_align_to_position( $p['ecbb_image_object_align_hover'] ?? '' );
-					if ( $op_b !== '' ) {
-						$style_rules[] = self::ecbb_mq_css_rule( $mq, $scope_sel . ' .ecbb-event__image--base{object-position:' . $op_b . ';}' );
-					}
-					if ( $op_h !== '' ) {
-						$style_rules[] = self::ecbb_mq_css_rule( $mq, $scope_sel . ' .ecbb-event__image--hover{object-position:' . $op_h . ';}' );
-					}
-					continue;
-				}
-				$align_b = self::ecbb_device_value( $p['ecbb_image_object_align'] ?? '', $device );
-				$op_b    = \ECBB_Markup::ecbb_align_to_position( $align_b );
-				$op_h    = \ECBB_Markup::ecbb_align_to_position( $p['ecbb_image_object_align_hover'] ?? '' );
-				if ( $hover_style_on && $op_h !== '' && $op_h !== $op_b ) {
-					if ( $op_b !== '' ) {
-						$style_rules[] = self::ecbb_mq_css_rule( $mq, $scope_sel . ' .ecbb-event__image{object-position:' . $op_b . ';transition:object-position 0.35s ease;}' );
-					} else {
-						$style_rules[] = self::ecbb_mq_css_rule( $mq, $scope_sel . ' .ecbb-event__image{transition:object-position 0.35s ease;}' );
-					}
-					$hover_rules[] = $scope_sel . ':hover .ecbb-event__image{object-position:' . $op_h . ' !important;}';
-				} elseif ( $op_b !== '' ) {
-					$style_rules[] = self::ecbb_mq_css_rule( $mq, $scope_sel . ' .ecbb-event__image{object-position:' . $op_b . ';}' );
+					$style_rules[] = self::ecbb_mq_css_rule(
+						$mq,
+						$scope_sel . ' .ecbb-event__image{' . implode( ';', $img_decls ) . '}'
+					);
 				}
 			}
 			return [ 'style' => $style_rules, 'hover' => $hover_rules ];
@@ -1985,7 +2036,7 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 				return $rules;
 			}
 
-			$icon_sel = self::ecbb_meta_icon_selector( $scope_sel );
+			$icon_sel = self::ecbb_resolved_meta_icon_selector( $scope_sel, $part_type, $list_item_style );
 			if ( $icon_sel === '' ) {
 				return $rules;
 			}
@@ -2064,7 +2115,7 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 				$style_css    = array_merge( $style_css, $image_bundle['style'] );
 				$hover_css    = array_merge( $hover_css, $image_bundle['hover'] );
 			}
-			return [ $style_css, $hover_css ];
+		return [ $style_css, $hover_css ];
 		}
 
 		/**
@@ -2176,12 +2227,14 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 				&& \ECBB_Markup::ecbb_show_shell_category_badge( $settings );
 			$show_date_shell     = class_exists( 'ECBB_Markup', false )
 				&& \ECBB_Markup::ecbb_show_style2_date_badge( $settings );
+			$layout = class_exists( 'ECBB_Markup', false )
+				? \ECBB_Markup::ecbb_sanitize_layout_template( $settings )
+				: [ 'template' => '', 'item_chrome' => '' ];
 
 			$var_keys = [
 				'ecbb_card_background' => '--ecbb-card-bg',
 			];
 			if ( $show_category_shell ) {
-				$layout = \ECBB_Markup::ecbb_sanitize_layout_template( $settings );
 				if ( $layout['template'] === 'grid' ) {
 					$var_keys['ecbb_shell_category_background_grid'] = '--ecbb-shell-cat-bg';
 				} else {

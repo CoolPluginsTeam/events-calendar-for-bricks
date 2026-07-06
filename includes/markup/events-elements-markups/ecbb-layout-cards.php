@@ -310,7 +310,9 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 
 			$row_clean = class_exists( 'ECBB_Styles', false ) ? \ECBB_Styles::ecbb_clean_part( $item ) : $item;
 			$part      = isset( $row_clean['part'] ) ? (string) $row_clean['part'] : '';
-			$icon      = self::ecbb_meta_icon_for_part( $part );
+			$icon      = self::ecbb_part_uses_composite_inline_meta_icons( $part )
+				? ''
+				: self::ecbb_meta_icon_for_part( $part );
 
 			if ( $layout === 'style2' ) {
 				return '<li class="ecbb-event-card__meta-item">' . $icon . $html . '</li>';
@@ -673,6 +675,7 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 			$slug  = (string) ( $row['part'] ?? $ui );
 			$slugs = [
 				'date', 'event_date', 'event_time', 'event_day', 'venue', 'organizer', 'event_cost',
+				'venue_time', 'venue_time_cost',
 				'tags', 'event_link', 'event_tickets', 'event_rsvp',
 				'venue_full_address', 'venue_street', 'venue_city', 'venue_state', 'venue_zip',
 				'venue_country', 'venue_phone', 'venue_website', 'event_map_link',
@@ -698,7 +701,9 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 
 		public static function ecbb_meta_icon_for_part( $slug ) {
 			$slug = (string) $slug;
-			if ( in_array( $slug, [ 'venue', 'organizer', 'venue_full_address', 'venue_street', 'venue_city', 'venue_state', 'venue_zip', 'venue_country', 'venue_phone' ], true ) ) {
+			if (
+				in_array( $slug, [ 'venue', 'organizer', 'venue_time', 'venue_time_cost', 'venue_full_address', 'venue_street', 'venue_city', 'venue_state', 'venue_zip', 'venue_country', 'venue_phone' ], true )
+			) {
 				return self::ecbb_meta_icon( 'pin' );
 			}
 			if ( $slug === 'event_cost' ) {
@@ -719,6 +724,8 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 				'event_time',
 				'event_day',
 				'venue',
+				'venue_time',
+				'venue_time_cost',
 				'organizer',
 				'event_cost',
 				'tags',
@@ -741,6 +748,20 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 		}
 
 		/**
+		 * Composite meta rows render per-segment icons inside the part wrapper.
+		 *
+		 * @param string $part_slug Cleaned part slug.
+		 * @return bool
+		 */
+		public static function ecbb_part_uses_composite_inline_meta_icons( $part_slug ) {
+			return in_array(
+				(string) $part_slug,
+				[ 'venue_time', 'venue_time_cost' ],
+				true
+			);
+		}
+
+		/**
 		 * Whether a resolved part slug renders with a Style 2 meta list icon.
 		 *
 		 * @param string $part_slug Cleaned part slug.
@@ -748,6 +769,9 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 		 */
 		public static function ecbb_part_shows_style2_meta_icon( $part_slug ) {
 			$part_slug = (string) $part_slug;
+			if ( $part_slug === 'venue_time_cost' ) {
+				return true;
+			}
 			if ( $part_slug === 'event_cost' ) {
 				return true;
 			}

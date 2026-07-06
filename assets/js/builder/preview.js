@@ -240,6 +240,14 @@
 		}
 
 		var icon = li.querySelector(":scope > .ecbb-event-card__meta-icon");
+		if (!icon && wrapper) {
+			var inlineIcons = wrapper.querySelectorAll(".ecbb-event-card__meta-icon--inline");
+			if (inlineIcons.length) {
+				inlineIcons.forEach(function (inlineIcon) {
+					inlineIcon.style.setProperty("color", "inherit", "important");
+				});
+			}
+		}
 		if (!icon) {
 			return "";
 		}
@@ -376,6 +384,21 @@
 			icon.style.setProperty("font-weight", "inherit", "important");
 			icon.style.setProperty("letter-spacing", "inherit", "important");
 			icon.style.setProperty("font-family", "inherit", "important");
+		} else if (wrapper) {
+			wrapper.querySelectorAll(".ecbb-event-card__meta-icon--inline").forEach(function (inlineIcon) {
+				inlineIcon.style.setProperty("width", "auto", "important");
+				inlineIcon.style.setProperty("height", "auto", "important");
+				inlineIcon.style.setProperty("flex", "0 0 auto", "important");
+				inlineIcon.style.setProperty("padding", "0", "important");
+				inlineIcon.style.setProperty("background", "transparent", "important");
+				inlineIcon.style.setProperty("border-radius", "0", "important");
+				inlineIcon.style.setProperty("color", "inherit", "important");
+				inlineIcon.style.setProperty("font-size", "inherit", "important");
+				inlineIcon.style.setProperty("line-height", "inherit", "important");
+				inlineIcon.style.setProperty("font-weight", "inherit", "important");
+				inlineIcon.style.setProperty("letter-spacing", "inherit", "important");
+				inlineIcon.style.setProperty("font-family", "inherit", "important");
+			});
 		}
 	}
 
@@ -1033,7 +1056,15 @@
 		}
 
 		var icon = li.querySelector(":scope > .ecbb-event-card__meta-icon");
-		if (!icon) {
+		var icons = [];
+		if (icon) {
+			icons.push(icon);
+		} else {
+			wrapper.querySelectorAll(".ecbb-event-card__meta-icon").forEach(function (inlineIcon) {
+				icons.push(inlineIcon);
+			});
+		}
+		if (!icons.length) {
 			return;
 		}
 
@@ -1076,26 +1107,42 @@
 		}
 
 		if (color) {
-			icon.style.setProperty("color", color, "important");
+			icons.forEach(function (metaIcon) {
+				metaIcon.style.setProperty("color", color, "important");
+			});
 		} else {
-			icon.style.removeProperty("color");
+			icons.forEach(function (metaIcon) {
+				metaIcon.style.removeProperty("color");
+			});
 		}
 
 		if (bg) {
-			icon.style.setProperty("background-color", bg, "important");
+			icons.forEach(function (metaIcon) {
+				metaIcon.style.setProperty("background-color", bg, "important");
+			});
 		} else {
-			icon.style.removeProperty("background-color");
+			icons.forEach(function (metaIcon) {
+				metaIcon.style.removeProperty("background-color");
+			});
 		}
 
 		if (typoOverrides.fontSize) {
-			icon.style.setProperty("font-size", typoOverrides.fontSize, "important");
+			icons.forEach(function (metaIcon) {
+				metaIcon.style.setProperty("font-size", typoOverrides.fontSize, "important");
+			});
 		} else {
-			icon.style.removeProperty("font-size");
+			icons.forEach(function (metaIcon) {
+				metaIcon.style.removeProperty("font-size");
+			});
 		}
 		if (typoOverrides.lineHeight) {
-			icon.style.setProperty("line-height", typoOverrides.lineHeight, "important");
+			icons.forEach(function (metaIcon) {
+				metaIcon.style.setProperty("line-height", typoOverrides.lineHeight, "important");
+			});
 		} else {
-			icon.style.removeProperty("line-height");
+			icons.forEach(function (metaIcon) {
+				metaIcon.style.removeProperty("line-height");
+			});
 		}
 	}
 

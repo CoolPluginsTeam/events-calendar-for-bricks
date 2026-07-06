@@ -86,10 +86,34 @@ if ( ! class_exists( 'ECBB_Settings_Normalizer', false ) ) {
 			if ( self::ecbb_parts_is_empty( $parts ) ) {
 				return $default_fn();
 			}
+
+			$slugs  = self::ecbb_parts_slugs( $parts );
+			$layout = (string) $layout;
+
+			$legacy_by_layout = [
+				'style1' => [
+					[ 'title', 'description', 'date', 'venue', 'event_cost', 'read_more' ],
+					[ 'title', 'description', 'date', 'venue', 'read_more' ],
+				],
+				'style2' => [
+					[ 'categories', 'title', 'description', 'venue', 'date', 'event_cost', 'read_more' ],
+					[ 'categories', 'title', 'date', 'venue', 'description', 'read_more' ],
+				],
+			];
+
+			if ( isset( $legacy_by_layout[ $layout ] ) ) {
+				foreach ( $legacy_by_layout[ $layout ] as $signature ) {
+					if ( $slugs === $signature ) {
+						return self::ecbb_parts_preserve_bricks_rows( $parts, $default_fn() );
+					}
+				}
+			}
+
 			$factory = [ 'categories', 'title', 'date', 'venue', 'description', 'read_more' ];
-			if ( self::ecbb_parts_slugs( $parts ) === $factory ) {
+			if ( $slugs === $factory ) {
 				return self::ecbb_parts_preserve_bricks_rows( $parts, $default_fn() );
 			}
+
 			return null;
 		}
 
@@ -227,7 +251,11 @@ if ( ! class_exists( 'ECBB_Settings_Normalizer', false ) ) {
 					continue;
 				}
 				foreach ( $settings[ $key ] as $index => $row ) {
-					if ( ! is_array( $row ) || (string) ( $row['part'] ?? '' ) !== 'event_cost' ) {
+					if ( ! is_array( $row ) ) {
+						continue;
+					}
+					$part = (string) ( $row['part'] ?? '' );
+					if ( $part !== 'event_cost' && $part !== 'venue_time_cost' ) {
 						continue;
 					}
 					if ( ! isset( $row['cost_currency'] ) || (string) $row['cost_currency'] === '' ) {
@@ -285,6 +313,30 @@ if ( ! class_exists( 'ECBB_Settings_Normalizer', false ) ) {
 			}
 
 			return $settings;
+		}
+
+		/**
+		 * Root CSS classes for shell card/image hover animation presets.
+		 *
+		 * @param array<string,mixed> $settings Widget settings.
+		 * @return string[]
+		 */
+		public static function ecbb_shell_hover_root_classes( array $settings ) {
+			if ( ! class_exists( 'ECBB_Controls', false ) ) {
+				return [];
+			}
+
+			$classes = [];
+			$card    = \ECBB_Controls::ecbb_sanitize_hover_animation_slug( $settings['ecbb_card_hover_animation'] ?? '' );
+			if ( $card !== '' ) {
+				$classes[] = 'ecbb-card-hover--' . sanitize_html_class( $card );
+			}
+			$image = \ECBB_Controls::ecbb_sanitize_hover_animation_slug( $settings['ecbb_image_hover_animation'] ?? '' );
+			if ( $image !== '' ) {
+				$classes[] = 'ecbb-img-hover--' . sanitize_html_class( $image );
+			}
+
+			return $classes;
 		}
 
 		/** True when a shell show/hide select (or legacy checkbox) is on. */

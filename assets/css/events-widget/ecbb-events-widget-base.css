@@ -227,6 +227,62 @@
 	stroke-linejoin: round;
 }
 
+/* Composite meta rows (venue + time, venue + time + cost). */
+.ecbb-ev .ecbb-event__meta-group {
+	display: inline-flex;
+	align-items: center;
+	flex-wrap: wrap;
+}
+
+.ecbb-ev .ecbb-event__meta-segment {
+	display: inline-flex;
+	align-items: center;
+	min-width: 0;
+}
+
+.ecbb-ev .ecbb-event__meta-text {
+	min-width: 0;
+}
+
+/* Style 1 / grid: small inline icons inherit row typography color. */
+.ecbb-ev .event-meta--list .ecbb-event__meta-group,
+.ecbb-ev .event-grid .ecbb-event__meta-group {
+	gap: 18px;
+}
+
+.ecbb-ev .event-meta--list .ecbb-event__meta-segment,
+.ecbb-ev .event-grid .ecbb-event__meta-segment {
+	gap: 8px;
+}
+
+.ecbb-ev .event-meta--list .ecbb-event__meta-group .ecbb-event-card__meta-icon--inline,
+.ecbb-ev .event-grid .ecbb-event__meta-group .ecbb-event-card__meta-icon--inline {
+	width: auto;
+	height: auto;
+	min-width: 0;
+	flex: 0 0 auto;
+	padding: 0;
+	background: transparent;
+	border-radius: 0;
+	color: inherit;
+	font-size: inherit;
+	line-height: inherit;
+}
+
+.ecbb-ev .event-meta--list .ecbb-event__meta-group .ecbb-event-card__meta-icon--inline svg,
+.ecbb-ev .event-grid .ecbb-event__meta-group .ecbb-event-card__meta-icon--inline svg {
+	width: 1.2em;
+	height: 1.2em;
+}
+
+.ecbb-ev .ecbb-event__meta-sep {
+	display: none;
+}
+
+.ecbb-ev .ecbb-event-card__meta-item .ecbb-event__meta-group {
+	min-width: 0;
+}
+
 .ecbb-ev .event-list-card--no-image,
 .ecbb-ev .ecbb-event-card--no-image {
 	grid-template-columns: 1fr !important;
