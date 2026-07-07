@@ -126,12 +126,19 @@ if ( ! class_exists( 'ECBB_Query_Controls', false ) ) {
 	}
 
 		public static function ecbb_get_event_category_options() {
+		static $cached = null;
+		if ( is_array( $cached ) ) {
+			return $cached;
+		}
+
 		$event_category_options = [];
 		if ( function_exists( 'taxonomy_exists' ) && taxonomy_exists( 'tribe_events_cat' ) ) {
+			$max_terms = (int) apply_filters( 'ecbb_event_category_options_limit', 500 );
 			$event_terms = get_terms(
 				[
 					'taxonomy'   => 'tribe_events_cat',
 					'hide_empty' => false,
+					'number'     => max( 1, $max_terms ),
 				]
 			);
 			if ( ! is_wp_error( $event_terms ) && is_array( $event_terms ) ) {
@@ -143,7 +150,8 @@ if ( ! class_exists( 'ECBB_Query_Controls', false ) ) {
 			}
 		}
 
-		return $event_category_options;
+		$cached = $event_category_options;
+		return $cached;
 	}
 
 	}

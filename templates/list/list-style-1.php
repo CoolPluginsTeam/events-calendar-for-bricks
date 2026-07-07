@@ -76,17 +76,19 @@ if ( ! class_exists( 'ECBB_List_1', false ) ) {
 			return 'event-list-card--no-date';
 		}
 
-		protected static function ecbb_render_image_shell( $post, array $settings ) {
-			$show_category = \ECBB_Markup::ecbb_show_shell_category_badge( $settings );
+		protected static function ecbb_image_wrap_class() {
+			return 'event-list-card__image-wrap';
+		}
 
-			echo '<div class="event-list-card__image-wrap">';
-			if ( $show_category ) {
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-				echo \ECBB_Markup::ecbb_shell_category_badge( $post );
+		protected static function ecbb_image_shell_badge_html( $post, array $settings ) {
+			if ( ! \ECBB_Markup::ecbb_show_shell_category_badge( $settings ) ) {
+				return '';
 			}
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-			echo \ECBB_Markup::ecbb_shell_featured_image( $post, 'style1', true, false );
-			echo '</div>';
+			return \ECBB_Markup::ecbb_shell_category_badge( $post );
+		}
+
+		protected static function ecbb_image_shell_featured_skin() {
+			return 'style1';
 		}
 
 		protected static function ecbb_open_content( $post, array $settings, $show_image ) {

@@ -73,7 +73,7 @@ if ( ! class_exists( 'ECBB_Cost_Formatter', false ) ) {
 			if ( isset( $aliases[ $code ] ) ) {
 				return $aliases[ $code ];
 			}
-			return isset( $aliases[ $code ] ) ? $aliases[ $code ] : ( isset( self::symbols()[ $code ] ) ? $code : 'default' );
+			return isset( self::symbols()[ $code ] ) ? $code : 'default';
 		}
 
 		/** True when token is zero or a common “free” label. */

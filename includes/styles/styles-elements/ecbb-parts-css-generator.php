@@ -153,8 +153,7 @@ if ( ! class_exists( 'ECBB_Parts_Css_Generator', false ) ) {
 				$style_css    = array_merge( $style_css, self::ecbb_parts_meta_list_unified_rules( $ctx ) );
 				$style_css    = array_merge( $style_css, self::ecbb_parts_meta_icon_rules( $ctx ) );
 				$image_bundle = self::ecbb_parts_image_rules( $ctx );
-				$style_css    = array_merge( $style_css, $image_bundle['style'] );
-				$hover_css    = array_merge( $hover_css, $image_bundle['hover'] );
+				$style_css    = array_merge( $style_css, $image_bundle );
 			}
 		return [ $style_css, $hover_css ];
 		}
@@ -331,9 +330,8 @@ if ( ! class_exists( 'ECBB_Parts_Css_Generator', false ) ) {
 			$part_type      = $ctx['part_type'];
 			$scope_sel      = $ctx['scope_sel'];
 			$style_rules    = [];
-			$hover_rules    = [];
 			if ( $part_type !== 'image' ) {
-				return [ 'style' => $style_rules, 'hover' => $hover_rules ];
+				return $style_rules;
 			}
 			foreach ( ECBB_Css_Value_Sanitizer::ecbb_breakpoints() as $device => $mq ) {
 				$img_decls = self::ecbb_image_decls( $p, $device );
@@ -344,7 +342,7 @@ if ( ! class_exists( 'ECBB_Parts_Css_Generator', false ) ) {
 					);
 				}
 			}
-			return [ 'style' => $style_rules, 'hover' => $hover_rules ];
+			return $style_rules;
 		}
 
 		private static function ecbb_btn_border_decls( array $item, $device, callable $color_fn ) {
@@ -496,8 +494,7 @@ if ( ! class_exists( 'ECBB_Parts_Css_Generator', false ) ) {
 						}
 						$rules[] = self::ecbb_mq_css_rule( $mq, $scope_sel . '{margin:0!important;}' );
 					} else {
-						$margin_sel = ( $meta_list_block && $row_sel !== '' ) ? $row_sel : $scope_sel;
-						$rules[]    = self::ecbb_mq_css_rule( $mq, $margin_sel . '{margin:' . $margin . ' !important;}' );
+						$rules[] = self::ecbb_mq_css_rule( $mq, $scope_sel . '{margin:' . $margin . ' !important;}' );
 					}
 				}
 				if ( $chip_surface || $meta_unified ) {

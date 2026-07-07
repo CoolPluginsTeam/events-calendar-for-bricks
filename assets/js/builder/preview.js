@@ -49,9 +49,7 @@
 			if (!node.classList.contains("ecbb-event-card__button")) {
 				return;
 			}
-			props.forEach(function (prop) {
-				node.style.removeProperty(prop);
-			});
+			builder.clearInlineProps(node, props);
 		});
 	}
 

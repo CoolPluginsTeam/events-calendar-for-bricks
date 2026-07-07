@@ -91,7 +91,7 @@
 		if (!node) {
 			return;
 		}
-		[
+		builder.clearInlineProps(node, [
 			"background-color",
 			"background",
 			"color",
@@ -110,9 +110,7 @@
 			"width",
 			"max-width",
 			"box-sizing",
-		].forEach(function (prop) {
-			node.style.removeProperty(prop);
-		});
+		]);
 	};
 
 	builder.clearStyledButtonPreviewPaint = function(wrapper) {

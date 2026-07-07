@@ -79,4 +79,13 @@
 		rulesByRowId: {},
 		layoutBtnTypoRulesByRowId: {},
 	};
+
+	builder.clearInlineProps = function(node, props) {
+		if (!node || !props || !props.length) {
+			return;
+		}
+		props.forEach(function (prop) {
+			node.style.removeProperty(prop);
+		});
+	};
 })();

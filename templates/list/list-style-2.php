@@ -101,17 +101,19 @@ if ( ! class_exists( 'ECBB_List_2', false ) ) {
 			return 'ecbb-event-card--no-image';
 		}
 
-		protected static function ecbb_render_image_shell( $post, array $settings ) {
-			$show_date_badge = \ECBB_Markup::ecbb_show_style2_date_badge( $settings );
+		protected static function ecbb_image_wrap_class() {
+			return 'ecbb-event-card__image-wrap';
+		}
 
-			echo '<div class="ecbb-event-card__image-wrap">';
-			if ( $show_date_badge ) {
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-				echo \ECBB_Markup::ecbb_list2_date_badge( $post, $settings );
+		protected static function ecbb_image_shell_badge_html( $post, array $settings ) {
+			if ( ! \ECBB_Markup::ecbb_show_style2_date_badge( $settings ) ) {
+				return '';
 			}
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-			echo \ECBB_Markup::ecbb_shell_featured_image( $post, 'style2', true, false );
-			echo '</div>';
+			return \ECBB_Markup::ecbb_list2_date_badge( $post, $settings );
+		}
+
+		protected static function ecbb_image_shell_featured_skin() {
+			return 'style2';
 		}
 
 		protected static function ecbb_open_content( $post, array $settings, $show_image ) {

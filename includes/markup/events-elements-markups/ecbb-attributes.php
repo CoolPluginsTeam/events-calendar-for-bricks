@@ -132,7 +132,10 @@ if ( ! class_exists( 'ECBB_Part_Chrome', false ) ) {
 				return '';
 			}
 			if ( ! empty( $item['id'] ) ) {
-				return '.' . $scope_class . ' [data-field-id="' . esc_attr( (string) $item['id'] ) . '"]';
+				$id = preg_replace( '/[^a-zA-Z0-9\-_]/', '', (string) $item['id'] );
+				if ( $id !== '' ) {
+					return '.' . $scope_class . ' [data-field-id="' . esc_attr( $id ) . '"]';
+				}
 			}
 			return '.' . $scope_class . ' .' . self::ecbb_part_index_class( absint( $idx ) );
 		}

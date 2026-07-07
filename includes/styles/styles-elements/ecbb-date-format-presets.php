@@ -26,7 +26,7 @@ if ( ! class_exists( 'ECBB_Date_Format_Presets', false ) ) {
 			return null;
 		}
 
-		if ( in_array( $preset, [ 'sed', 'sedt', 'MD,YT', 'dFT' ], true ) ) {
+		if ( in_array( $preset, [ 'sed', 'sedt' ], true ) ) {
 			return $part === 'event_time'
 			? (string) get_option( 'time_format' )
 			: (string) get_option( 'date_format' );
@@ -80,8 +80,8 @@ if ( ! class_exists( 'ECBB_Date_Format_Presets', false ) ) {
 			'dFT'     => esc_html__( 'dFT (01 January 8:00am-5:00pm)', 'events-calendar-for-bricks' ),
 			'sed'     => esc_html__( 'SED (01 Jan - 02 Jan 2025)', 'events-calendar-for-bricks' ),
 			'sedt'    => esc_html__( 'SEDT (01 Jan - 02 Jan 2025 8:00am-5:00pm)', 'events-calendar-for-bricks' ),
-			'D.j.F'   => 'D.,j. F (Wed., 15. May)',
-			'custom'  => esc_html__( 'Customâ€¦', 'events-calendar-for-bricks' ),
+			'D.j.F'   => esc_html__( 'D.,j. F (Wed., 15. May)', 'events-calendar-for-bricks' ),
+			'custom'  => esc_html__( 'Custom…', 'events-calendar-for-bricks' ),
 			];
 		}
 

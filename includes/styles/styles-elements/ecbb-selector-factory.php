@@ -160,14 +160,18 @@ if ( ! class_exists( 'ECBB_Selector_Factory', false ) ) {
 			return '';
 		}
 
+		private static function ecbb_repeater_inner_surface_selectors() {
+			return '& .ecbb-event__term-chip, & .ecbb-event__link, & > .ecbb-event__link, & .ecbb-event__term, & > .ecbb-event__term, '
+				. '& .ecbb-event__title-text, & .ecbb-event-card__category, & > .ecbb-event-card__category, '
+				. '& a.event-button, & > a.event-button, & a.ecbb-event-card__button, & > a.ecbb-event-card__button';
+		}
+
 		public static function ecbb_repeater_type_selector() {
 			// Layout CTA wrappers are full-width rows; bare `&` typography only adds phantom line-box height.
 			$wrapper_exclude = ':not(.ecbb-event-part--read-more):not(.ecbb-event-part--event-tickets):not(.ecbb-event-part--event-rsvp)'
 				. ':not(.ecbb-style2-read-more):not(.ecbb-style2-event-tickets):not(.ecbb-style2-event-rsvp)';
 
-			return '&' . $wrapper_exclude . ', & .ecbb-event__term-chip, & .ecbb-event__link, & > .ecbb-event__link, & .ecbb-event__term, & > .ecbb-event__term, '
-			. '& .ecbb-event__title-text, & .ecbb-event-card__category, & > .ecbb-event-card__category, '
-			. '& a.event-button, & > a.event-button, & a.ecbb-event-card__button, & > a.ecbb-event-card__button';
+			return '&' . $wrapper_exclude . ', ' . self::ecbb_repeater_inner_surface_selectors();
 		}
 
 		public static function ecbb_composite_inline_meta_icon_selector( $scope_sel ) {
@@ -225,9 +229,7 @@ if ( ! class_exists( 'ECBB_Selector_Factory', false ) ) {
 		}
 
 		public static function ecbb_repeater_align_selector() {
-			return '&, & .ecbb-event__term-chip, & .ecbb-event__link, & > .ecbb-event__link, & .ecbb-event__term, & > .ecbb-event__term, '
-			. '& .ecbb-event__title-text, & .ecbb-event-card__category, & > .ecbb-event-card__category, '
-			. '& a.event-button, & > a.event-button, & a.ecbb-event-card__button, & > a.ecbb-event-card__button';
+			return '&, ' . self::ecbb_repeater_inner_surface_selectors();
 		}
 
 	}

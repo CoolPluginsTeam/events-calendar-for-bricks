@@ -302,6 +302,36 @@ if ( ! class_exists( 'ECBB_Layout_Base', false ) ) {
 		}
 
 		/**
+		 * Image shell wrapper class (empty in base = no image column).
+		 *
+		 * @return string
+		 */
+		protected static function ecbb_image_wrap_class() {
+			return '';
+		}
+
+		/**
+		 * Optional badge HTML inside the image shell.
+		 *
+		 * @param \WP_Post              $post     Event post.
+		 * @param array<string,mixed>   $settings Widget settings.
+		 * @return string
+		 */
+		protected static function ecbb_image_shell_badge_html( $post, array $settings ) {
+			unset( $post, $settings );
+			return '';
+		}
+
+		/**
+		 * Skin key passed to ecbb_shell_featured_image().
+		 *
+		 * @return string
+		 */
+		protected static function ecbb_image_shell_featured_skin() {
+			return '';
+		}
+
+		/**
 		 * Featured image column (badge + image).
 		 *
 		 * @param \WP_Post              $post     Event post.
@@ -309,7 +339,20 @@ if ( ! class_exists( 'ECBB_Layout_Base', false ) ) {
 		 * @return void
 		 */
 		protected static function ecbb_render_image_shell( $post, array $settings ) {
-			unset( $post, $settings );
+			$wrap_class = static::ecbb_image_wrap_class();
+			if ( $wrap_class === '' ) {
+				return;
+			}
+
+			echo '<div class="' . esc_attr( $wrap_class ) . '">';
+			$badge_html = static::ecbb_image_shell_badge_html( $post, $settings );
+			if ( $badge_html !== '' ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				echo $badge_html;
+			}
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			echo \ECBB_Markup::ecbb_shell_featured_image( $post, static::ecbb_image_shell_featured_skin(), true, false );
+			echo '</div>';
 		}
 
 		/**

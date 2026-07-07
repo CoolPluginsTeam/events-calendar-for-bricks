@@ -21,17 +21,18 @@ if ( ! class_exists( 'ECBB_Hover_Controls', false ) ) {
 			if ( $include_none ) {
 				$options['none'] = esc_html__( 'None', 'events-calendar-for-bricks' );
 			}
-			return array_merge(
-				$options,
-				[
-					'fade_in_up'    => esc_html__( 'Fade in up', 'events-calendar-for-bricks' ),
-					'fade_in_right' => esc_html__( 'Fade in right', 'events-calendar-for-bricks' ),
-					'fade_in_down'  => esc_html__( 'Fade in down', 'events-calendar-for-bricks' ),
-					'fade_in_left'  => esc_html__( 'Fade in left', 'events-calendar-for-bricks' ),
-					'zoom_in'       => esc_html__( 'Zoom in', 'events-calendar-for-bricks' ),
-					'zoom_out'      => esc_html__( 'Zoom out', 'events-calendar-for-bricks' ),
-				]
-			);
+			return array_merge( $options, self::ecbb_hover_animation_labels() );
+		}
+
+		private static function ecbb_hover_animation_labels() {
+			return [
+				'fade_in_up'    => esc_html__( 'Fade in up', 'events-calendar-for-bricks' ),
+				'fade_in_right' => esc_html__( 'Fade in right', 'events-calendar-for-bricks' ),
+				'fade_in_down'  => esc_html__( 'Fade in down', 'events-calendar-for-bricks' ),
+				'fade_in_left'  => esc_html__( 'Fade in left', 'events-calendar-for-bricks' ),
+				'zoom_in'       => esc_html__( 'Zoom in', 'events-calendar-for-bricks' ),
+				'zoom_out'      => esc_html__( 'Zoom out', 'events-calendar-for-bricks' ),
+			];
 		}
 
 			public static function ecbb_req_list1_date_column_style() {
@@ -134,14 +135,7 @@ if ( ! class_exists( 'ECBB_Hover_Controls', false ) ) {
 		}
 
 			public static function ecbb_hover_animation_slugs() {
-			return [
-				'fade_in_up',
-				'fade_in_right',
-				'fade_in_down',
-				'fade_in_left',
-				'zoom_in',
-				'zoom_out',
-			];
+			return array_keys( self::ecbb_hover_animation_labels() );
 		}
 
 		public static function ecbb_req_shell_date_badge_style() {

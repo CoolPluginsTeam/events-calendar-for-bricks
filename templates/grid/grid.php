@@ -101,17 +101,19 @@ if ( ! class_exists( 'ECBB_Grid', false ) ) {
 			return '';
 		}
 
-		protected static function ecbb_render_image_shell( $post, array $settings ) {
-			$show_category = \ECBB_Markup::ecbb_show_shell_category_badge( $settings );
+		protected static function ecbb_image_wrap_class() {
+			return 'event-grid-card__image-wrap';
+		}
 
-			echo '<div class="event-grid-card__image-wrap">';
-			if ( $show_category ) {
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-				echo \ECBB_Markup::ecbb_shell_category_badge( $post );
+		protected static function ecbb_image_shell_badge_html( $post, array $settings ) {
+			if ( ! \ECBB_Markup::ecbb_show_shell_category_badge( $settings ) ) {
+				return '';
 			}
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-			echo \ECBB_Markup::ecbb_shell_featured_image( $post, 'grid', true, false );
-			echo '</div>';
+			return \ECBB_Markup::ecbb_shell_category_badge( $post );
+		}
+
+		protected static function ecbb_image_shell_featured_skin() {
+			return 'grid';
 		}
 
 		protected static function ecbb_open_content( $post, array $settings, $show_image ) {

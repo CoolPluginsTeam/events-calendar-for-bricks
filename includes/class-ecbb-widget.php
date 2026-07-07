@@ -554,7 +554,6 @@ class ECBB_Widget extends \Bricks\Element
 		$list_class = 'ecbb-ev__list ecbb-ev__list--' . $layout['template'];
 		if ( $layout['use_style1_shell'] ) {
 			$list_class .= ' event-list';
-		} elseif ( $layout['use_style2_shell'] ) {
 		} elseif ( $layout['use_grid_shell'] ) {
 			$list_class .= ' event-grid';
 		}

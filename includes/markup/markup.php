@@ -46,8 +46,7 @@ if ( ! class_exists( 'ECBB_Markup', false ) ) {
 						'ecbb_sanitize_layout_template',
 						'ecbb_parts_clean', 'ecbb_parts_preserve_bricks_rows',
 						'ecbb_upgrade_layout_parts', 'ecbb_parts_is_empty', 'ecbb_parts_assign_ids',
-						'ecbb_hover_interactive_types', 'ecbb_hover_part_types',
-						'ecbb_hover_on_values', 'ecbb_norm_settings_hover', 'ecbb_resolve_parts',
+						'ecbb_norm_settings_hover', 'ecbb_resolve_parts',
 						'ecbb_migrate_cost_currency', 'ecbb_layout_settings', 'ecbb_norm_layout_shell_settings',
 						'ecbb_shell_style_root_classes', 'ecbb_show_event_image',
 						'ecbb_show_shell_category_badge', 'ecbb_show_style2_date_badge', 'ecbb_show_list1_date_column',
@@ -59,12 +58,6 @@ if ( ! class_exists( 'ECBB_Markup', false ) ) {
 						'ecbb_cost_currency_opts',
 					],
 					'ECBB_Cost_Formatter'
-				),
-				$bind(
-					[
-						'ecbb_event_start_date_raw', 'ecbb_event_end_date_raw',
-					],
-					'ECBB_Event_Data'
 				),
 				$bind(
 					[
@@ -105,59 +98,59 @@ if ( ! class_exists( 'ECBB_Markup', false ) ) {
 		}
 
 		/** Shared bool coercion for generic values and Bricks checkbox controls. */
-		private static function ecbb_to_bool( $value, $default = false, $mode = 'generic' ) {
-			if ( $mode === 'checkbox' ) {
-				if ( $value === false || $value === 0 || $value === '0' || $value === 'no' || $value === 'off' ) {
+		private static function ecbb_checkbox_to_bool( $value ) {
+			if ( $value === false || $value === 0 || $value === '0' || $value === 'no' || $value === 'off' ) {
+				return false;
+			}
+			if ( $value === true || $value === 1 || $value === '1' || $value === 'yes' || $value === 'on' ) {
+				return true;
+			}
+			if ( is_array( $value ) && $value === [] ) {
+				return false;
+			}
+			if ( $value === null || $value === '' ) {
+				return false;
+			}
+			if ( is_string( $value ) ) {
+				$s = strtolower( sanitize_text_field( $value ) );
+				if ( in_array( $s, [ 'no', 'off', 'false', '0', 'hide', 'hidden' ], true ) ) {
 					return false;
 				}
-				if ( $value === true || $value === 1 || $value === '1' || $value === 'yes' || $value === 'on' ) {
+				if ( in_array( $s, [ 'yes', 'true', '1', 'show', 'on' ], true ) ) {
 					return true;
 				}
-				if ( is_array( $value ) && $value === [] ) {
-					return false;
-				}
-				if ( $value === null || $value === '' ) {
-					return false;
-				}
-				if ( is_string( $value ) ) {
-					$s = strtolower( sanitize_text_field( $value ) );
-					if ( in_array( $s, [ 'no', 'off', 'false', '0', 'hide', 'hidden' ], true ) ) {
-						return false;
-					}
-					if ( in_array( $s, [ 'yes', 'true', '1', 'show', 'on' ], true ) ) {
-						return true;
-					}
-				}
-				return (bool) $value;
 			}
+			return (bool) $value;
+		}
 
+		private static function ecbb_generic_to_bool( $value, $default = false ) {
 			if ( $value === null ) {
 				return $default;
 			}
 			if ( is_bool( $value ) ) {
-			return $value;
-		}
+				return $value;
+			}
 			if ( is_numeric( $value ) ) {
-			return (int) $value === 1;
-		}
+				return (int) $value === 1;
+			}
 			if ( is_string( $value ) ) {
 				$value = strtolower( trim( $value ) );
 				if ( $value === '' ) {
-				return false;
-			}
+					return false;
+				}
 				if ( in_array( $value, [ '1', 'true', 'yes', 'on' ], true ) ) {
-			return true;
-		}
+					return true;
+				}
 				if ( in_array( $value, [ '0', 'false', 'no', 'off' ], true ) ) {
-			return false;
-		}
-		}
-		return (bool) $value;
+					return false;
+				}
+			}
+			return (bool) $value;
 		}
 
 		/** True for 1, yes, on, true (string or scalar). */
 		public static function ecbb_is_truthy( $value, $default = false ) {
-			return self::ecbb_to_bool( $value, $default, 'generic' );
+			return self::ecbb_generic_to_bool( $value, $default );
 		}
 
 		/** Bricks color control value → CSS color string, or empty. */
@@ -166,38 +159,49 @@ if ( ! class_exists( 'ECBB_Markup', false ) ) {
 				return '';
 			}
 			if ( is_object( $value ) ) {
-			$value = (array) $value;
-		}
-		$color = '';
+				$value = (array) $value;
+			}
 			if ( is_array( $value ) ) {
-				if (
-					class_exists( '\Bricks\Assets' ) && method_exists( '\Bricks\Assets', 'generate_css_color' )
-					&& ( isset( $value['id'] ) || isset( $value['raw'] ) || isset( $value['rgb'] ) || isset( $value['hex'] ) || isset( $value['rgba'] ) )
-				) {
-					$gen = \Bricks\Assets::generate_css_color( $value );
-					if ( is_string( $gen ) && trim( $gen ) !== '' ) {
-						$color = trim( $gen );
-					}
-				}
-				if ( $color === '' && isset( $value['rgb'] ) && is_array( $value['rgb'] ) ) {
-					$r = isset( $value['rgb']['r'] ) ? (int) $value['rgb']['r'] : 0;
-					$g = isset( $value['rgb']['g'] ) ? (int) $value['rgb']['g'] : 0;
-					$b = isset( $value['rgb']['b'] ) ? (int) $value['rgb']['b'] : 0;
-					$a = isset( $value['rgb']['a'] ) ? (float) $value['rgb']['a'] : 1.0;
-			$color = 'rgba(' . $r . ',' . $g . ',' . $b . ',' . $a . ')';
-		}
-				if ( $color === '' ) {
-					$tmp   = $value['raw'] ?? $value['rgba'] ?? $value['hex'] ?? $value['value'] ?? '';
-					$color = is_string( $tmp ) ? trim( $tmp ) : '';
-				}
-			} elseif ( is_string( $value ) ) {
-				$color = trim( $value );
-		} else {
-		return '';
-		}
-			if ( $color === '' ) {
+				return self::ecbb_norm_color_from_array( $value );
+			}
+			if ( is_string( $value ) ) {
+				return self::ecbb_validate_css_color_string( trim( $value ) );
+			}
 			return '';
 		}
+
+		private static function ecbb_norm_color_from_array( array $value ) {
+			$color = '';
+			if (
+				class_exists( '\Bricks\Assets' ) && method_exists( '\Bricks\Assets', 'generate_css_color' )
+				&& ( isset( $value['id'] ) || isset( $value['raw'] ) || isset( $value['rgb'] ) || isset( $value['hex'] ) || isset( $value['rgba'] ) )
+			) {
+				$gen = \Bricks\Assets::generate_css_color( $value );
+				if ( is_string( $gen ) && trim( $gen ) !== '' ) {
+					$color = trim( $gen );
+				}
+			}
+			if ( $color === '' && isset( $value['rgb'] ) && is_array( $value['rgb'] ) ) {
+				$r = isset( $value['rgb']['r'] ) ? (int) $value['rgb']['r'] : 0;
+				$g = isset( $value['rgb']['g'] ) ? (int) $value['rgb']['g'] : 0;
+				$b = isset( $value['rgb']['b'] ) ? (int) $value['rgb']['b'] : 0;
+				$a = isset( $value['rgb']['a'] ) ? (float) $value['rgb']['a'] : 1.0;
+				$color = 'rgba(' . $r . ',' . $g . ',' . $b . ',' . $a . ')';
+			}
+			if ( $color === '' ) {
+				$tmp   = $value['raw'] ?? $value['rgba'] ?? $value['hex'] ?? $value['value'] ?? '';
+				$color = is_string( $tmp ) ? trim( $tmp ) : '';
+			}
+			if ( $color === '' ) {
+				return '';
+			}
+			return self::ecbb_validate_css_color_string( $color );
+		}
+
+		private static function ecbb_validate_css_color_string( $color ) {
+			if ( $color === '' ) {
+				return '';
+			}
 			if ( isset( $color[0] ) && ( $color[0] === '{' || $color[0] === '[' ) ) {
 				$decoded = json_decode( $color, true );
 				if ( is_array( $decoded ) ) {
@@ -207,22 +211,22 @@ if ( ! class_exists( 'ECBB_Markup', false ) ) {
 			$color = preg_replace( '/\s*!important\s*$/i', '', $color );
 			$color = rtrim( trim( $color ), ';' );
 			if ( preg_match( '/^var\\(--[a-zA-Z0-9\\-_]+(\\s*,\\s*[^\\)]+)?\\)$/', $color ) ) {
-			return $color;
-		}
+				return $color;
+			}
 			$lower = strtolower( $color );
 			if ( in_array( $lower, [ 'transparent', 'currentcolor', 'inherit', 'initial', 'unset' ], true ) ) {
-			return $color;
-		}
+				return $color;
+			}
 			if ( preg_match( '/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', $color ) ) {
-			return $color;
-		}
+				return $color;
+			}
 			if ( preg_match( '/^rgba?\\(([^\\)]+)\\)$/', $color ) ) {
-			return $color;
-		}
+				return $color;
+			}
 			if ( preg_match( '/^hsla?\\(([^\\)]+)\\)$/', $color ) ) {
-			return $color;
-		}
-		return '';
+				return $color;
+			}
+			return '';
 		}
 
 		/** Visible hover paint only (drops transparent / inherit / zero-alpha). */
@@ -261,7 +265,7 @@ if ( ! class_exists( 'ECBB_Markup', false ) ) {
 
 		/** Bricks checkbox / show-hide saved value → bool. */
 		public static function ecbb_parse_bricks_checkbox( $value ) {
-			return self::ecbb_to_bool( $value, false, 'checkbox' );
+			return self::ecbb_checkbox_to_bool( $value );
 		}
 	}
 }

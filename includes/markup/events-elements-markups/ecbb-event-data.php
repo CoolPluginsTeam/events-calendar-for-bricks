@@ -296,6 +296,34 @@ if ( ! class_exists( 'ECBB_Event_Data', false ) ) {
 			return $venue;
 		}
 
+		private static function ecbb_resolve_tribe_full_address( array $ids, $strip_venue_name_for_event_id = 0 ) {
+			if ( ! function_exists( 'tribe_get_full_address' ) ) {
+				return '';
+			}
+			foreach ( $ids as $try_id ) {
+				$raw = (string) \tribe_get_full_address( $try_id );
+				$raw = preg_replace( '/<br\s*\/?>/i', ', ', $raw );
+				$t   = trim( wp_strip_all_tags( html_entity_decode( $raw, ENT_QUOTES, 'UTF-8' ) ) );
+				if ( $t === '' ) {
+					continue;
+				}
+				if ( $strip_venue_name_for_event_id > 0 ) {
+					$name = self::ecbb_venue_name( $strip_venue_name_for_event_id );
+					if ( $name !== '' && strcasecmp( $t, $name ) === 0 ) {
+						continue;
+					}
+					if ( $name !== '' && stripos( $t, $name ) === 0 ) {
+						$t = trim( preg_replace( '/^' . preg_quote( $name, '/' ) . '\s*,\s*/i', '', $t ) );
+					}
+					if ( $t === '' ) {
+						continue;
+					}
+				}
+				return $t;
+			}
+			return '';
+		}
+
 		public static function ecbb_venue_address( $event_id ) {
 			$event_id = (int) $event_id;
 			if ( $event_id < 1 ) {
@@ -308,25 +336,9 @@ if ( ! class_exists( 'ECBB_Event_Data', false ) ) {
 			}
 			$ids = array_values( array_unique( $ids ) );
 
-			if ( function_exists( 'tribe_get_full_address' ) ) {
-				foreach ( $ids as $try_id ) {
-					$raw = (string) \tribe_get_full_address( $try_id );
-					$raw = preg_replace( '/<br\s*\/?>/i', ', ', $raw );
-					$t   = trim( wp_strip_all_tags( html_entity_decode( $raw, ENT_QUOTES, 'UTF-8' ) ) );
-					if ( $t === '' ) {
-						continue;
-					}
-					$name = self::ecbb_venue_name( $event_id );
-					if ( $name !== '' && strcasecmp( $t, $name ) === 0 ) {
-						continue;
-					}
-					if ( $name !== '' && stripos( $t, $name ) === 0 ) {
-						$t = trim( preg_replace( '/^' . preg_quote( $name, '/' ) . '\s*,\s*/i', '', $t ) );
-					}
-					if ( $t !== '' ) {
-						return $t;
-					}
-				}
+			$address = self::ecbb_resolve_tribe_full_address( $ids, $event_id );
+			if ( $address !== '' ) {
+				return $address;
 			}
 
 			if ( $vid > 0 ) {
@@ -446,15 +458,9 @@ if ( ! class_exists( 'ECBB_Event_Data', false ) ) {
 			}
 			$address_ids = array_values( array_unique( $address_ids ) );
 
-			if ( function_exists( 'tribe_get_full_address' ) ) {
-				foreach ( $address_ids as $try_id ) {
-					$raw = (string) \tribe_get_full_address( $try_id );
-					$raw = preg_replace( '/<br\s*\/?>/i', ', ', $raw );
-					$t   = trim( wp_strip_all_tags( html_entity_decode( $raw, ENT_QUOTES, 'UTF-8' ) ) );
-					if ( $t !== '' ) {
-						return $t;
-					}
-				}
+			$address = self::ecbb_resolve_tribe_full_address( $address_ids );
+			if ( $address !== '' ) {
+				return $address;
 			}
 
 			$bits = array_filter(

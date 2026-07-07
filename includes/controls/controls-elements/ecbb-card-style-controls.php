@@ -22,8 +22,7 @@ if ( ! class_exists( 'ECBB_Card_Style_Controls', false ) ) {
 	}
 
 		private static function ecbb_register_events_card_style_controls( $element ) {
-		$card_sel  = self::ecbb_style_card_selector();
-		$card_sels = self::ecbb_style_card_selectors();
+		$card_sel = self::ecbb_style_card_selector();
 
 		$element->controls['ecbb_card_background'] = [
 			'tab'         => 'style',
@@ -79,20 +78,7 @@ if ( ! class_exists( 'ECBB_Card_Style_Controls', false ) ) {
 			'unit'        => 'px',
 			'placeholder' => '1',
 			'responsive'  => true,
-			'css'         => [
-				[
-					'property' => 'border-width',
-					'selector' => $card_sels[0],
-				],
-				[
-					'property' => 'border-width',
-					'selector' => $card_sels[1],
-				],
-				[
-					'property' => 'border-width',
-					'selector' => $card_sels[2],
-				],
-			],
+			'css'         => ECBB_Part_Fields::ecbb_field_css( 'border-width', $card_sel ),
 		];
 
 		$element->controls['ecbb_card_border_color'] = [
@@ -102,20 +88,7 @@ if ( ! class_exists( 'ECBB_Card_Style_Controls', false ) ) {
 			'type'        => 'color',
 			'placeholder' => '#e5eaf2',
 			'responsive'  => true,
-			'css'         => [
-				[
-					'property' => 'border-color',
-					'selector' => $card_sels[0],
-				],
-				[
-					'property' => 'border-color',
-					'selector' => $card_sels[1],
-				],
-				[
-					'property' => 'border-color',
-					'selector' => $card_sels[2],
-				],
-			],
+			'css'         => ECBB_Part_Fields::ecbb_field_css( 'border-color', $card_sel ),
 		];
 
 		$element->controls['ecbb_card_padding'] = [

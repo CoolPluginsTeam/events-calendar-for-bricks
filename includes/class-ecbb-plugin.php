@@ -129,11 +129,11 @@ if ( ! class_exists( 'ECBB_Plugin', false ) ) {
 			if ( ! isset( $_POST['postId'] ) || ! class_exists( '\Bricks\Ajax' ) || ! class_exists( '\Bricks\Database' ) ) {
 				return;
 			}
-			$post_id = absint( wp_unslash( $_POST['postId'] ) );
-			if ( $post_id < 1 ) {
+			if ( false === check_ajax_referer( 'bricks-nonce', 'nonce', false ) ) {
 				return;
 			}
-			if ( false === check_ajax_referer( 'bricks-nonce', 'nonce', false ) ) {
+			$post_id = absint( wp_unslash( $_POST['postId'] ) );
+			if ( $post_id < 1 ) {
 				return;
 			}
 			if ( ! current_user_can( 'edit_post', $post_id ) ) {

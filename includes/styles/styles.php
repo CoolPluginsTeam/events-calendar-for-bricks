@@ -56,7 +56,7 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 				$bind(
 					[
 						'ecbb_meta_combo_order', 'ecbb_meta_combo_all_slugs', 'ecbb_is_meta_combo_slug',
-						'ecbb_meta_combo_has_segment', 'ecbb_meta_combo_slugs_style1', 'ecbb_meta_combo_slugs_style2',
+						'ecbb_meta_combo_has_segment', 'ecbb_meta_combo_slugs_style2',
 						'ecbb_meta_combo_slugs_with_segment', 'ecbb_normalize_meta_combo_row',
 					],
 					'ECBB_Meta_Combo'
