@@ -9,10 +9,6 @@
 	gap: var(--ecbb-gap, 24px);
 }
 
-.ecbb-ev__list--list.event-list {
-	gap: var(--ecbb-gap, 24px);
-}
-
 .ecbb-ev__list--grid {
 	display: grid;
 	gap: var(--ecbb-gap, 24px);
@@ -140,7 +136,9 @@
 		text-decoration-color var(--transition-base);
 }
 
-.ecbb-ev a.event-badge--blue:hover {
+.ecbb-ev a.event-badge--blue:hover,
+.ecbb-ev .event-list-card:hover a.event-badge--blue:hover,
+.ecbb-ev .event-grid-card:hover a.event-badge--blue:hover {
 	color: var(--ecbb-shell-cat-color, var(--color-card-bg));
 	background: var(--ecbb-shell-cat-bg, var(--badge-blue));
 }
@@ -583,9 +581,7 @@
 }
 
 @media (max-width: 767px) {
-	.ecbb-ev__list--list,
-	.ecbb-ev__list--list.event-list,
-	.ecbb-ev__list--list.ecbb-list {
+	.ecbb-ev__list--list {
 		gap: var(--ecbb-gap, 18px);
 	}
 

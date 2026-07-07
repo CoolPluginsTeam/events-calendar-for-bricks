@@ -296,10 +296,11 @@
 			typoColor = typoOverrides.color;
 		}
 
-		li.style.setProperty("display", "inline-flex", "important");
+		var hasCompositeGroup = !!li.querySelector(".ecbb-event__meta-group");
+		li.style.setProperty("display", hasCompositeGroup ? "flex" : "inline-flex", "important");
 		li.style.setProperty("align-items", "center", "important");
 		li.style.setProperty("gap", "8px", "important");
-		li.style.setProperty("width", "fit-content", "important");
+		li.style.setProperty("width", hasCompositeGroup ? "100%" : "fit-content", "important");
 		li.style.setProperty("max-width", "100%", "important");
 		li.style.setProperty("border-radius", "10px", "important");
 
@@ -1283,7 +1284,7 @@
 		return !!(
 			preview &&
 			preview.querySelector(
-				".ecbb-ev__item--style-2, .ecbb-ev__item-inner--style-2"
+				".ecbb-ev__item--style-2"
 			)
 		);
 	}

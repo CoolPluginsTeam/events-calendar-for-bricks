@@ -808,6 +808,17 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 	}
 
 	/**
+	 * @return array<int,string>
+	 */
+	private static function ecbb_style_card_selectors() {
+		return [
+			'& .event-list-card',
+			'& .ecbb-event-card',
+			'& .event-grid-card',
+		];
+	}
+
+	/**
 	 * Category badge control keys/rules per layout (content toggle + style tab chrome).
 	 *
 	 * @return array<string,array<string,mixed>>
@@ -893,7 +904,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 		$c        = $configs[ $layout ];
 		$required = $c['style_required'];
 		$badge    = '& .event-badge--blue';
-		$badge_h  = '& a.event-badge--blue:hover, & .event-badge--blue:hover';
+		$badge_h  = '& a.event-badge--blue:hover, & .event-badge--blue:hover, & .event-list-card:hover a.event-badge--blue:hover, & .event-grid-card:hover a.event-badge--blue:hover';
 		$wrap     = '& .event-badge';
 
 		$element->controls[ $c['sep_key'] ] = [
@@ -1387,7 +1398,8 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 	 * @return void
 	 */
 	private static function ecbb_register_events_card_style_controls( $element ) {
-		$card_sel = self::ecbb_style_card_selector();
+		$card_sel  = self::ecbb_style_card_selector();
+		$card_sels = self::ecbb_style_card_selectors();
 
 		$element->controls['ecbb_card_background'] = [
 			'tab'         => 'style',
@@ -1408,25 +1420,6 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			],
 		];
 
-		$element->controls['ecbb_card_text_color'] = [
-			'tab'         => 'style',
-			'group'       => 'events_card',
-			'label'       => esc_html__( 'Text color', 'events-calendar-for-bricks' ),
-			'type'        => 'color',
-			'placeholder' => '#334155',
-			'responsive'  => true,
-			'css'         => [
-				[
-					'property' => '--ecbb-card-fg',
-					'selector' => '&',
-				],
-				[
-					'property' => 'color',
-					'selector' => $card_sel . ' .event-list-card__body, & .ecbb-event-card__content, & .event-grid-card__content',
-				],
-			],
-		];
-
 		$element->controls['ecbb_sep_card_border'] = [
 			'tab'   => 'style',
 			'group' => 'events_card',
@@ -1443,7 +1436,20 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			'unit'        => 'px',
 			'placeholder' => '1',
 			'responsive'  => true,
-			'css'         => self::ecbb_field_css( 'border-width', $card_sel ),
+			'css'         => [
+				[
+					'property' => 'border-width',
+					'selector' => $card_sels[0],
+				],
+				[
+					'property' => 'border-width',
+					'selector' => $card_sels[1],
+				],
+				[
+					'property' => 'border-width',
+					'selector' => $card_sels[2],
+				],
+			],
 		];
 
 		$element->controls['ecbb_card_border_color'] = [
@@ -1453,7 +1459,20 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			'type'        => 'color',
 			'placeholder' => '#e5eaf2',
 			'responsive'  => true,
-			'css'         => self::ecbb_field_css( 'border-color', $card_sel ),
+			'css'         => [
+				[
+					'property' => 'border-color',
+					'selector' => $card_sels[0],
+				],
+				[
+					'property' => 'border-color',
+					'selector' => $card_sels[1],
+				],
+				[
+					'property' => 'border-color',
+					'selector' => $card_sels[2],
+				],
+			],
 		];
 
 		$element->controls['ecbb_card_padding'] = [
@@ -1820,16 +1839,6 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			'css'        => self::ecbb_field_css( 'padding', '& .ecbb-event-card__date-badge' ),
 		];
 
-		$element->controls['ecbb_shell_date_border_radius'] = [
-			'tab'         => 'style',
-			'group'       => 'featured_image',
-			'label'       => esc_html__( 'Border radius', 'events-calendar-for-bricks' ),
-			'type'        => 'dimensions',
-			'placeholder' => '10px',
-			'responsive'  => true,
-			'required'    => self::ecbb_req_shell_date_badge_style(),
-			'css'         => self::ecbb_field_css( 'border-radius', '& .ecbb-event-card__date-badge' ),
-		];
 	}
 
 	/**

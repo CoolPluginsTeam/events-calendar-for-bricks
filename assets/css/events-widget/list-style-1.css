@@ -10,7 +10,7 @@
 	background: var(--ecbb-card-bg, var(--color-card-bg));
 	color: var(--ecbb-card-fg, inherit);
 	border: 1px solid var(--color-border);
-	border-radius: var(--ecbb-card-radius, 20px);
+	border-radius: 20px;
 	width: 100%;
 }
 
@@ -166,8 +166,8 @@
 	min-width: 0;
 }
 
-/* Style 1 meta row: icon + text are one styled unit (the <li>). */
-.ecbb-ev .event-meta--list > li.ecbb-meta-list-row {
+/* Style 1 single meta row: icon + text are one styled unit (the <li>). */
+.ecbb-ev .event-meta--list > li.ecbb-meta-list-row:not(:has(.ecbb-event__meta-group)) {
 	display: inline-flex;
 	align-items: center;
 	gap: 8px;

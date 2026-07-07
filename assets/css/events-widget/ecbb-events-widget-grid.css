@@ -10,7 +10,7 @@
 	background: var(--ecbb-card-bg, var(--color-card-bg));
 	color: var(--ecbb-card-fg, inherit);
 	border: 1px solid var(--color-border);
-	border-radius: var(--ecbb-card-radius, 15px);
+	border-radius: 15px;
 	box-shadow: var(--shadow-card);
 	width: 100%;
 	--ecbb-card-hover-border-color: rgba(33, 71, 199, 0.18);
