@@ -40,7 +40,7 @@ if ( ! class_exists( 'ECBB_Plugin', false ) ) {
 		* @return void
 		*/
 		public static function ecbb_load_render_dependencies() {
-			foreach ( [ 'includes/query.php', 'includes/markup/markup.php', 'includes/styles.php', 'includes/controls.php' ] as $relative_path ) {
+			foreach ( [ 'includes/query.php', 'includes/markup/markup.php', 'includes/styles/styles.php', 'includes/controls/controls.php' ] as $relative_path ) {
 				self::ecbb_require_file( $relative_path );
 			}
 		}
@@ -61,7 +61,8 @@ if ( ! class_exists( 'ECBB_Plugin', false ) ) {
 		*/
 		private static function ecbb_load_builder_panel_dependencies() {
 			self::ecbb_load_markup_dependencies();
-			self::ecbb_require_file( 'includes/controls.php' );
+			self::ecbb_require_file( 'includes/styles/styles.php' );
+			self::ecbb_require_file( 'includes/controls/controls.php' );
 		}
 
 		/**

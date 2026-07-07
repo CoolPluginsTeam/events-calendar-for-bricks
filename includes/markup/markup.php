@@ -43,79 +43,52 @@ if ( ! class_exists( 'ECBB_Markup', false ) ) {
 			self::$delegates = array_merge(
 				$bind(
 					[
-						'ecbb_sanitize_template', 'ecbb_sanitize_list_style', 'ecbb_sanitize_layout_template',
-						'ecbb_parts_clean', 'ecbb_parts_slugs', 'ecbb_parts_preserve_bricks_rows',
+						'ecbb_sanitize_layout_template',
+						'ecbb_parts_clean', 'ecbb_parts_preserve_bricks_rows',
 						'ecbb_upgrade_layout_parts', 'ecbb_parts_is_empty', 'ecbb_parts_assign_ids',
-						'ecbb_hover_interactive_types', 'ecbb_hover_part_types', 'ecbb_part_has_hover',
-						'ecbb_hover_on_values', 'ecbb_hover_is_on', 'ecbb_norm_hover_row',
-						'ecbb_norm_parts_hover', 'ecbb_norm_settings_hover', 'ecbb_resolve_parts',
+						'ecbb_hover_interactive_types', 'ecbb_hover_part_types',
+						'ecbb_hover_on_values', 'ecbb_norm_settings_hover', 'ecbb_resolve_parts',
 						'ecbb_migrate_cost_currency', 'ecbb_layout_settings', 'ecbb_norm_layout_shell_settings',
-						'ecbb_shell_hover_root_classes', 'ecbb_shell_style_root_classes',
-						'ecbb_shell_select_on', 'ecbb_show_event_image', 'ecbb_show_shell_category_badge',
-						'ecbb_show_style2_date_badge', 'ecbb_show_list1_date_column', 'ecbb_style2_date_badge_order', 'ecbb_list1_date_column_order',
+						'ecbb_shell_style_root_classes', 'ecbb_show_event_image',
+						'ecbb_show_shell_category_badge', 'ecbb_show_style2_date_badge', 'ecbb_show_list1_date_column',
 					],
 					'ECBB_Settings_Normalizer'
 				),
 				$bind(
 					[
-						'ecbb_cost_currency_opts', 'ecbb_sanitize_cost_currency', 'ecbb_cost_is_free',
-						'ecbb_cost_currency_symbol', 'ecbb_strip_cost_symbols', 'ecbb_format_cost_token',
-						'ecbb_apply_cost_currency', 'ecbb_resolve_cost_currency', 'ecbb_format_cost_display',
-						'ecbb_layout_cost_label',
+						'ecbb_cost_currency_opts',
 					],
 					'ECBB_Cost_Formatter'
 				),
 				$bind(
 					[
-						'ecbb_part_detail_text', 'ecbb_event_start_date_raw', 'ecbb_event_end_date_raw',
-						'ecbb_venue_id', 'ecbb_venue_name', 'ecbb_venue_address', 'ecbb_venue_name_addr',
-						'ecbb_venue_name_state', 'ecbb_venue_name_city', 'ecbb_venue_display_key',
-						'ecbb_venue_uses_full', 'ecbb_venue_text', 'ecbb_organizer_name', 'ecbb_organizer_full',
-						'ecbb_organizer_uses_full', 'ecbb_organizer_text',
+						'ecbb_event_start_date_raw', 'ecbb_event_end_date_raw',
 					],
 					'ECBB_Event_Data'
 				),
 				$bind(
 					[
-						'ecbb_part_date_php_fmt', 'ecbb_time_fmt_lower', 'ecbb_time_lower_am',
-						'ecbb_build_day_time_parts',
-					],
-					'ECBB_Date_Formatter'
-				),
-				$bind(
-					[
-						'ecbb_render_venue', 'ecbb_render_organizer', 'ecbb_render_featured_img',
-						'ecbb_render_part_date', 'ecbb_render_part_event_date', 'ecbb_render_part_event_time',
-						'ecbb_render_part_event_day', 'ecbb_render_part_detail', 'ecbb_render_part_event_cost',
-						'ecbb_render_part_event_tickets', 'ecbb_render_part_event_rsvp', 'ecbb_render_part_read_more',
+						'ecbb_render_featured_img',
 						'ecbb_render_part_ext',
 					],
 					'ECBB_Part_Renderer'
 				),
 				$bind(
 					[
-						'ecbb_event_start_timestamp', 'ecbb_list1_date_column', 'ecbb_list2_date_badge',
-						'ecbb_grid_date_range_text', 'ecbb_render_grid_date_flow', 'ecbb_render_style2_category',
-						'ecbb_render_grid_category',
-						'ecbb_render_layout_read_more', 'ecbb_render_layout_read_more_shell',
-						'ecbb_render_layout_parts_sequence', 'ecbb_render_meta_li', 'ecbb_render_meta_lists',
-						'ecbb_flush_meta_rows', 'ecbb_shell_featured_image', 'ecbb_shell_category_badge',
+						'ecbb_list1_date_column', 'ecbb_list2_date_badge',
+						'ecbb_render_layout_parts_sequence', 'ecbb_render_meta_li',
+						'ecbb_shell_featured_image', 'ecbb_shell_category_badge',
 						'ecbb_event_thumbnail_id', 'ecbb_event_category_terms', 'ecbb_description_plain_text',
-						'ecbb_grid_description_html', 'ecbb_grid_description_word_limit', 'ecbb_layout_surface_class',
-						'ecbb_shell_skip_part', 'ecbb_is_layout_meta_row', 'ecbb_meta_icon', 'ecbb_meta_icon_for_part',
-						'ecbb_meta_list_icon_part_slugs', 'ecbb_part_shows_style2_meta_icon',
+						'ecbb_grid_description_html', 'ecbb_layout_surface_class', 'ecbb_part_shows_style2_meta_icon',
 						'ecbb_part_renders_meta_list_icon', 'ecbb_part_uses_composite_inline_meta_icons',
 					],
 					'ECBB_Layout_Shell'
 				),
 				$bind(
 					[
-						'ecbb_read_more_merge_link_classes', 'ecbb_part_dom_id', 'ecbb_part_dom_id_attr',
-						'ecbb_part_classes', 'ecbb_part_index_class', 'ecbb_part_wrap_attrs', 'ecbb_part_scope_selector',
-						'ecbb_hover_has_custom_styles', 'ecbb_hover_anim_css', 'ecbb_hover_inline_vars',
-						'ecbb_hover_state_selectors', 'ecbb_hover_style_active', 'ecbb_title_link_active',
-						'ecbb_btn_style_active', 'ecbb_layout_read_more_btn_class', 'ecbb_image_size_opts',
-						'ecbb_sanitize_image_size', 'ecbb_action_link_html', 'ecbb_terms_html',
+						'ecbb_part_classes', 'ecbb_part_wrap_attrs', 'ecbb_part_scope_selector',
+						'ecbb_hover_anim_css', 'ecbb_hover_style_active', 'ecbb_title_link_active',
+						'ecbb_btn_style_active', 'ecbb_image_size_opts', 'ecbb_sanitize_image_size', 'ecbb_terms_html',
 					],
 					'ECBB_Part_Chrome'
 				)

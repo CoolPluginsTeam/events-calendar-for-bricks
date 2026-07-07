@@ -34,7 +34,7 @@ if ( ! class_exists( 'ECBB_Part_Renderer', false ) ) {
 			if ( $text === '' ) {
 				return '';
 			}
-			$shell = self::ecbb_part_shell( 'venue', $item, $idx, $style, $skin, ' ecbb-has-row-icon' );
+			$shell = self::ecbb_part_shell( 'venue', $item, $idx, $style, $skin );
 			return '<div class="' . $shell['wrap'] . '"' . $shell['attr'] . '>' . esc_html( $text ) . '</div>';
 		}
 
@@ -43,7 +43,7 @@ if ( ! class_exists( 'ECBB_Part_Renderer', false ) ) {
 			if ( ! $post instanceof \WP_Post ) {
 				return '';
 			}
-			$text = ECBB_Event_Data::ecbb_organizer_text( $post->ID, $item, $skin );
+			$text = ECBB_Event_Data::ecbb_organizer_text( $post->ID, $item );
 			if ( $text === '' ) {
 				return '';
 			}
@@ -120,7 +120,7 @@ if ( ! class_exists( 'ECBB_Part_Renderer', false ) ) {
 
 			$shell = self::ecbb_part_shell( 'date', $item, $idx, $style, $skin );
 
-			return '<div class="' . $shell['wrap'] . ' ecbb-has-row-icon"' . $shell['attr'] . '>' . esc_html( $html ) . '</div>';
+			return '<div class="' . $shell['wrap'] . '"' . $shell['attr'] . '>' . esc_html( $html ) . '</div>';
 		}
 
 		public static function ecbb_render_part_event_date( $post, array $item, $idx, $style, $skin = '' ) {
@@ -148,8 +148,7 @@ if ( ! class_exists( 'ECBB_Part_Renderer', false ) ) {
 			if ( $html === '' ) {
 				return '';
 			}
-			$icon = ( $shell['skin'] !== 'style2' ) ? ' ecbb-has-row-icon' : '';
-			return '<div class="' . $shell['wrap'] . $icon . '"' . $shell['attr'] . '>' . esc_html( $html ) . '</div>';
+			return '<div class="' . $shell['wrap'] . '"' . $shell['attr'] . '>' . esc_html( $html ) . '</div>';
 		}
 
 		public static function ecbb_render_part_event_day( $post, array $item, $idx, $style, $skin = '' ) {
@@ -180,9 +179,6 @@ if ( ! class_exists( 'ECBB_Part_Renderer', false ) ) {
 				return '';
 			}
 
-			$loc_parts = [ 'venue_full_address', 'venue_street', 'venue_city', 'venue_state', 'venue_zip', 'venue_country', 'venue_phone' ];
-			$loc_icon  = in_array( $part, $loc_parts, true ) ? ' ecbb-has-row-icon' : '';
-
 			if ( $part === 'organizer_email' && is_email( $html ) ) {
 				return '<div class="' . $shell['wrap'] . '"' . $shell['attr'] . '><a class="ecbb-event__link" href="' . esc_url( 'mailto:' . $html ) . '">' . esc_html( $html ) . '</a></div>';
 			}
@@ -208,7 +204,7 @@ if ( ! class_exists( 'ECBB_Part_Renderer', false ) ) {
 				return '<div class="' . $shell['wrap'] . '"' . $shell['attr'] . '><a class="ecbb-event__link" href="' . esc_url( $safe ) . '" rel="noopener noreferrer" target="_blank">' . esc_html( $label ) . '</a></div>';
 			}
 
-			return '<div class="' . $shell['wrap'] . $loc_icon . '"' . $shell['attr'] . '>' . esc_html( $html ) . '</div>';
+			return '<div class="' . $shell['wrap'] . '"' . $shell['attr'] . '>' . esc_html( $html ) . '</div>';
 		}
 
 		public static function ecbb_render_part_event_cost( $post, array $item, $idx, $style, $skin = '' ) {
@@ -358,9 +354,7 @@ if ( ! class_exists( 'ECBB_Part_Renderer', false ) ) {
 			}
 
 			$shell = self::ecbb_part_shell( $part_slug, $item, $idx, $style, $skin );
-			$icon  = ( $shell['skin'] !== 'style2' ) ? ' ecbb-has-row-icon' : '';
-
-			return '<div class="' . $shell['wrap'] . $icon . '"' . $shell['attr'] . '>' . $inner . '</div>';
+			return '<div class="' . $shell['wrap'] . '"' . $shell['attr'] . '>' . $inner . '</div>';
 		}
 
 		public static function ecbb_render_part_event_tickets( $post, array $item, $idx, $style, $skin = '' ) {

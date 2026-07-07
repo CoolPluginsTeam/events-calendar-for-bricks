@@ -517,7 +517,7 @@ if ( ! class_exists( 'ECBB_Event_Data', false ) ) {
 			return $display === 'full_details';
 		}
 
-		public static function ecbb_organizer_text( $event_id, array $item, $skin = '' ) {
+		public static function ecbb_organizer_text( $event_id, array $item ) {
 			$event_id = (int) $event_id;
 			if ( $event_id < 1 ) {
 				return '';

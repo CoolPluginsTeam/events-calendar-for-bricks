@@ -19,7 +19,7 @@
 	min-height: 268px;
 	overflow: hidden;
 	border-radius: 20px 0 0 20px;
-	background: #d9e0ea;
+	background: var(--ecbb-image-placeholder-bg);
 }
 
 .ecbb-ev .event-list-card__content {
@@ -174,24 +174,6 @@
 	width: fit-content;
 	max-width: 100%;
 	border-radius: 10px;
-}
-
-.ecbb-ev .event-meta--list > li.ecbb-meta-list-row > .ecbb-event-card__meta-icon {
-	width: auto;
-	height: auto;
-	min-width: 0;
-	flex: 0 0 auto;
-	padding: 0;
-	background: transparent;
-	border-radius: 0;
-	color: inherit;
-	font-size: inherit;
-	line-height: inherit;
-}
-
-.ecbb-ev .event-meta--list > li.ecbb-meta-list-row > .ecbb-event-card__meta-icon svg {
-	width: 1.2em;
-	height: 1.2em;
 }
 
 .ecbb-ev .event-meta--list > li.ecbb-meta-list-row > [data-field-id] {
@@ -358,12 +340,12 @@
 .ecbb-ev__item--style-1 .ecbb-event-part:not(.ecbb-has-hover-bg):not(.ecbb-no-hover) a.ecbb-event__link.event-button--outline:hover {
 	background-color: var(--color-primary) !important;
 	border-color: var(--color-primary) !important;
-	box-shadow: 0 8px 18px rgba(33, 71, 199, 0.2) !important;
+	box-shadow: var(--ecbb-btn-hover-shadow) !important;
 }
 
 .ecbb-ev__item--style-1 .ecbb-event-part:not(.ecbb-has-hover-bg):not(.ecbb-no-hover) a.event-button.event-button--filled:hover,
 .ecbb-ev__item--style-1 .ecbb-event-part:not(.ecbb-has-hover-bg):not(.ecbb-no-hover) > a.event-button.event-button--filled:hover {
 	background-color: var(--color-primary-dark) !important;
 	border-color: var(--color-primary-dark) !important;
-	box-shadow: 0 8px 20px rgba(33, 71, 199, 0.24) !important;
+	box-shadow: var(--ecbb-btn-hover-shadow-filled) !important;
 }

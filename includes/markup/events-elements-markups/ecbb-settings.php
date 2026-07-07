@@ -58,7 +58,7 @@ if ( ! class_exists( 'ECBB_Settings_Normalizer', false ) ) {
 		/** Copy Bricks row ids and style fields from saved rows onto defaults. */
 		public static function ecbb_parts_preserve_bricks_rows( array $saved, array $defaults ) {
 			$style_keys = [
-				'id', 'ecbb_typography', 'ecbb_text_align', 'ecbb_background', 'ecbb_background_inner',
+				'id', 'ecbb_typography', 'ecbb_text_align', 'ecbb_background',
 				'ecbb_meta_icon_color', 'ecbb_meta_icon_background',
 				'ecbb_margin', 'ecbb_padding', 'ecbb_use_hover', 'ecbb_hover_color', 'ecbb_hover_background',
 				'ecbb_hover_text_decoration', 'ecbb_hover_animation', 'btn_style', 'btn_bg', 'btn_text_color',

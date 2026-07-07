@@ -36,6 +36,7 @@
 			? fromPhp.style2MetaIconParts
 			: ["venue", "date", "event_cost", "venue_time_cost"],
 		layoutActionButtonParts: ["read_more", "event_tickets", "event_rsvp"],
+		layoutActionSurfaceSelector: ".ecbb-event__link, a.event-button, a.ecbb-event-card__button",
 		styledButtonBackgroundKeys: ["ecbb_background"],
 		styledButtonBorderKeys: Array.isArray(fromPhp.btnBorderKeys)
 			? fromPhp.btnBorderKeys.filter(function (key) { return key !== "btn_sep_border"; })
@@ -56,9 +57,7 @@
 	builder.tabs = { scanTimer: null, sortEndRaf: 0 };
 	builder.preview = { typographyPickerRaf: 0 };
 	builder.hover = {
-		rulesByItem: typeof WeakMap !== "undefined" ? new WeakMap() : null,
 		rulesByRowId: {},
-		layoutBtnTypoRulesByItem: typeof WeakMap !== "undefined" ? new WeakMap() : null,
 		layoutBtnTypoRulesByRowId: {},
 	};
 })();

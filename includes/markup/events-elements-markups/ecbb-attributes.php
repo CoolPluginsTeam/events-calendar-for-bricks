@@ -114,16 +114,8 @@ if ( ! class_exists( 'ECBB_Part_Chrome', false ) ) {
 
 		public static function ecbb_part_wrap_attrs(array $item, $idx, $style = '')
 		{
-			$attrs = self::ecbb_part_dom_id_attr($item, $idx);
-			$hover = self::ecbb_hover_inline_vars( $item );
-			if ( $hover !== '' ) {
-				$style = trim( (string) $style );
-				$style = $style !== '' ? $style . ';' . $hover : $hover;
-			}
-			if ($style !== '') {
-				$attrs .= ' style="' . esc_attr($style) . '"';
-			}
-		return $attrs;
+			unset( $style );
+			return self::ecbb_part_dom_id_attr($item, $idx);
 		}
 
 		/**
@@ -198,30 +190,6 @@ if ( ! class_exists( 'ECBB_Part_Chrome', false ) ) {
 			'base'  => $base,
 			'hover' => $hover . '{transform:' . $transforms[ $anim ] . ';}',
 		];
-		}
-
-		/**
-		 * Inline CSS custom properties for repeater hover paint on the part wrapper.
-		 *
-		 * @param array<string,mixed> $item Repeater row.
-		 * @return string Declaration string (no style="" wrapper), or empty.
-		 */
-		public static function ecbb_hover_inline_vars( array $item ) {
-			if ( ! self::ecbb_hover_style_active( $item ) ) {
-				return '';
-			}
-
-			$decls = [];
-			$fg    = ECBB_Markup::ecbb_norm_hover_paint_color( $item['ecbb_hover_color'] ?? ( $item['hover_color'] ?? '' ) );
-			if ( $fg !== '' ) {
-				$decls[] = '--ecbb-hover-fg:' . $fg;
-			}
-			$bg = ECBB_Markup::ecbb_norm_hover_paint_color( $item['ecbb_hover_background'] ?? '' );
-			if ( $bg !== '' ) {
-				$decls[] = '--ecbb-hover-bg:' . $bg;
-			}
-
-			return $decls !== [] ? implode( ';', $decls ) . ';' : '';
 		}
 
 		public static function ecbb_hover_state_selectors($scope_sel)
@@ -436,12 +404,10 @@ if ( ! class_exists( 'ECBB_Part_Chrome', false ) ) {
 			return '<a class="ecbb-event__link" href="' . esc_url( $href ) . '"' . $extra_attrs . $link_attr . '>' . esc_html( $label ) . '</a>';
 		}
 
-		public static function ecbb_terms_html(array $terms, array $item, $style_attr = '', $skin = '', $part = 'categories')
+		public static function ecbb_terms_html(array $terms, array $item, $skin = '', $part = 'categories')
 		{
-			$style_attr = (string) $style_attr;
 			$skin       = (string) $skin;
 			$part       = sanitize_key((string) $part);
-			$link_style = $style_attr !== '' ? ' style="' . esc_attr($style_attr) . '"' : '';
 			$chip_each  = ('style1' === $skin && 'categories' === $part);
 			$link_terms = self::ecbb_hover_style_active($item);
 
@@ -462,7 +428,7 @@ if ( ! class_exists( 'ECBB_Part_Chrome', false ) ) {
 			if (is_wp_error($url)) {
 				continue;
 			}
-		$inner = '<a class="ecbb-event__link" href="' . esc_url($url) . '"' . $link_style . '>' . esc_html($t->name) . '</a>';
+		$inner = '<a class="ecbb-event__link" href="' . esc_url($url) . '">' . esc_html($t->name) . '</a>';
 		} else {
 		$inner = '<span class="ecbb-event__term">' . esc_html($t->name) . '</span>';
 		}

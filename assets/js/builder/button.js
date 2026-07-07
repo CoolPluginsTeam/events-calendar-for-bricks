@@ -77,9 +77,7 @@
 		if (!wrapper) {
 			return null;
 		}
-		var link = wrapper.querySelector(
-			".ecbb-event__link, a.event-button, a.ecbb-event-card__button"
-		);
+		var link = wrapper.querySelector(builder.config.layoutActionSurfaceSelector);
 		if (link) {
 			return link;
 		}
@@ -116,7 +114,7 @@
 
 		wrapper
 			.querySelectorAll(
-				".ecbb-event__link, .ecbb-event__plain, a.event-button, a.ecbb-event-card__button"
+				builder.config.layoutActionSurfaceSelector + ", .ecbb-event__plain"
 			)
 			.forEach(function (node) {
 			node.removeAttribute("style");

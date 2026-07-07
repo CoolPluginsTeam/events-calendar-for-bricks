@@ -24,33 +24,43 @@ if ( ! class_exists( 'ECBB_Cost_Formatter', false ) ) {
 			];
 		}
 
+		/** @return array<string,string> */
+		private static function currency_labels(): array {
+			return [
+				'USD' => 'US Dollar',
+				'EUR' => 'Euro',
+				'GBP' => 'British Pound',
+				'CAD' => 'Canadian Dollar',
+				'AUD' => 'Australian Dollar',
+				'INR' => 'Indian Rupee',
+				'JPY' => 'Japanese Yen',
+				'CNY' => 'Chinese Yuan',
+				'CHF' => 'Swiss Franc',
+				'SEK' => 'Swedish Krona',
+				'NOK' => 'Norwegian Krone',
+				'DKK' => 'Danish Krone',
+				'NZD' => 'New Zealand Dollar',
+				'ZAR' => 'South African Rand',
+				'BRL' => 'Brazilian Real',
+				'MXN' => 'Mexican Peso',
+				'SGD' => 'Singapore Dollar',
+				'HKD' => 'Hong Kong Dollar',
+				'AED' => 'UAE Dirham',
+				'SAR' => 'Saudi Riyal',
+			];
+		}
+
 		/** Currency codes for the cost part control. */
 		public static function ecbb_cost_currency_opts(): array {
-			$sym = self::symbols();
-			return [
+			$options = [
 				'default' => esc_html__( 'Site default', 'events-calendar-for-bricks' ),
 				'none'    => esc_html__( 'No currency symbol', 'events-calendar-for-bricks' ),
-				'USD'     => 'USD (' . $sym['USD'] . ')',
-				'EUR'     => 'EUR (' . $sym['EUR'] . ')',
-				'GBP'     => 'GBP (' . $sym['GBP'] . ')',
-				'CAD'     => 'CAD (' . $sym['CAD'] . ')',
-				'AUD'     => 'AUD (' . $sym['AUD'] . ')',
-				'INR'     => 'INR (' . $sym['INR'] . ')',
-				'JPY'     => 'JPY (' . $sym['JPY'] . ')',
-				'CNY'     => 'CNY (' . $sym['CNY'] . ')',
-				'CHF'     => 'CHF (' . $sym['CHF'] . ')',
-				'SEK'     => 'SEK (' . $sym['SEK'] . ')',
-				'NOK'     => 'NOK (' . $sym['NOK'] . ')',
-				'DKK'     => 'DKK (' . $sym['DKK'] . ')',
-				'NZD'     => 'NZD (' . $sym['NZD'] . ')',
-				'ZAR'     => 'ZAR (' . $sym['ZAR'] . ')',
-				'BRL'     => 'BRL (' . $sym['BRL'] . ')',
-				'MXN'     => 'MXN (' . $sym['MXN'] . ')',
-				'SGD'     => 'SGD (' . $sym['SGD'] . ')',
-				'HKD'     => 'HKD (' . $sym['HKD'] . ')',
-				'AED'     => 'AED (' . $sym['AED'] . ')',
-				'SAR'     => 'SAR (' . $sym['SAR'] . ')',
 			];
+			$symbols = self::symbols();
+			foreach ( array_keys( self::currency_labels() ) as $code ) {
+				$options[ $code ] = $code . ' (' . $symbols[ $code ] . ')';
+			}
+			return $options;
 		}
 
 		/** Normalize saved currency code to a known option key. */

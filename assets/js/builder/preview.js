@@ -12,9 +12,7 @@
 		if (!wrapper) {
 			return [];
 		}
-		return wrapper.querySelectorAll(
-			".ecbb-event__link, a.event-button, a.ecbb-event-card__button"
-		);
+		return wrapper.querySelectorAll(builder.config.layoutActionSurfaceSelector);
 	}
 
 	builder.isStyle2CardActionButtonContext = function(preview, wrapper) {
@@ -368,35 +366,21 @@
 			li.style.removeProperty("padding");
 		}
 
-		if (icon) {
-			icon.style.setProperty("width", "auto", "important");
-			icon.style.setProperty("height", "auto", "important");
-			icon.style.setProperty("flex", "0 0 auto", "important");
-			icon.style.setProperty("padding", "0", "important");
-			icon.style.setProperty("background", "transparent", "important");
-			icon.style.setProperty("border-radius", "0", "important");
-			icon.style.setProperty("color", "inherit", "important");
-			icon.style.setProperty("font-size", "inherit", "important");
-			icon.style.setProperty("line-height", "inherit", "important");
-			icon.style.setProperty("font-weight", "inherit", "important");
-			icon.style.setProperty("letter-spacing", "inherit", "important");
-			icon.style.setProperty("font-family", "inherit", "important");
-		} else if (wrapper) {
-			wrapper.querySelectorAll(".ecbb-event-card__meta-icon--inline").forEach(function (inlineIcon) {
-				inlineIcon.style.setProperty("width", "auto", "important");
-				inlineIcon.style.setProperty("height", "auto", "important");
-				inlineIcon.style.setProperty("flex", "0 0 auto", "important");
-				inlineIcon.style.setProperty("padding", "0", "important");
-				inlineIcon.style.setProperty("background", "transparent", "important");
-				inlineIcon.style.setProperty("border-radius", "0", "important");
-				inlineIcon.style.setProperty("color", "inherit", "important");
-				inlineIcon.style.setProperty("font-size", "inherit", "important");
-				inlineIcon.style.setProperty("line-height", "inherit", "important");
-				inlineIcon.style.setProperty("font-weight", "inherit", "important");
-				inlineIcon.style.setProperty("letter-spacing", "inherit", "important");
-				inlineIcon.style.setProperty("font-family", "inherit", "important");
-			});
-		}
+		var icons = icon ? [icon] : Array.prototype.slice.call(wrapper.querySelectorAll(".ecbb-event-card__meta-icon--inline"));
+		icons.forEach(function (metaIcon) {
+			metaIcon.style.setProperty("width", "auto", "important");
+			metaIcon.style.setProperty("height", "auto", "important");
+			metaIcon.style.setProperty("flex", "0 0 auto", "important");
+			metaIcon.style.setProperty("padding", "0", "important");
+			metaIcon.style.setProperty("background", "transparent", "important");
+			metaIcon.style.setProperty("border-radius", "0", "important");
+			metaIcon.style.setProperty("color", "inherit", "important");
+			metaIcon.style.setProperty("font-size", "inherit", "important");
+			metaIcon.style.setProperty("line-height", "inherit", "important");
+			metaIcon.style.setProperty("font-weight", "inherit", "important");
+			metaIcon.style.setProperty("letter-spacing", "inherit", "important");
+			metaIcon.style.setProperty("font-family", "inherit", "important");
+		});
 	}
 
 	builder.scheduleStyle1GridMetaListRowPreviewStyle = function(repeaterItem) {
@@ -789,10 +773,6 @@
 		return "";
 	}
 
-	builder.readLayoutActionButtonTypographyOverrides = function(repeaterItem, wrapper, preview, surfaces) {
-		return builder.readTypographyControlSnapshot(repeaterItem, wrapper, preview, surfaces);
-	}
-
 	builder.isLayoutOwnedPreviewNode = function(node, repeaterItem) {
 		if (!node || !repeaterItem) {
 			return false;
@@ -803,9 +783,7 @@
 				part === "event_tickets" ||
 				part === "event_rsvp" ) &&
 			!builder.isStyledButtonModeEnabled(repeaterItem) &&
-			node.matches(
-				"a.event-button, a.ecbb-event-card__button, .ecbb-event__link"
-			)
+			node.matches(builder.config.layoutActionSurfaceSelector)
 		) {
 			return true;
 		}
@@ -828,7 +806,7 @@
 		var wrapper = ctx.wrapper;
 		wrapper
 			.querySelectorAll(
-				".ecbb-event__term-chip, .ecbb-event__link, .ecbb-event__term, a.event-button, a.ecbb-event-card__button, .ecbb-event-card__category"
+				".ecbb-event__term-chip, .ecbb-event__term, .ecbb-event-card__category, " + builder.config.layoutActionSurfaceSelector
 			)
 			.forEach(function (node) {
 				if (!builder.isLayoutOwnedPreviewNode(node, repeaterItem)) {
@@ -889,7 +867,7 @@
 		builder.setWrapperTypographyFlags(wrapper, repeaterItem, typoColor, {});
 
 		var targets = wrapper.querySelectorAll(
-			".ecbb-event__term-chip, .ecbb-event__link, .ecbb-event__term, .ecbb-event__date-day, .ecbb-event__date-time, .ecbb-event__date-sep, a.event-button, a.ecbb-event-card__button, .ecbb-event-card__category"
+			".ecbb-event__term-chip, .ecbb-event__term, .ecbb-event-card__category, " + builder.config.layoutActionSurfaceSelector
 		);
 
 		targets.forEach(function (node) {
@@ -933,7 +911,7 @@
 
 		var bg = builder.readColorControlValue(builder.getRepeaterControlInner(repeaterItem, "ecbb_background"));
 		var pad = builder.readSpacingControlValue(builder.getRepeaterControlInner(repeaterItem, "ecbb_padding"));
-		var typoOverrides = builder.readLayoutActionButtonTypographyOverrides(
+		var typoOverrides = builder.readTypographyControlSnapshot(
 			repeaterItem,
 			wrapper,
 			preview,
@@ -1103,44 +1081,28 @@
 				) || typoOverrides.color;
 		}
 
-		if (color) {
-			icons.forEach(function (metaIcon) {
+		icons.forEach(function (metaIcon) {
+			if (color) {
 				metaIcon.style.setProperty("color", color, "important");
-			});
-		} else {
-			icons.forEach(function (metaIcon) {
+			} else {
 				metaIcon.style.removeProperty("color");
-			});
-		}
-
-		if (bg) {
-			icons.forEach(function (metaIcon) {
+			}
+			if (bg) {
 				metaIcon.style.setProperty("background-color", bg, "important");
-			});
-		} else {
-			icons.forEach(function (metaIcon) {
+			} else {
 				metaIcon.style.removeProperty("background-color");
-			});
-		}
-
-		if (typoOverrides.fontSize) {
-			icons.forEach(function (metaIcon) {
+			}
+			if (typoOverrides.fontSize) {
 				metaIcon.style.setProperty("font-size", typoOverrides.fontSize, "important");
-			});
-		} else {
-			icons.forEach(function (metaIcon) {
+			} else {
 				metaIcon.style.removeProperty("font-size");
-			});
-		}
-		if (typoOverrides.lineHeight) {
-			icons.forEach(function (metaIcon) {
+			}
+			if (typoOverrides.lineHeight) {
 				metaIcon.style.setProperty("line-height", typoOverrides.lineHeight, "important");
-			});
-		} else {
-			icons.forEach(function (metaIcon) {
+			} else {
 				metaIcon.style.removeProperty("line-height");
-			});
-		}
+			}
+		});
 	}
 
 	builder.syncTitleInnerBackgroundPreview = function(repeaterItem) {
@@ -1155,9 +1117,6 @@
 		var wrapper = ctx.wrapper;
 
 		var bg = builder.readColorControlValue(builder.getRepeaterControlInner(repeaterItem, "ecbb_background"));
-		if (!bg) {
-			bg = builder.readColorControlValue(builder.getRepeaterControlInner(repeaterItem, "ecbb_background_inner"));
-		}
 
 		wrapper.style.setProperty("background-color", "transparent", "important");
 
@@ -1384,35 +1343,7 @@
 		return '[data-field-id="' + rowId + '"]';
 	}
 
-	builder.buildHoverPreviewBackgroundSelectors = function(scope) {
-		return (
-			scope +
-			" .ecbb-event__term-chip:hover," +
-			scope +
-			" .ecbb-event__link:hover," +
-			scope +
-			" > .ecbb-event__link:hover," +
-			scope +
-			" a.event-button:hover," +
-			scope +
-			" > a.event-button:hover," +
-			scope +
-			" a.ecbb-event-card__button:hover," +
-			scope +
-			" > a.ecbb-event-card__button:hover," +
-			scope +
-			" .ecbb-event__term:hover," +
-			scope +
-			" .ecbb-event__title-text:hover," +
-			scope +
-			" .ecbb-event-card__category:hover," +
-			"li:has(> " +
-			scope +
-			"):hover > .ecbb-event-card__meta-icon"
-		);
-	}
-
-	builder.buildHoverPreviewColorSelectors = function(scope) {
+	builder.buildHoverPreviewSelectors = function(scope) {
 		return (
 			scope +
 			" .ecbb-event__term-chip:hover," +
@@ -1467,21 +1398,11 @@
 			return;
 		}
 		var chunks = [];
-		if (builder.hover.layoutBtnTypoRulesByItem) {
-			builder.hover.layoutBtnTypoRulesByItem.forEach(function (rule) {
-				if (rule) {
-					chunks.push(rule);
-				}
-			});
-		} else {
-			Object.keys(builder.hover.layoutBtnTypoRulesByRowId).forEach(
-				function (key) {
-					if (builder.hover.layoutBtnTypoRulesByRowId[key]) {
-						chunks.push(builder.hover.layoutBtnTypoRulesByRowId[key]);
-					}
-				}
-			);
-		}
+		Object.keys(builder.hover.layoutBtnTypoRulesByRowId).forEach(function (key) {
+			if (builder.hover.layoutBtnTypoRulesByRowId[key]) {
+				chunks.push(builder.hover.layoutBtnTypoRulesByRowId[key]);
+			}
+		});
 		el.textContent = chunks.join("\n");
 	}
 
@@ -1541,13 +1462,7 @@
 		var rowId = ctx.rowId;
 		var preview = ctx.preview;
 		var rule = builder.buildLayoutButtonTypographyPreviewRule(rowId, typoOverrides || {});
-		if (builder.hover.layoutBtnTypoRulesByItem) {
-			if (rule) {
-				builder.hover.layoutBtnTypoRulesByItem.set(repeaterItem, rule);
-			} else {
-				builder.hover.layoutBtnTypoRulesByItem.delete(repeaterItem);
-			}
-		} else if (rule) {
+		if (rule) {
 			builder.hover.layoutBtnTypoRulesByRowId[rowId] = rule;
 		} else {
 			delete builder.hover.layoutBtnTypoRulesByRowId[rowId];
@@ -1562,19 +1477,11 @@
 			return;
 		}
 		var chunks = [];
-		if (builder.hover.rulesByItem) {
-			builder.hover.rulesByItem.forEach(function (rule) {
-				if (rule) {
-					chunks.push(rule);
-				}
-			});
-		} else {
-			Object.keys(builder.hover.rulesByRowId).forEach(function (key) {
-				if (builder.hover.rulesByRowId[key]) {
-					chunks.push(builder.hover.rulesByRowId[key]);
-				}
-			});
-		}
+		Object.keys(builder.hover.rulesByRowId).forEach(function (key) {
+			if (builder.hover.rulesByRowId[key]) {
+				chunks.push(builder.hover.rulesByRowId[key]);
+			}
+		});
 		el.textContent = chunks.join("\n");
 	}
 
@@ -1656,17 +1563,17 @@
 					" !important;}";
 			}
 			if (hoverColor) {
-				rule += builder.buildHoverPreviewColorSelectors(scope) + "{color:" + hoverColor + " !important;}";
+				rule += builder.buildHoverPreviewSelectors(scope) + "{color:" + hoverColor + " !important;}";
 			}
 			if (hoverBg) {
-				rule += builder.buildHoverPreviewBackgroundSelectors(scope) + "{background-color:" + hoverBg + " !important;}";
+				rule += builder.buildHoverPreviewSelectors(scope) + "{background-color:" + hoverBg + " !important;}";
 			}
 		}
 
-		if (builder.hover.rulesByItem) {
-			builder.hover.rulesByItem.set(repeaterItem, rule);
-		} else {
+		if (rule) {
 			builder.hover.rulesByRowId[rowId] = rule;
+		} else {
+			delete builder.hover.rulesByRowId[rowId];
 		}
 
 		builder.rebuildHoverPreviewStylesheet(preview);

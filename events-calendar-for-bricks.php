@@ -99,7 +99,7 @@ if ( ! class_exists( __NAMESPACE__ . '\\EventsCalendarForBricks' ) ) {
 
 			return '<strong>' . esc_html__( 'Events Calendar for Bricks Builder is missing required dependencies.', 'events-calendar-for-bricks' ) . '</strong> '
 				. esc_html__( 'This plugin requires:', 'events-calendar-for-bricks' )
-				. '<ul style="list-style:disc;margin:0.5em 0 0 1.5em;"><li>' . $theme_line . '</li></ul>';
+				. '<ul><li>' . $theme_line . '</li></ul>';
 		}
 
 		public function ecbb_render_dependency_notice() {

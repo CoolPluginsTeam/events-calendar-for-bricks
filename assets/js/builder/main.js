@@ -7,14 +7,14 @@
 	builder.initPreviewSyncRegistry = function() {
 		builder.sync.registry.length = 0;
 
-		builder.sync.layoutActionButton = builder.createPreviewSyncHandler({
+		builder.createPreviewSyncHandler({
 			id: "layoutActionButtonPreview",
 			matches: builder.isLayoutActionButtonPart,
 			controlKeys: ["ecbb_background", "ecbb_padding", "ecbb_typography", "ecbb_text_align"],
 			sync: builder.syncLayoutActionButtonPreviewStyle,
 		});
 
-		builder.sync.categoryChip = builder.createPreviewSyncHandler({
+		builder.createPreviewSyncHandler({
 			id: "categoryChipPreview",
 			matches: function (item) {
 				return builder.readRepeaterPartSlug(item) === "categories";
@@ -23,7 +23,7 @@
 			sync: builder.syncCategoryChipPreviewStyle,
 		});
 
-		builder.sync.style2MetaIcon = builder.createPreviewSyncHandler({
+		builder.createPreviewSyncHandler({
 			id: "style2MetaIconPreview",
 			matches: function (item) {
 				return builder.config.style2MetaIconParts.indexOf(builder.readRepeaterPartSlug(item)) !== -1;
@@ -37,7 +37,7 @@
 			sync: builder.syncStyle2MetaIconPreviewStyle,
 		});
 
-		builder.sync.style1GridMetaListRow = builder.createPreviewSyncHandler({
+		builder.createPreviewSyncHandler({
 			id: "style1GridMetaListRowPreview",
 			controlKeys: [
 				"ecbb_background",
@@ -63,7 +63,7 @@
 			matches: function (item) {
 				return builder.readRepeaterPartControlValue(item) === "title";
 			},
-			controlKeys: ["ecbb_background", "ecbb_background_inner"],
+			controlKeys: ["ecbb_background"],
 			sync: builder.syncTitleInnerBackgroundPreview,
 		});
 
@@ -189,9 +189,20 @@
 	builder.watchTypographyColorPickerDrag = function() {
 		if (!document.querySelector(".pcr-app.visible")) {
 			builder.preview.typographyPickerRaf = 0;
+			builder.preview.lastTypographyPickerColor = "";
 			return;
 		}
-		builder.syncOpenRepeaterTypographyPreview();
+		var activeColor = builder.readActivePickrColor();
+		var now = Date.now();
+		if (
+			activeColor !== builder.preview.lastTypographyPickerColor ||
+			!builder.preview.lastTypographySyncAt ||
+			now - builder.preview.lastTypographySyncAt >= 100
+		) {
+			builder.preview.lastTypographyPickerColor = activeColor;
+			builder.preview.lastTypographySyncAt = now;
+			builder.syncOpenRepeaterTypographyPreview();
+		}
 		builder.preview.typographyPickerRaf = requestAnimationFrame(
 			builder.watchTypographyColorPickerDrag
 		);
@@ -210,7 +221,21 @@
 			cancelAnimationFrame(builder.preview.typographyPickerRaf);
 			builder.preview.typographyPickerRaf = 0;
 		}
+		builder.preview.lastTypographySyncAt = 0;
+		builder.preview.lastTypographyPickerColor = "";
 		builder.syncOpenRepeaterTypographyPreview();
+	}
+
+	builder.schedulePanelRepeaterScan = function() {
+		if (builder.tabs.pointerUpScanTimer) {
+			clearTimeout(builder.tabs.pointerUpScanTimer);
+		}
+		builder.tabs.pointerUpScanTimer = setTimeout(function () {
+			builder.tabs.pointerUpScanTimer = 0;
+			if (!builder.isRepeaterSortActive()) {
+				builder.scanRepeaterRowsAndSyncPreview();
+			}
+		}, 120);
 	}
 
 	builder.initPreviewSyncRegistry();
@@ -236,6 +261,15 @@
 		"pointerup",
 		function (e) {
 			if (
+				!(
+					e.target &&
+					e.target.closest &&
+					e.target.closest("#bricks-panel-element")
+				)
+			) {
+				return;
+			}
+			if (
 				e.target &&
 				e.target.closest &&
 				e.target.closest(
@@ -245,11 +279,7 @@
 				builder.scheduleRepeaterSortEndResync();
 				return;
 			}
-			setTimeout(function () {
-				if (!builder.isRepeaterSortActive()) {
-					builder.scanRepeaterRowsAndSyncPreview();
-				}
-			}, 120);
+			builder.schedulePanelRepeaterScan();
 		},
 		true
 	);

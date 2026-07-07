@@ -309,7 +309,7 @@ class ECBB_Widget extends \Bricks\Element
 			return;
 		}
 
-		$inner = \ECBB_Markup::ecbb_terms_html( $terms, $item, '', $skin, $part_key );
+		$inner = \ECBB_Markup::ecbb_terms_html( $terms, $item, $skin, $part_key );
 		if ( $inner === '' ) {
 			return;
 		}
@@ -555,7 +555,6 @@ class ECBB_Widget extends \Bricks\Element
 		if ( $layout['use_style1_shell'] ) {
 			$list_class .= ' event-list';
 		} elseif ( $layout['use_style2_shell'] ) {
-			$list_class .= ' ecbb-list';
 		} elseif ( $layout['use_grid_shell'] ) {
 			$list_class .= ' event-grid';
 		}
@@ -592,28 +591,39 @@ class ECBB_Widget extends \Bricks\Element
 			$settings = is_array( $this->settings ) ? $this->settings : [];
 		}
 
-		$shells = [
+		foreach ( $this->ecbb_layout_shell_map() as $flag => [ $class, $skin, $layout_skin ] ) {
+			if ( ! $layout[ $flag ] || ! class_exists( $class, false ) ) {
+				continue;
+			}
+			$this->ecbb_render_layout_shell_item( $class, $post, $parts_effective, $settings, $skin, $layout_skin );
+			return;
+		}
+
+		$this->ecbb_render_plain_event_item_parts( $post, $parts_effective );
+	}
+
+	private function ecbb_layout_shell_map() {
+		return [
 			'use_style1_shell' => [ \ECBB_List_1::class, 'style1', 'style1' ],
 			'use_style2_shell' => [ \ECBB_List_2::class, 'style2', 'style2' ],
 			'use_grid_shell'   => [ \ECBB_Grid::class, '', 'grid' ],
 		];
-		foreach ( $shells as $flag => [ $class, $skin, $layout_skin ] ) {
-			if ( ! $layout[ $flag ] || ! class_exists( $class, false ) ) {
-				continue;
-			}
-			$widget = $this;
-			$emit   = static function ( $ev, $item, $idx ) use ( $widget, $skin ) {
-				$widget->ecbb_render_part( $ev, $item, $idx, $skin );
-			};
-			$emit_meta = static function ( $ev, $item, $idx, $price = false ) use ( $skin, $layout_skin ) {
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in \ECBB_Markup::ecbb_render_meta_li().
-				echo \ECBB_Markup::ecbb_render_meta_li( $ev, $item, $idx, $skin, $layout_skin, (bool) $price );
-			};
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-			echo $class::ecbb_item_inner( $post, $parts_effective, $emit, $settings, $emit_meta );
-			return;
-		}
+	}
 
+	private function ecbb_render_layout_shell_item( $class, $post, array $parts_effective, array $settings, $skin, $layout_skin ) {
+		$widget = $this;
+		$emit   = static function ( $ev, $item, $idx ) use ( $widget, $skin ) {
+			$widget->ecbb_render_part( $ev, $item, $idx, $skin );
+		};
+		$emit_meta = static function ( $ev, $item, $idx, $price = false ) use ( $skin, $layout_skin ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in \ECBB_Markup::ecbb_render_meta_li().
+			echo \ECBB_Markup::ecbb_render_meta_li( $ev, $item, $idx, $skin, $layout_skin, (bool) $price );
+		};
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo $class::ecbb_item_inner( $post, $parts_effective, $emit, $settings, $emit_meta );
+	}
+
+	private function ecbb_render_plain_event_item_parts( $post, array $parts_effective ) {
 		$part_idx = 0;
 		foreach ( $parts_effective as $item ) {
 			if ( ! is_array( $item ) ) {

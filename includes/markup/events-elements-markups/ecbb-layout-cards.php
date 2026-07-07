@@ -14,16 +14,8 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 	final class ECBB_Layout_Shell {
 		/** Event start Unix timestamp. */
 		public static function ecbb_event_start_timestamp( $post_id ) {
-			$post_id = absint( $post_id );
-			if ( $post_id < 1 ) {
-				return false;
-			}
-			if ( class_exists( 'ECBB_List_2', false ) ) {
-				list( $start_ts ) = \ECBB_List_2::ecbb_date_bounds( $post_id );
-				return $start_ts ? (int) $start_ts : false;
-			}
-			$raw = ECBB_Event_Data::ecbb_event_start_date_raw( $post_id );
-			return $raw ? strtotime( $raw ) : false;
+			list( $start_ts ) = self::date_bounds( $post_id );
+			return $start_ts ? (int) $start_ts : false;
 		}
 
 		/** Start and end Unix timestamps for an event. */
@@ -277,7 +269,7 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 					continue;
 				}
 
-				if ( self::ecbb_shell_skip_part( $ui, $layout ) ) {
+				if ( self::ecbb_shell_skip_part( $ui ) ) {
 					continue;
 				}
 
@@ -394,9 +386,8 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 			}
 		}
 
-		public static function ecbb_render_meta_lists( $post, array $meta_primary, array $meta_price, $skin, $layout, callable $emit_li ) {
-			$all = array_merge( $meta_primary, $meta_price );
-			if ( $all === [] ) {
+		public static function ecbb_render_meta_lists( $post, array $rows, $layout, callable $emit_li ) {
+			if ( $rows === [] ) {
 				return;
 			}
 
@@ -407,7 +398,7 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 			}
 
 			echo '<ul class="' . esc_attr( $ul_class ) . '">';
-			foreach ( $all as $row ) {
+			foreach ( $rows as $row ) {
 				$is_price = ! empty( $row['price'] );
 				$emit_li( $post, $row['item'], $row['idx'], $is_price );
 			}
@@ -433,7 +424,7 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 				return;
 			}
 
-			self::ecbb_render_meta_lists( $post, $rows, [], $skin, $layout, static function ( $ev, $item, $idx, $is_price ) use ( $emit_meta ) {
+			self::ecbb_render_meta_lists( $post, $rows, $layout, static function ( $ev, $item, $idx, $is_price ) use ( $emit_meta ) {
 				$emit_meta( $ev, $item, $idx, (bool) $is_price );
 			} );
 		}
@@ -690,9 +681,8 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 			return isset( $map[ $skin ][ $part ] ) ? $map[ $skin ][ $part ] : '';
 		}
 
-		public static function ecbb_shell_skip_part( $slug, $layout ) {
+		public static function ecbb_shell_skip_part( $slug ) {
 			$slug = (string) $slug;
-			unset( $layout );
 			if ( in_array( $slug, [ 'read_more', 'event_date', 'event_day' ], true ) ) {
 				return true;
 			}
