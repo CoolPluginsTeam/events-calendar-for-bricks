@@ -96,6 +96,7 @@ if ( ! class_exists( 'ECBB_Markup', false ) ) {
 					[
 						'ecbb_event_start_timestamp', 'ecbb_list1_date_column', 'ecbb_list2_date_badge',
 						'ecbb_grid_date_range_text', 'ecbb_render_grid_date_flow', 'ecbb_render_style2_category',
+						'ecbb_render_grid_category',
 						'ecbb_render_layout_read_more', 'ecbb_render_layout_read_more_shell',
 						'ecbb_render_layout_parts_sequence', 'ecbb_render_meta_li', 'ecbb_render_meta_lists',
 						'ecbb_flush_meta_rows', 'ecbb_shell_featured_image', 'ecbb_shell_category_badge',

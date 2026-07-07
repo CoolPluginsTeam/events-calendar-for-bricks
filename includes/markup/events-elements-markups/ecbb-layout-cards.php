@@ -118,7 +118,12 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 			return '<span class="' . $wrap . '"' . $attr . '>' . esc_html( strtoupper( $text ) ) . '</span>';
 		}
 
-		public static function ecbb_render_style2_category( $post, array $item, $idx, $skin ) {
+		/**
+		 * Repeater category row (pill links) for list/grid layouts.
+		 *
+		 * @param string $wrap_prefix Layout wrapper class before part classes.
+		 */
+		private static function ecbb_render_layout_category_row( $post, array $item, $idx, $skin, $wrap_prefix ) {
 			if ( ! $post instanceof \WP_Post ) {
 				return '';
 			}
@@ -131,7 +136,7 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 			$attr  = ECBB_Part_Chrome::ecbb_part_wrap_attrs( $item, $idx );
 			$wrap  = esc_attr(
 				trim(
-					'ecbb-event-card__top '
+					(string) $wrap_prefix . ' '
 					. ECBB_Part_Chrome::ecbb_part_classes( 'categories', $idx, $skin, $item )
 				)
 			);
@@ -150,6 +155,14 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 			}
 
 			return '<div class="' . $wrap . '"' . $attr . '>' . implode( '', $links ) . '</div>';
+		}
+
+		public static function ecbb_render_style2_category( $post, array $item, $idx, $skin ) {
+			return self::ecbb_render_layout_category_row( $post, $item, $idx, $skin, 'ecbb-event-card__top' );
+		}
+
+		public static function ecbb_render_grid_category( $post, array $item, $idx, $skin = '' ) {
+			return self::ecbb_render_layout_category_row( $post, $item, $idx, $skin, 'event-grid-card__categories' );
 		}
 
 		public static function ecbb_render_layout_read_more( $post, array $item, $idx, $skin ) {
@@ -266,10 +279,15 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 					continue;
 				}
 
-				if ( $ui === 'categories' && $layout === 'style2' ) {
+				if ( $ui === 'categories' && ( $layout === 'style2' || $layout === 'grid' ) ) {
 					$flush_meta();
-					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-					echo self::ecbb_render_style2_category( $post, $item, (int) $i, $skin );
+					if ( $layout === 'grid' ) {
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+						echo self::ecbb_render_grid_category( $post, $item, (int) $i, $skin );
+					} else {
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+						echo self::ecbb_render_style2_category( $post, $item, (int) $i, $skin );
+					}
 					continue;
 				}
 
@@ -675,6 +693,7 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 				'grid'   => [
 					'title'       => 'event-grid-card__title',
 					'description' => 'event-grid-card__description',
+					'categories'  => 'ecbb-event-card__category',
 				],
 			];
 			return isset( $map[ $skin ][ $part ] ) ? $map[ $skin ][ $part ] : '';
@@ -685,7 +704,7 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 			if ( in_array( $slug, [ 'image', 'read_more', 'event_date', 'event_day' ], true ) ) {
 				return true;
 			}
-			if ( in_array( $slug, [ 'categories' ], true ) && in_array( $layout, [ 'style1', 'grid' ], true ) ) {
+			if ( $slug === 'categories' && $layout === 'style1' ) {
 				return true;
 			}
 			return false;

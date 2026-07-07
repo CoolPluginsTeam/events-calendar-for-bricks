@@ -312,6 +312,7 @@
 /* Category chips / card top / hover rows: wrapper stays transparent. */
 .ecbb-event-part--categories.ecbb-event-part,
 .ecbb-ev .ecbb-event-card__top,
+.ecbb-ev .event-grid-card__categories,
 .ecbb-event-part.ecbb-has-hover-bg:not(.ecbb-no-hover):hover {
 	background-color: transparent !important;
 }

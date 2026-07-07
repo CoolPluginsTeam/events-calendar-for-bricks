@@ -2131,7 +2131,7 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 			if ( ! $hover_style_on ) {
 				return [ 'style' => $style_rules, 'hover' => $hover_rules ];
 			}
-			if ( $list_item_style === 'style-2' && $part_type === 'categories' ) {
+			if ( in_array( $list_item_style, [ 'style-2', 'grid' ], true ) && $part_type === 'categories' ) {
 				$hover_rules = array_merge( $hover_rules, self::ecbb_layout_style2_category_hover_rules( $scope_sel, $p, true ) );
 			}
 			$hover_sel = self::ecbb_hover_selectors( $scope_sel, $part_type );

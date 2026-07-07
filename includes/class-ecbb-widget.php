@@ -47,13 +47,13 @@ class ECBB_Widget extends \Bricks\Element
 			'tab'   => 'content',
 		];
 
-		$this->control_groups['layout_appearance'] = [
-			'title' => esc_html__( 'Event cards', 'events-calendar-for-bricks' ),
+		$this->control_groups['events_card'] = [
+			'title' => esc_html__( 'Events card', 'events-calendar-for-bricks' ),
 			'tab'   => 'style',
 		];
 
-		$this->control_groups['image_overlays'] = [
-			'title' => esc_html__( 'Featured image overlays', 'events-calendar-for-bricks' ),
+		$this->control_groups['featured_image'] = [
+			'title' => esc_html__( 'Featured image', 'events-calendar-for-bricks' ),
 			'tab'   => 'style',
 		];
 	}
