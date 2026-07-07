@@ -93,13 +93,13 @@ if ( ! class_exists( 'ECBB_Hover_Controls', false ) ) {
 
 		public static function ecbb_req_featured_image_style() {
 		return [
-			[ 'show_event_image', '!=', true ],
+			[ 'hide_event_image', '!=', true ],
 		];
 	}
 
 		public static function ecbb_req_shell_category_style_grid() {
 		return [
-			[ 'show_event_image', '!=', true ],
+			[ 'hide_event_image', '!=', true ],
 				[ 'layout_template', '=', 'grid' ],
 				[ 'grid_show_category_badge', '!=', true ],
 			];
@@ -118,7 +118,7 @@ if ( ! class_exists( 'ECBB_Hover_Controls', false ) ) {
 
 		public static function ecbb_req_featured_image_vignette() {
 		return [
-			[ 'show_event_image', '!=', true ],
+			[ 'hide_event_image', '!=', true ],
 				[ 'ecbb_featured_image_vignette', '!=', '' ],
 				[ 'ecbb_featured_image_vignette', '!=', 'none' ],
 			];
@@ -126,7 +126,7 @@ if ( ! class_exists( 'ECBB_Hover_Controls', false ) ) {
 
 		public static function ecbb_req_shell_category_style_list1() {
 		return [
-			[ 'show_event_image', '!=', true ],
+			[ 'hide_event_image', '!=', true ],
 				[ 'layout_template', '=', 'list' ],
 				[ 'list_item_style', '!=', 'style-2' ],
 				[ 'list1_show_category_badge', '!=', true ],
@@ -146,7 +146,7 @@ if ( ! class_exists( 'ECBB_Hover_Controls', false ) ) {
 
 		public static function ecbb_req_shell_date_badge_style() {
 		return [
-			[ 'show_event_image', '!=', true ],
+			[ 'hide_event_image', '!=', true ],
 				[ 'layout_template', '=', 'list' ],
 				[ 'list_item_style', '=', 'style-2' ],
 			[ 'style2_show_date_badge', '!=', true ],

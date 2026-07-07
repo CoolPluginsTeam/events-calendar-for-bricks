@@ -456,7 +456,7 @@ if ( ! class_exists( 'ECBB_Part_Fields', false ) ) {
 
 			if ( $part_options === null ) {
 				$part_options = class_exists( 'ECBB_Styles', false )
-					? \ECBB_Styles::ecbb_part_options()
+					? \ECBB_Styles::ecbb_part_options_shared()
 					: [ 'title' => esc_html__( 'Title', 'events-calendar-for-bricks' ) ];
 			}
 

@@ -3,7 +3,8 @@
  *
  * HOW THE BUILDER SCRIPTS FIT TOGETHER
  * ------------------------------------
- * WordPress loads several small files in order (see class-ecbb-plugin.php).
+ * WordPress loads several small files in order (see class-ecbb-plugin.php):
+ * core → color → tabs → controls → sync → preview → button → main.
  * They all add functions to ONE shared object: window.ECBB.builder
  *
  * Each other file uses this pattern:
@@ -29,6 +30,8 @@
 	builder.config = {
 		tabContentLabel: fromPhp.tabContent || "CONTENT",
 		tabStyleLabel: fromPhp.tabStyle || "STYLE",
+		style2CategoryHoverFg: fromPhp.style2CategoryHoverFg || "#0d55d8",
+		style2CategoryHoverBg: fromPhp.style2CategoryHoverBg || "#d4e4ff",
 		hoverCapableParts: Array.isArray(fromPhp.hoverParts)
 			? fromPhp.hoverParts
 			: ["title", "categories", "tags", "read_more", "event_tickets", "event_rsvp", "image"],
@@ -53,9 +56,23 @@
 		: ["ecbb_use_hover", "ecbb_hover_color", "ecbb_hover_background"];
 
 	// Shared state buckets (other files read/write these).
-	builder.sync = { registry: [] };
-	builder.tabs = { scanTimer: null, sortEndRaf: 0 };
-	builder.preview = { typographyPickerRaf: 0 };
+	builder.sync = {
+		registry: [],
+		handlersByKey: typeof Map !== "undefined" ? new Map() : null,
+	};
+	builder.tabs = {
+		scanTimer: null,
+		sortEndRaf: 0,
+		pointerUpScanTimer: null,
+	};
+	builder.preview = {
+		typographyPickerRaf: 0,
+		lastTypographyPickerColor: "",
+		lastTypographySyncAt: 0,
+		iframeEl: null,
+		iframeDoc: null,
+		repeaterCssCache: typeof Map !== "undefined" ? new Map() : null,
+	};
 	builder.hover = {
 		rulesByRowId: {},
 		layoutBtnTypoRulesByRowId: {},

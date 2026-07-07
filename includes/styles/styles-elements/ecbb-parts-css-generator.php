@@ -102,9 +102,6 @@ if ( ! class_exists( 'ECBB_Parts_Css_Generator', false ) ) {
 		private static function ecbb_btn_bg_decl( array $item, $device, callable $color_fn ) {
 			$bg_raw = ECBB_Css_Value_Sanitizer::ecbb_device_value( $item['ecbb_background'] ?? '', $device );
 			if ( $bg_raw === '' || $bg_raw === null ) {
-				$bg_raw = ECBB_Css_Value_Sanitizer::ecbb_device_value( $item['btn_bg'] ?? '', $device );
-			}
-			if ( $bg_raw === '' || $bg_raw === null ) {
 			return [];
 		}
 			$bg = $color_fn( $bg_raw );
@@ -181,15 +178,6 @@ if ( ! class_exists( 'ECBB_Parts_Css_Generator', false ) ) {
 		if ( ! empty( $item['ecbb_image_border'] ) ) {
 			$border_css = ECBB_Css_Value_Sanitizer::ecbb_border_css( $item['ecbb_image_border'] );
 		}
-		if ( $border_css === '' ) {
-			$bw = ECBB_Css_Value_Sanitizer::ecbb_css_size( $item['ecbb_image_border_width'] ?? '', 'px' );
-			$bc = class_exists( 'ECBB_Markup', false ) ? \ECBB_Markup::ecbb_norm_color( $item['ecbb_image_border_color'] ?? '' ) : '';
-			$bs = isset( $item['ecbb_image_border_style'] ) ? (string) $item['ecbb_image_border_style'] : 'solid';
-			$bs = in_array( $bs, [ 'solid', 'dashed', 'dotted' ], true ) ? $bs : 'solid';
-			if ( $bw !== '' && $bw !== '0px' && $bc !== '' ) {
-				$border_css = $bw . ' ' . $bs . ' ' . $bc;
-			}
-		}
 		if ( $border_css !== '' ) {
 			$styles[] = 'border:' . $border_css;
 		}
@@ -197,9 +185,6 @@ if ( ! class_exists( 'ECBB_Parts_Css_Generator', false ) ) {
 		$radius = '';
 		if ( ! empty( $item['ecbb_image_radius'] ) && is_array( $item['ecbb_image_radius'] ) ) {
 			$radius = ECBB_Css_Value_Sanitizer::ecbb_spacing_css( $item['ecbb_image_radius'] );
-		}
-		if ( $radius === '' ) {
-			$radius = ECBB_Css_Value_Sanitizer::ecbb_css_size( $item['ecbb_image_radius'] ?? '', 'px' );
 		}
 		if ( $radius !== '' ) {
 			$styles[] = 'border-radius:' . $radius;
@@ -229,9 +214,6 @@ if ( ! class_exists( 'ECBB_Parts_Css_Generator', false ) ) {
 			if ( ! empty( $item['ecbb_typography'] ) && is_array( $item['ecbb_typography'] ) ) {
 			$tc_raw = ECBB_Css_Value_Sanitizer::ecbb_device_value( $item['ecbb_typography']['color'] ?? '', $device );
 		}
-			if ( $tc_raw === '' || $tc_raw === null ) {
-				$tc_raw = ECBB_Css_Value_Sanitizer::ecbb_device_value( $item['btn_text_color'] ?? '', $device );
-			}
 			if ( $tc_raw === '' || $tc_raw === null ) {
 				return [];
 			}
@@ -370,21 +352,6 @@ if ( ! class_exists( 'ECBB_Parts_Css_Generator', false ) ) {
 		$border_style     = ECBB_Css_Value_Sanitizer::ecbb_device_value( $item['btn_border_type'] ?? '', $device );
 		$border_width_raw = ECBB_Css_Value_Sanitizer::ecbb_device_value( $item['btn_border_width'] ?? '', $device );
 
-		if ( ( $border_color_raw === '' || $border_color_raw === null ) && ! empty( $item['btn_border'] ) ) {
-			$border_legacy = ECBB_Css_Value_Sanitizer::ecbb_device_value( $item['btn_border'], $device );
-			if ( is_array( $border_legacy ) ) {
-				if ( ! empty( $border_legacy['color'] ) ) {
-					$border_color_raw = $border_legacy['color'];
-				}
-			if ( ( $border_style === '' || $border_style === null ) && ! empty( $border_legacy['style'] ) ) {
-				$border_style = $border_legacy['style'];
-			}
-		if ( ( $border_width_raw === '' || $border_width_raw === null ) && isset( $border_legacy['width'] ) ) {
-			$border_width_raw = $border_legacy['width'];
-		}
-		}
-		}
-
 		if ( ! is_string( $border_style ) || $border_style === '' ) {
 				$border_style = isset( $item['btn_border_type'] ) ? trim( (string) $item['btn_border_type'] ) : '';
 		}
@@ -423,13 +390,6 @@ if ( ! class_exists( 'ECBB_Parts_Css_Generator', false ) ) {
 		private static function ecbb_btn_padding_decl( array $item, $device ) {
 		$padding_raw = self::ecbb_responsive_spacing( $item, 'btn_padding', $device );
 			$padding_css = ! empty( $padding_raw ) ? ECBB_Css_Value_Sanitizer::ecbb_spacing_css( $padding_raw ) : '';
-		if ( $padding_css === '' ) {
-				$py = ECBB_Css_Value_Sanitizer::ecbb_css_size( $item['btn_padding_y'] ?? '', 'px' );
-				$px = ECBB_Css_Value_Sanitizer::ecbb_css_size( $item['btn_padding_x'] ?? '', 'px' );
-			if ( $py !== '' || $px !== '' ) {
-				$padding_css = ( $py !== '' ? $py : '10px' ) . ' ' . ( $px !== '' ? $px : '14px' );
-			}
-		}
 			return $padding_css !== '' ? [ 'padding:' . $padding_css ] : [];
 		}
 

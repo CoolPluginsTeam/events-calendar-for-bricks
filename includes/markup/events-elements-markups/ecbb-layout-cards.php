@@ -539,8 +539,9 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 				return [];
 			}
 
-			$by_id      = [];
-			$taxonomies = apply_filters( 'ecbb_event_category_taxonomies', [ 'tribe_events_cat' ], $post_id );
+			$by_id       = [];
+			$pending_ids = [];
+			$taxonomies  = apply_filters( 'ecbb_event_category_taxonomies', [ 'tribe_events_cat' ], $post_id );
 
 			foreach ( (array) $taxonomies as $taxonomy ) {
 				if ( ! is_string( $taxonomy ) || ! taxonomy_exists( $taxonomy ) ) {
@@ -564,20 +565,56 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 				}
 			}
 
-			if ( $by_id === [] && function_exists( 'tribe_get_event' ) ) {
-				$event = tribe_get_event( $post_id );
-				if ( $event && ! empty( $event->categories ) && is_array( $event->categories ) ) {
-					foreach ( $event->categories as $term ) {
-						if ( $term instanceof \WP_Term ) {
-							$by_id[ (int) $term->term_id ] = $term;
-							continue;
-						}
-						if ( is_object( $term ) && ! empty( $term->term_id ) ) {
-							$loaded = get_term( (int) $term->term_id );
-							if ( $loaded instanceof \WP_Term && ! is_wp_error( $loaded ) ) {
-								$by_id[ (int) $loaded->term_id ] = $loaded;
-							}
-						}
+			if ( $by_id !== [] ) {
+				return array_values( $by_id );
+			}
+
+			if ( ! function_exists( 'tribe_get_event' ) ) {
+				return [];
+			}
+
+			$event = tribe_get_event( $post_id );
+			if ( ! $event || empty( $event->categories ) || ! is_array( $event->categories ) ) {
+				return [];
+			}
+
+			foreach ( $event->categories as $term ) {
+				if ( $term instanceof \WP_Term ) {
+					$by_id[ (int) $term->term_id ] = $term;
+					continue;
+				}
+				if ( is_object( $term ) && ! empty( $term->term_id ) ) {
+					$term_taxonomy = ( ! empty( $term->taxonomy ) && is_string( $term->taxonomy ) )
+						? $term->taxonomy
+						: 'tribe_events_cat';
+					if ( ! isset( $pending_ids[ $term_taxonomy ] ) ) {
+						$pending_ids[ $term_taxonomy ] = [];
+					}
+					$pending_ids[ $term_taxonomy ][ (int) $term->term_id ] = true;
+				}
+			}
+
+			if ( $pending_ids === [] ) {
+				return array_values( $by_id );
+			}
+
+			foreach ( $pending_ids as $taxonomy => $ids ) {
+				if ( ! is_string( $taxonomy ) || ! taxonomy_exists( $taxonomy ) || $ids === [] ) {
+					continue;
+				}
+				$loaded_terms = get_terms(
+					[
+						'taxonomy'   => $taxonomy,
+						'include'    => array_keys( $ids ),
+						'hide_empty' => false,
+					]
+				);
+				if ( is_wp_error( $loaded_terms ) || ! is_array( $loaded_terms ) ) {
+					continue;
+				}
+				foreach ( $loaded_terms as $loaded ) {
+					if ( $loaded instanceof \WP_Term ) {
+						$by_id[ (int) $loaded->term_id ] = $loaded;
 					}
 				}
 			}

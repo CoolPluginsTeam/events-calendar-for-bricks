@@ -56,10 +56,6 @@
 	color: inherit;
 }
 
-.ecbb-ev.ecbb-list1-date-align--top .event-list-card__date {
-	justify-content: flex-start;
-}
-
 .ecbb-ev.ecbb-list1-date-align--center .event-list-card__date {
 	justify-content: center;
 }
@@ -192,10 +188,6 @@
 
 .ecbb-ev .event-meta--list .price {
 	font-weight: 500;
-	color: var(--badge-blue);
-}
-
-.ecbb-ev .event-meta--list .price.ecbb-meta-list-row {
 	color: var(--badge-blue);
 }
 

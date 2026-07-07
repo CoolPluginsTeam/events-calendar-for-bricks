@@ -87,6 +87,34 @@
 		return null;
 	}
 
+	builder.clearStyledButtonMirroredSurfaceStyles = function(node) {
+		if (!node) {
+			return;
+		}
+		[
+			"background-color",
+			"background",
+			"color",
+			"padding",
+			"border",
+			"border-radius",
+			"font-size",
+			"line-height",
+			"font-family",
+			"font-weight",
+			"letter-spacing",
+			"text-transform",
+			"display",
+			"align-items",
+			"justify-content",
+			"width",
+			"max-width",
+			"box-sizing",
+		].forEach(function (prop) {
+			node.style.removeProperty(prop);
+		});
+	};
+
 	builder.clearStyledButtonPreviewPaint = function(wrapper) {
 		if (!wrapper) {
 			return;
@@ -117,7 +145,7 @@
 				builder.config.layoutActionSurfaceSelector + ", .ecbb-event__plain"
 			)
 			.forEach(function (node) {
-			node.removeAttribute("style");
+			builder.clearStyledButtonMirroredSurfaceStyles(node);
 		});
 	}
 

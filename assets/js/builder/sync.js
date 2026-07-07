@@ -5,6 +5,39 @@
 (function (builder) {
 	"use strict";
 
+	function registerHandlerKeys(entry, controlKeys) {
+		if (!controlKeys || !controlKeys.length) {
+			return;
+		}
+		var i;
+		if (builder.sync.handlersByKey) {
+			for (i = 0; i < controlKeys.length; i++) {
+				var key = controlKeys[i];
+				if (!key) {
+					continue;
+				}
+				if (!builder.sync.handlersByKey.has(key)) {
+					builder.sync.handlersByKey.set(key, []);
+				}
+				builder.sync.handlersByKey.get(key).push(entry);
+			}
+			return;
+		}
+		if (!builder.sync.handlersByKeyFallback) {
+			builder.sync.handlersByKeyFallback = {};
+		}
+		for (i = 0; i < controlKeys.length; i++) {
+			key = controlKeys[i];
+			if (!key) {
+				continue;
+			}
+			if (!builder.sync.handlersByKeyFallback[key]) {
+				builder.sync.handlersByKeyFallback[key] = [];
+			}
+			builder.sync.handlersByKeyFallback[key].push(entry);
+		}
+	}
+
 	builder.createPreviewSyncHandler = function(options) {
 		var delay = options.delay != null ? options.delay : 60;
 		var timers =
@@ -59,7 +92,7 @@
 					if (options.matches && !options.matches(item)) {
 						return;
 					}
-					options.sync(item);
+					run(item);
 				});
 		}
 
@@ -78,29 +111,29 @@
 			handlesKey: handlesKey,
 		};
 		builder.sync.registry.push(entry);
+		registerHandlerKeys(entry, options.controlKeys);
 		return entry;
-	}
+	};
 
 	builder.runAllPreviewSyncHandlers = function(includeDelayed) {
 		var i;
 		for (i = 0; i < builder.sync.registry.length; i++) {
 			builder.sync.registry[i].syncAll();
 		}
-		if (!includeDelayed || !builder.sync.hover || !builder.sync.typography) {
+		if (!includeDelayed) {
 			return;
 		}
-		setTimeout(function () {
-			builder.sync.hover.syncAll();
-		}, 150);
-		setTimeout(function () {
-			builder.sync.hover.syncAll();
+		if (builder.sync.settledPassTimer) {
+			clearTimeout(builder.sync.settledPassTimer);
+		}
+		builder.sync.settledPassTimer = setTimeout(function () {
+			builder.sync.settledPassTimer = 0;
+			if (builder.sync.hover) {
+				builder.sync.hover.syncAll();
+			}
+			if (builder.sync.typography) {
+				builder.sync.typography.syncAll();
+			}
 		}, 350);
-		setTimeout(function () {
-			builder.sync.typography.syncAll();
-		}, 150);
-		setTimeout(function () {
-			builder.sync.typography.syncAll();
-		}, 350);
-	}
+	};
 })(window.ECBB.builder);
-

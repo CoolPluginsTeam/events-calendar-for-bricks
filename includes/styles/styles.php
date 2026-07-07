@@ -63,7 +63,7 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 				),
 				$bind(
 					[
-						'ecbb_part_options', 'ecbb_part_options_style1', 'ecbb_part_options_style2',
+						'ecbb_part_options_style1', 'ecbb_part_options_style2', 'ecbb_part_options_shared',
 						'ecbb_part_options_grid', 'ecbb_clean_part',
 					],
 					'ECBB_Part_Options'

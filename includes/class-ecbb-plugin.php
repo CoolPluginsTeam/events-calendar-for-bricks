@@ -23,6 +23,15 @@ if ( ! class_exists( 'ECBB_Plugin', false ) ) {
 		];
 
 		public function __construct() {
+			$this->register_hooks();
+		}
+
+		/**
+		 * Register WordPress hooks (kept out of the constructor for clarity and testability).
+		 *
+		 * @return void
+		 */
+		private function register_hooks() {
 			add_action( 'init', [ $this, 'ecbb_register_elements' ], 11 );
 			add_action( 'wp_enqueue_scripts', [ $this, 'ecbb_enqueue_scripts' ], 25 );
 			add_filter( 'bricks/element/settings', [ $this, 'ecbb_filter_events_loop_element_settings' ], 10, 2 );
@@ -270,12 +279,6 @@ if ( ! class_exists( 'ECBB_Plugin', false ) ) {
 
 		$settings = \ECBB_Markup::ecbb_norm_layout_shell_settings( $settings );
 
-		// Migrate legacy select value ('show'/'hide') to new checkbox boolean
-		// (true = hide image, false/absent = show image).
-		if ( isset( $settings['show_event_image'] ) && is_string( $settings['show_event_image'] ) ) {
-			$settings['show_event_image'] = ( $settings['show_event_image'] === 'hide' );
-		}
-
 		return $settings;
 	}
 
@@ -374,6 +377,7 @@ if ( ! class_exists( 'ECBB_Plugin', false ) ) {
 			foreach (
 				[
 					'ecbb-builder-core'     => 'core.js',
+					'ecbb-builder-color'    => 'color.js',
 					'ecbb-builder-tabs'     => 'tabs.js',
 					'ecbb-builder-controls' => 'controls.js',
 					'ecbb-builder-sync'     => 'sync.js',
@@ -397,12 +401,14 @@ if ( ! class_exists( 'ECBB_Plugin', false ) ) {
 			}
 
 			wp_localize_script( $localize_on, 'ECBBBuilder', [
-				'tabContent'          => __( 'CONTENT', 'events-calendar-for-bricks' ),
-				'tabStyle'            => __( 'STYLE', 'events-calendar-for-bricks' ),
-				'hoverParts'          => \ECBB_Controls::ecbb_hover_part_types(),
-				'hoverKeys'           => \ECBB_Controls::ecbb_hover_field_keys(),
-				'btnBorderKeys'       => \ECBB_Controls::ecbb_btn_border_keys(),
-				'style2MetaIconParts' => \ECBB_Controls::ecbb_style2_meta_icon_ui_parts(),
+				'tabContent'             => __( 'CONTENT', 'events-calendar-for-bricks' ),
+				'tabStyle'               => __( 'STYLE', 'events-calendar-for-bricks' ),
+				'hoverParts'             => \ECBB_Controls::ecbb_hover_part_types(),
+				'hoverKeys'              => \ECBB_Controls::ecbb_hover_field_keys(),
+				'btnBorderKeys'          => \ECBB_Controls::ecbb_btn_border_keys(),
+				'style2MetaIconParts'    => \ECBB_Controls::ecbb_style2_meta_icon_ui_parts(),
+				'style2CategoryHoverFg'  => '#0d55d8',
+				'style2CategoryHoverBg'  => '#d4e4ff',
 			] );
 		}
 	}

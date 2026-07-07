@@ -242,13 +242,6 @@
 	}
 }
 
-@media (max-width: 860px) {
-	.ecbb-ev .ecbb-event-card__meta {
-		column-gap: var(--ecbb-meta-segment-gap, var(--ecbb-meta-gap, 24px));
-		row-gap: var(--ecbb-meta-row-gap, var(--ecbb-meta-gap, 24px));
-	}
-}
-
 @media (max-width: 767px) {
 	.ecbb-ev .ecbb-event-card {
 		grid-template-columns: 1fr;

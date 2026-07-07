@@ -46,22 +46,13 @@ if ( ! class_exists( 'ECBB_Settings_Normalizer', false ) ) {
 			return $out;
 		}
 
-		/** Part slugs from cleaned repeater rows. */
-		public static function ecbb_parts_slugs( array $parts ) {
-			$out = [];
-			foreach ( self::ecbb_parts_clean( $parts ) as $row ) {
-				$out[] = isset( $row['part'] ) ? (string) $row['part'] : '';
-			}
-			return $out;
-		}
-
 		/** Copy Bricks row ids and style fields from saved rows onto defaults. */
 		public static function ecbb_parts_preserve_bricks_rows( array $saved, array $defaults ) {
 			$style_keys = [
 				'id', 'ecbb_typography', 'ecbb_text_align', 'ecbb_background',
 				'ecbb_meta_icon_color', 'ecbb_meta_icon_background',
 				'ecbb_margin', 'ecbb_padding', 'ecbb_use_hover', 'ecbb_hover_color', 'ecbb_hover_background',
-				'ecbb_hover_text_decoration', 'ecbb_hover_animation', 'btn_style', 'btn_bg', 'btn_text_color',
+				'ecbb_hover_text_decoration', 'ecbb_hover_animation', 'btn_style',
 				'btn_border_type', 'btn_border_width', 'btn_border_color', 'btn_padding', 'btn_border_radius',
 				'date_display', 'venue_display', 'cost_currency', 'organizer_display', 'event_link_display',
 				'date_format_preset', 'date_format_custom',
@@ -83,94 +74,11 @@ if ( ! class_exists( 'ECBB_Settings_Normalizer', false ) ) {
 			return $defaults;
 		}
 
-		/**
-		 * Carry date/venue/cost display settings from legacy Style 2 rows onto combo defaults.
-		 *
-		 * @param array<int,array<string,mixed>> $saved
-		 * @param array<int,array<string,mixed>> $defaults
-		 * @return array<int,array<string,mixed>>
-		 */
-		public static function ecbb_migrate_legacy_style2_combo_display( array $saved, array $defaults ) {
-			if ( ! class_exists( 'ECBB_Styles', false ) ) {
-				return $defaults;
-			}
-
-			$date_display  = '';
-			$venue_display = '';
-			$cost_currency = '';
-			foreach ( $saved as $row ) {
-				if ( ! is_array( $row ) ) {
-					continue;
-				}
-				$part = (string) ( $row['part'] ?? '' );
-				if ( $part === 'date' && isset( $row['date_display'] ) ) {
-					$date_display = (string) $row['date_display'];
-				}
-				if ( $part === 'venue' && isset( $row['venue_display'] ) ) {
-					$venue_display = (string) $row['venue_display'];
-				}
-				if ( $part === 'event_cost' && isset( $row['cost_currency'] ) ) {
-					$cost_currency = (string) $row['cost_currency'];
-				}
-			}
-
-			foreach ( $defaults as $index => $row ) {
-				if ( ! is_array( $row ) ) {
-					continue;
-				}
-				$part = (string) ( $row['part'] ?? '' );
-				if ( ! \ECBB_Styles::ecbb_is_meta_combo_slug( $part ) ) {
-					continue;
-				}
-				if ( $date_display !== '' && \ECBB_Styles::ecbb_meta_combo_has_segment( $part, 'time' ) ) {
-					$defaults[ $index ]['date_display'] = $date_display;
-				}
-				if ( $venue_display !== '' && \ECBB_Styles::ecbb_meta_combo_has_segment( $part, 'venue' ) ) {
-					$defaults[ $index ]['venue_display'] = $venue_display;
-				}
-				if ( $cost_currency !== '' && \ECBB_Styles::ecbb_meta_combo_has_segment( $part, 'cost' ) ) {
-					$defaults[ $index ]['cost_currency'] = $cost_currency;
-				}
-			}
-
-			return $defaults;
-		}
-
-		/** Replace empty or legacy factory stacks with layout defaults; null keeps saved rows. */
+		/** Use layout defaults when the parts repeater is empty. */
 		public static function ecbb_upgrade_layout_parts( array $parts, $layout, callable $default_fn ) {
+			unset( $layout );
 			if ( self::ecbb_parts_is_empty( $parts ) ) {
 				return $default_fn();
-			}
-
-			$slugs  = self::ecbb_parts_slugs( $parts );
-			$layout = (string) $layout;
-
-			$legacy_by_layout = [
-				'style1' => [
-					[ 'title', 'description', 'date', 'venue', 'event_cost', 'read_more' ],
-					[ 'title', 'description', 'date', 'venue', 'read_more' ],
-				],
-				'style2' => [
-					[ 'categories', 'title', 'description', 'venue', 'date', 'event_cost', 'read_more' ],
-					[ 'categories', 'title', 'date', 'venue', 'description', 'read_more' ],
-				],
-			];
-
-			if ( isset( $legacy_by_layout[ $layout ] ) ) {
-				foreach ( $legacy_by_layout[ $layout ] as $signature ) {
-					if ( $slugs === $signature ) {
-						$defaults = self::ecbb_parts_preserve_bricks_rows( $parts, $default_fn() );
-						if ( $layout === 'style2' ) {
-							$defaults = self::ecbb_migrate_legacy_style2_combo_display( $parts, $defaults );
-						}
-						return $defaults;
-					}
-				}
-			}
-
-			$factory = [ 'categories', 'title', 'date', 'venue', 'description', 'read_more' ];
-			if ( $slugs === $factory ) {
-				return self::ecbb_parts_preserve_bricks_rows( $parts, $default_fn() );
 			}
 
 			return null;
@@ -341,30 +249,6 @@ if ( ! class_exists( 'ECBB_Settings_Normalizer', false ) ) {
 
 		/** Normalize shell show/hide settings for Bricks save/render. */
 		public static function ecbb_norm_layout_shell_settings( array $settings ) {
-			if (
-				! array_key_exists( 'list1_show_category_badge', $settings )
-				&& ! array_key_exists( 'grid_show_category_badge', $settings )
-				&& array_key_exists( 'shell_show_category_badge', $settings )
-			) {
-				$legacy_val = ECBB_Markup::ecbb_parse_bricks_checkbox( $settings['shell_show_category_badge'] ) ? 'show' : 'hide';
-				$settings['list1_show_category_badge'] = $legacy_val;
-				$settings['grid_show_category_badge']  = $legacy_val;
-			}
-
-		if ( array_key_exists( 'show_event_image', $settings ) ) {
-			$raw = $settings['show_event_image'];
-			if ( $raw === 'show' || $raw === 'hide' ) {
-				// Legacy select string — keep as-is.
-			} elseif ( is_bool( $raw ) ) {
-				// Checkbox: true = hide image, false = show image.
-				$settings['show_event_image'] = $raw ? 'hide' : 'show';
-			} elseif ( $raw === 1 || $raw === '1' || $raw === 'yes' || $raw === 'on' ) {
-				$settings['show_event_image'] = 'hide';
-			} elseif ( $raw === 0 || $raw === '0' || $raw === 'no' || $raw === 'off' || $raw === '' || $raw === null ) {
-				$settings['show_event_image'] = 'show';
-			}
-		}
-
 			foreach ( [ 'list1_show_category_badge', 'grid_show_category_badge', 'style2_show_date_badge', 'list1_show_date_column' ] as $key ) {
 				if ( ! array_key_exists( $key, $settings ) ) {
 					continue;
@@ -456,17 +340,8 @@ if ( ! class_exists( 'ECBB_Settings_Normalizer', false ) ) {
 
 		public static function ecbb_show_event_image( $settings ) {
 			$settings = self::ecbb_layout_settings( is_array( $settings ) ? $settings : [] );
-			if ( ! array_key_exists( 'show_event_image', $settings ) ) {
-				return true;
-			}
-			$raw = $settings['show_event_image'];
-			if ( $raw === 'hide' || $raw === 'no' ) {
-				return false;
-			}
-			if ( $raw === 'show' || $raw === 'yes' ) {
-				return true;
-			}
-			return ECBB_Markup::ecbb_parse_bricks_checkbox( $raw );
+
+			return ! ECBB_Markup::ecbb_parse_bricks_checkbox( $settings['hide_event_image'] ?? false );
 		}
 
 		public static function ecbb_show_shell_category_badge( $settings ) {

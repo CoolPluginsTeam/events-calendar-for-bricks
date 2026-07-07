@@ -11,6 +11,45 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 if ( ! class_exists( 'ECBB_Layout_Base', false ) ) {
 
+	/**
+	 * Buffered item-inner renderer (explicit steps instead of mixed ob_start/echo).
+	 */
+	final class ECBB_Layout_Item_Renderer {
+
+		/** @var string */
+		private $html = '';
+
+		/**
+		 * @param string $card_class Escaped card root class list.
+		 * @return void
+		 */
+		public function open_card( $card_class ) {
+			$this->html .= '<div class="' . esc_attr( $card_class ) . '">';
+		}
+
+		/**
+		 * @param string $chunk Raw HTML chunk (already escaped by caller).
+		 * @return void
+		 */
+		public function append( $chunk ) {
+			$this->html .= $chunk;
+		}
+
+		/**
+		 * @return void
+		 */
+		public function close_card() {
+			$this->html .= '</div>';
+		}
+
+		/**
+		 * @return string
+		 */
+		public function to_string() {
+			return $this->html;
+		}
+	}
+
 	abstract class ECBB_Layout_Base {
 
 		/**
@@ -221,15 +260,18 @@ if ( ! class_exists( 'ECBB_Layout_Base', false ) ) {
 				$card_class .= ' ' . $no_date_class;
 			}
 
-			ob_start();
-
-			echo '<div class="' . esc_attr( $card_class ) . '">';
+			$renderer = new ECBB_Layout_Item_Renderer();
+			$renderer->open_card( $card_class );
 
 			if ( $show_image && class_exists( 'ECBB_Markup', false ) ) {
+				ob_start();
 				static::ecbb_render_image_shell( $post, $settings );
+				$renderer->append( (string) ob_get_clean() );
 			}
 
+			ob_start();
 			static::ecbb_open_content( $post, $settings, $show_image );
+			$renderer->append( (string) ob_get_clean() );
 
 			if ( class_exists( 'ECBB_Markup', false ) ) {
 				$skin        = static::ecbb_part_skin();
@@ -238,6 +280,7 @@ if ( ! class_exists( 'ECBB_Layout_Base', false ) ) {
 					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in ECBB_Markup::ecbb_render_meta_li().
 					echo \ECBB_Markup::ecbb_render_meta_li( $ev, $item, $idx, $skin, $layout_skin, (bool) $price );
 				};
+				ob_start();
 				\ECBB_Markup::ecbb_render_layout_parts_sequence(
 					$post,
 					$parts,
@@ -246,13 +289,16 @@ if ( ! class_exists( 'ECBB_Layout_Base', false ) ) {
 					$emit_part,
 					$emit_meta_cb
 				);
+				$renderer->append( (string) ob_get_clean() );
 			}
 
+			ob_start();
 			static::ecbb_close_content();
+			$renderer->append( (string) ob_get_clean() );
 
-			echo '</div>';
+			$renderer->close_card();
 
-			return ob_get_clean();
+			return $renderer->to_string();
 		}
 
 		/**

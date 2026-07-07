@@ -42,7 +42,7 @@ if ( ! class_exists( 'ECBB_Layout_Controls', false ) ) {
 	}
 
 		private static function ecbb_register_layout_display_controls( $element ) {
-		$element->controls['show_event_image'] = [
+		$element->controls['hide_event_image'] = [
 			'tab'      => 'content',
 			'group'    => 'layouts',
 			'label'    => esc_html__( 'Hide featured image', 'events-calendar-for-bricks' ),
@@ -96,7 +96,7 @@ if ( ! class_exists( 'ECBB_Layout_Controls', false ) ) {
 			'default'  => false,
 			'rerender' => true,
 			'required' => [
-				[ 'show_event_image', '!=', true ],
+				[ 'hide_event_image', '!=', true ],
 				[ 'layout_template', '=', 'list' ],
 				[ 'list_item_style', '=', 'style-2' ],
 			],
@@ -105,7 +105,7 @@ if ( ! class_exists( 'ECBB_Layout_Controls', false ) ) {
 	$element->controls['style2_date_badge_order'] = [
 			'tab'      => 'content',
 			'group'    => 'layouts',
-			'label'    => esc_html__( 'Date column order', 'events-calendar-for-bricks' ),
+			'label'    => esc_html__( 'Date badge order', 'events-calendar-for-bricks' ),
 			'type'     => 'select',
 			'options'  => $date_column_order_options,
 			'default'  => 'month_day',
@@ -114,7 +114,7 @@ if ( ! class_exists( 'ECBB_Layout_Controls', false ) ) {
 		'required' => [
 			[ 'layout_template', '=', 'list' ],
 			[ 'list_item_style', '=', 'style-2' ],
-		[ 'show_event_image', '!=', true ],
+		[ 'hide_event_image', '!=', true ],
 		[ 'style2_show_date_badge', '!=', true ],
 		],
 		];

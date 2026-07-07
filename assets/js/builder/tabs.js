@@ -292,6 +292,12 @@
 			return;
 		}
 		preview.__ecbbPreviewMutationSyncHooked = true;
+		if (builder.preview.iframeEl && !builder.preview.iframeEl.__ecbbCacheInvalidationHooked) {
+			builder.preview.iframeEl.__ecbbCacheInvalidationHooked = true;
+			builder.preview.iframeEl.addEventListener("load", function () {
+				builder.invalidateBricksPreviewDocumentCache();
+			});
+		}
 		var previewIframeMutationObserver = new MutationObserver(builder.scheduleRepeaterRowScan);
 		previewIframeMutationObserver.observe(preview.body, {
 			childList: true,
@@ -300,7 +306,11 @@
 	}
 
 	builder.scanRepeaterRowsAndSyncPreview = function() {
-		document.querySelectorAll(".repeater-item").forEach(function (item) {
+		document
+			.querySelectorAll(
+				'#bricks-panel-element [data-control-key^="parts_"] .repeater-item'
+			)
+			.forEach(function (item) {
 			builder.ensureRepeaterContentStyleTabs(item);
 			builder.syncRepeaterHoverPanelState(item);
 			builder.initRepeaterPanelAccordions(item);
@@ -372,7 +382,28 @@
 		);
 	}
 
+	builder.invalidateBricksPreviewDocumentCache = function() {
+		builder.preview.iframeEl = null;
+		builder.preview.iframeDoc = null;
+		if (builder.preview.repeaterCssCache) {
+			builder.preview.repeaterCssCache.clear();
+		}
+	};
+
 	builder.getBricksPreviewDocument = function() {
+		if (builder.preview.iframeDoc && builder.preview.iframeEl) {
+			try {
+				if (
+					builder.preview.iframeEl.contentDocument &&
+					builder.preview.iframeEl.contentDocument.body
+				) {
+					return builder.preview.iframeDoc;
+				}
+			} catch (err) {
+				builder.invalidateBricksPreviewDocumentCache();
+			}
+		}
+
 		var selectors = [
 			"#bricks-builder-iframe",
 			"#bricks-preview-iframe",
@@ -382,9 +413,12 @@
 		for (i = 0; i < selectors.length; i++) {
 			var iframe = document.querySelector(selectors[i]);
 			if (iframe && iframe.contentDocument && iframe.contentDocument.body) {
-				return iframe.contentDocument;
+				builder.preview.iframeEl = iframe;
+				builder.preview.iframeDoc = iframe.contentDocument;
+				return builder.preview.iframeDoc;
 			}
 		}
+		builder.invalidateBricksPreviewDocumentCache();
 		return null;
 	}
 

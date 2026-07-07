@@ -100,10 +100,6 @@
 		wrapper.style.removeProperty("--ecbb-btn-fg");
 	}
 
-	/**
-	 * Bricks repeater live CSS paints typography on the row wrapper. Collapse that
-	 * shell so mirrored font-size on the inner button does not leave phantom space.
-	 */
 	builder.collapseRepeaterWrapperTypographyShell = function(wrapper) {
 		if (!wrapper) {
 			return;
@@ -178,56 +174,371 @@
 		return !!(btnCb && btnCb.checked);
 	}
 
-	builder.readTypographyControlColor = function(repeaterItem, wrapper, preview, surfaces) {
-		var controlInner = builder.getRepeaterControlInner(repeaterItem, "ecbb_typography");
-		var color = "";
-
-		// Live pickr session wins over a stale saved control value.
-		if (document.querySelector(".pcr-app.visible")) {
-			color = builder.readActivePickrColor();
+	builder.readTextAlignControlValue = function(repeaterItem) {
+		var controlInner = builder.getRepeaterControlInner(repeaterItem, "ecbb_text_align");
+		if (!controlInner) {
+			return "";
 		}
 
-		if (!color && controlInner) {
-			var colorWrap = controlInner.querySelector(
-				'[data-control-key="color"], [data-setting="color"], .control-color'
-			);
-			color = builder.readColorControlValue(colorWrap || controlInner);
-		}
-
-		if (!color) {
-			color = builder.readActivePickrColor();
-		}
-
-		if (!color && wrapper && preview) {
-			color = builder.readPreviewRepeaterCssValue(wrapper, preview, "color");
-		}
-
-		if (!color && wrapper && preview && preview.defaultView) {
-			color = preview.defaultView.getComputedStyle(wrapper).color;
-		}
-
-		if (!color && surfaces && surfaces.length && preview && preview.defaultView) {
-			var surface = surfaces[0];
-			// Meta icons keep inline builder paint; reading them back returns a stale first pick.
+		var active = controlInner.querySelector(
+			".control-button.active, .control-button.is-active, [aria-pressed='true']"
+		);
+		if (active) {
+			var fromActive =
+				active.getAttribute("data-value") ||
+				active.getAttribute("data-align") ||
+				active.getAttribute("value") ||
+				"";
+			fromActive = String(fromActive).trim().toLowerCase();
 			if (
-				!(
-					surface &&
-					surface.classList &&
-					surface.classList.contains("ecbb-event-card__meta-icon")
-				)
+				fromActive === "left" ||
+				fromActive === "center" ||
+				fromActive === "right" ||
+				fromActive === "justify"
 			) {
-				color = preview.defaultView.getComputedStyle(surface).color;
+				return fromActive;
 			}
 		}
 
-		return builder.normalizeTypographyColor(color);
+		var hidden = controlInner.querySelector('input[type="hidden"], input[type="text"]');
+		if (hidden && hidden.value) {
+			var hiddenValue = String(hidden.value).trim().toLowerCase();
+			if (
+				hiddenValue === "left" ||
+				hiddenValue === "center" ||
+				hiddenValue === "right" ||
+				hiddenValue === "justify"
+			) {
+				return hiddenValue;
+			}
+		}
+
+		return "";
 	}
 
-	/**
-	 * Style 1 / grid meta rows: Bricks typography paints the part wrapper; mirror that
-	 * color onto the leading icon sibling (and row) after live CSS settles.
-	 */
-	builder.mirrorMetaRowIconColorFromText = function(wrapper, preview) {
+	builder.isLayoutOwnedPreviewNode = function(node, repeaterItem) {
+		if (!node || !repeaterItem) {
+			return false;
+		}
+		var part = builder.readRepeaterPartSlug(repeaterItem);
+		if (
+			( part === "read_more" ||
+				part === "event_tickets" ||
+				part === "event_rsvp" ) &&
+			!builder.isStyledButtonModeEnabled(repeaterItem) &&
+			node.matches(builder.config.layoutActionSurfaceSelector)
+		) {
+			return true;
+		}
+		if (
+			part === "categories" &&
+			node.matches(
+				".ecbb-event__term-chip, .ecbb-event-card__category, a.ecbb-event-card__category"
+			)
+		) {
+			return true;
+		}
+		return false;
+	}
+
+	builder.clearMirroredPreviewInlineStyles = function(repeaterItem) {
+		var ctx = builder.resolvePreviewRowContext(repeaterItem);
+		if (!ctx) {
+			return;
+		}
+		var wrapper = ctx.wrapper;
+		wrapper
+			.querySelectorAll(
+				".ecbb-event__term-chip, .ecbb-event__term, .ecbb-event-card__category, " + builder.config.layoutActionSurfaceSelector
+			)
+			.forEach(function (node) {
+				if (!builder.isLayoutOwnedPreviewNode(node, repeaterItem)) {
+					return;
+				}
+				node.style.removeProperty("color");
+				node.style.removeProperty("background-color");
+				node.style.removeProperty("padding");
+				node.style.removeProperty("font-size");
+				node.style.removeProperty("line-height");
+				node.style.removeProperty("font-family");
+				node.style.removeProperty("font-weight");
+				node.style.removeProperty("letter-spacing");
+				node.style.removeProperty("text-transform");
+				node.style.removeProperty("vertical-align");
+			});
+	}
+
+	builder.syncLayoutActionButtonPreviewStyle = function(repeaterItem) {
+		if (!repeaterItem || !builder.isLayoutActionButtonPart(repeaterItem)) {
+			return;
+		}
+		if (builder.isStyledButtonModeEnabled(repeaterItem)) {
+			return;
+		}
+
+		var ctx = builder.resolvePreviewRowContext(repeaterItem, { needView: true });
+		if (!ctx) {
+			return;
+		}
+		var preview = ctx.preview;
+		var wrapper = ctx.wrapper;
+
+		var surfaces = builder.findLayoutActionButtonSurfaces(wrapper);
+		if (!surfaces.length) {
+			return;
+		}
+
+		if (builder.isStyle2CardActionButtonContext(preview, wrapper)) {
+			builder.syncStyle2ActionButtonTypographyColor(
+				repeaterItem,
+				wrapper,
+				preview,
+				surfaces
+			);
+			return;
+		}
+
+		var bg = builder.readColorControlValue(builder.getRepeaterControlInner(repeaterItem, "ecbb_background"));
+		var pad = builder.readSpacingControlValue(builder.getRepeaterControlInner(repeaterItem, "ecbb_padding"));
+		var typoOverrides = builder.readTypographyControlSnapshot(
+			repeaterItem,
+			wrapper,
+			preview,
+			surfaces
+		);
+		var typoColor =
+			builder.readTypographyControlColor(repeaterItem, wrapper, preview, surfaces) ||
+			typoOverrides.color;
+		var textAlign = builder.readTextAlignControlValue(repeaterItem);
+		var computed = preview.defaultView.getComputedStyle(
+			surfaces[0] || wrapper
+		);
+
+		builder.setWrapperTypographyFlags(wrapper, repeaterItem, typoColor, typoOverrides);
+		builder.syncLayoutButtonTypographyPreviewRule(repeaterItem, typoOverrides);
+
+		builder.collapseRepeaterWrapperTypographyShell(wrapper);
+		if (textAlign) {
+			wrapper.style.setProperty("text-align", textAlign, "important");
+		}
+
+		surfaces.forEach(function (node) {
+			if (bg) {
+				node.style.setProperty("background-color", bg, "important");
+			}
+			if (pad) {
+				node.style.setProperty("padding", pad, "important");
+			}
+			builder.applyTypographyToButtonPreviewSurface(node, computed, typoColor, typoOverrides);
+		});
+	}
+
+	builder.syncCategoryChipPreviewStyle = function(repeaterItem) {
+		var ctx = builder.resolvePreviewRowContext(repeaterItem, {
+			matches: function (item) {
+				return builder.readRepeaterPartSlug(item) === "categories";
+			},
+			needView: true,
+		});
+		if (!ctx) {
+			return;
+		}
+		var preview = ctx.preview;
+		var wrapper = ctx.wrapper;
+
+		var bg = builder.readColorControlValue(builder.getRepeaterControlInner(repeaterItem, "ecbb_background"));
+		var pad = builder.readSpacingControlValue(builder.getRepeaterControlInner(repeaterItem, "ecbb_padding"));
+		var chips = wrapper.querySelectorAll(
+			".ecbb-event__term-chip, .ecbb-event-card__category"
+		);
+		var typoOverrides = builder.readTypographyControlSnapshot(
+			repeaterItem,
+			wrapper,
+			preview,
+			chips.length ? chips : null
+		);
+		var typoColor =
+			builder.readTypographyControlColor(
+				repeaterItem,
+				wrapper,
+				preview,
+				chips.length ? chips : null
+			) || typoOverrides.color;
+
+		if (!bg && !pad && !typoColor && !typoOverrides.fontSize && !typoOverrides.lineHeight) {
+			builder.clearMirroredPreviewInlineStyles(repeaterItem);
+			wrapper.classList.remove("ecbb-has-typo-fg", "ecbb-has-typo-size");
+			return;
+		}
+
+		builder.collapseRepeaterWrapperTypographyShell(wrapper);
+		builder.setWrapperTypographyFlags(wrapper, repeaterItem, typoColor, typoOverrides);
+
+		if (bg || pad) {
+			wrapper.style.setProperty("background-color", "transparent", "important");
+			if (pad) {
+				wrapper.style.setProperty("padding", "0", "important");
+			}
+		}
+
+		chips.forEach(function (chip) {
+			if (bg) {
+				chip.style.setProperty("background-color", bg);
+			} else {
+				chip.style.removeProperty("background-color");
+			}
+			if (pad) {
+				chip.style.setProperty("padding", pad);
+			} else {
+				chip.style.removeProperty("padding");
+			}
+			builder.applyTypographyToButtonPreviewSurface(chip, null, typoColor, typoOverrides);
+		});
+	}
+
+	builder.syncTitleInnerBackgroundPreview = function(repeaterItem) {
+		var ctx = builder.resolvePreviewRowContext(repeaterItem, {
+			matches: function (item) {
+				return builder.readRepeaterPartControlValue(item) === "title";
+			},
+		});
+		if (!ctx) {
+			return;
+		}
+		var wrapper = ctx.wrapper;
+
+		var bg = builder.readColorControlValue(builder.getRepeaterControlInner(repeaterItem, "ecbb_background"));
+
+		wrapper.style.setProperty("background-color", "transparent", "important");
+
+		wrapper
+			.querySelectorAll(".ecbb-event__link, .ecbb-event__title-text")
+			.forEach(function (node) {
+				if (bg) {
+					node.style.setProperty("background-color", bg, "important");
+					node.style.setProperty("display", "inline-block");
+					node.style.setProperty("width", "fit-content");
+					node.style.setProperty("max-width", "100%");
+				} else {
+					node.style.removeProperty("background-color");
+				}
+			});
+	}
+
+	builder.scheduleTitleInnerBackgroundPreviewSync = function(repeaterItem) {
+		if (builder.sync.titleInnerBackground) {
+			builder.sync.titleInnerBackground.schedule(repeaterItem);
+			return;
+		}
+		builder.syncTitleInnerBackgroundPreview(repeaterItem);
+	}
+
+	builder.isStyle2LayoutPreview = function(preview) {
+		return !!(
+			preview &&
+			preview.querySelector(
+				".ecbb-ev__item--style-2"
+			)
+		);
+	}
+
+	builder.getOrCreateBuilderPreviewStyleElement = function(preview, styleId) {
+		var doc =
+			preview && preview.defaultView
+				? preview.defaultView.document
+				: document;
+		var el = doc.getElementById(styleId);
+		if (!el) {
+			el = doc.createElement("style");
+			el.id = styleId;
+			doc.head.appendChild(el);
+		}
+		return el;
+	}
+
+	builder.rebuildLayoutButtonTypoPreviewStylesheet = function(preview) {
+		var el = builder.getOrCreateBuilderPreviewStyleElement(
+			preview,
+			"ecbb-builder-layout-btn-typo-css"
+		);
+		if (!el) {
+			return;
+		}
+		var chunks = [];
+		Object.keys(builder.hover.layoutBtnTypoRulesByRowId).forEach(function (key) {
+			if (builder.hover.layoutBtnTypoRulesByRowId[key]) {
+				chunks.push(builder.hover.layoutBtnTypoRulesByRowId[key]);
+			}
+		});
+		el.textContent = chunks.join("\n");
+	}
+
+	builder.buildLayoutButtonTypographyPreviewRule = function(rowId, typoOverrides) {
+		if (!rowId || !typoOverrides) {
+			return "";
+		}
+
+		var scope = '[data-field-id="' + rowId + '"]';
+		var surfaceSelectors =
+			scope +
+			" a.event-button," +
+			scope +
+			" > a.event-button," +
+			scope +
+			" > .ecbb-event__link," +
+			scope +
+			" .ecbb-event__link," +
+			scope +
+			" a.ecbb-event-card__button," +
+			scope +
+			" > a.ecbb-event-card__button";
+		var rule = "";
+
+		if (typoOverrides.fontSize) {
+			rule += surfaceSelectors + "{font-size:" + typoOverrides.fontSize + " !important;";
+			if (typoOverrides.lineHeight) {
+				rule += "line-height:" + typoOverrides.lineHeight + " !important;";
+			}
+			rule += "}";
+		}
+
+		if (typoOverrides.color) {
+			rule +=
+				surfaceSelectors +
+				"{color:" +
+				typoOverrides.color +
+				" !important;}";
+		}
+
+		if (typoOverrides.fontSize || typoOverrides.lineHeight) {
+			rule += scope + "{font-size:0 !important;line-height:0 !important;}";
+		}
+
+		return rule;
+	}
+
+	builder.syncLayoutButtonTypographyPreviewRule = function(repeaterItem, typoOverrides) {
+		var ctx = builder.resolvePreviewRowContext(repeaterItem);
+		if (!ctx) {
+			return;
+		}
+		if (builder.isStyle2CardActionButtonContext(ctx.preview, ctx.wrapper)) {
+			return;
+		}
+
+		var rowId = ctx.rowId;
+		var preview = ctx.preview;
+		var rule = builder.buildLayoutButtonTypographyPreviewRule(rowId, typoOverrides || {});
+		if (rule) {
+			builder.hover.layoutBtnTypoRulesByRowId[rowId] = rule;
+		} else {
+			delete builder.hover.layoutBtnTypoRulesByRowId[rowId];
+		}
+
+		builder.rebuildLayoutButtonTypoPreviewStylesheet(preview);
+	}
+
+builder.mirrorMetaRowIconColorFromText = function(wrapper, preview) {
 		if (!wrapper || !preview || !preview.defaultView) {
 			return "";
 		}
@@ -262,7 +573,6 @@
 		return textColor;
 	}
 
-	/** Paint Style 1 / grid meta list rows as one unit (icon + text share the <li> chrome). */
 	builder.applyUnifiedMetaListRowPreviewChrome = function(repeaterItem, li, wrapper, icon, preview) {
 		if (!li || !wrapper) {
 			return;
@@ -397,7 +707,139 @@
 		}, 350);
 	}
 
-	builder.readActivePickrColor = function() {
+	builder.isStyle1OrGridMetaListPreviewRow = function(wrapper, preview) {
+		if (!wrapper || !preview || builder.isStyle2LayoutPreview(preview)) {
+			return false;
+		}
+		var li = wrapper.closest("li");
+		return !!(li && li.closest(".event-meta"));
+	}
+
+	builder.syncStyle1GridMetaListRowPreviewStyle = function(repeaterItem) {
+		var ctx = builder.resolvePreviewRowContext(repeaterItem, {
+			wrapperTest: function (wrapper, preview) {
+				return builder.isStyle1OrGridMetaListPreviewRow(wrapper, preview);
+			},
+		});
+		if (!ctx) {
+			return;
+		}
+		var preview = ctx.preview;
+		var wrapper = ctx.wrapper;
+
+		var li = wrapper.closest("li");
+		if (!li) {
+			return;
+		}
+
+		var icon = li.querySelector(":scope > .ecbb-event-card__meta-icon");
+		builder.applyUnifiedMetaListRowPreviewChrome(
+			repeaterItem,
+			li,
+			wrapper,
+			icon,
+			preview
+		);
+		builder.mirrorMetaRowIconColorFromText(wrapper, preview);
+	}
+
+	builder.syncStyle2MetaIconPreviewStyle = function(repeaterItem) {
+		var ctx = builder.resolvePreviewRowContext(repeaterItem, {
+			matches: function (item) {
+				return builder.config.style2MetaIconParts.indexOf(builder.readRepeaterPartSlug(item)) !== -1;
+			},
+			needView: true,
+			wrapperTest: function (wrapper, preview) {
+				return builder.isStyle2LayoutPreview(preview);
+			},
+		});
+		if (!ctx) {
+			return;
+		}
+		var preview = ctx.preview;
+		var wrapper = ctx.wrapper;
+
+		var li = wrapper.closest("li.ecbb-event-card__meta-item");
+		if (!li) {
+			return;
+		}
+
+		var icon = li.querySelector(":scope > .ecbb-event-card__meta-icon");
+		var icons = [];
+		if (icon) {
+			icons.push(icon);
+		} else {
+			wrapper.querySelectorAll(".ecbb-event-card__meta-icon").forEach(function (inlineIcon) {
+				icons.push(inlineIcon);
+			});
+		}
+		if (!icons.length) {
+			return;
+		}
+
+		var ul = li.closest("ul.ecbb-event-card__meta");
+		var margin = builder.readSpacingControlValue(
+			builder.getRepeaterControlInner(repeaterItem, "ecbb_margin")
+		);
+		if (ul) {
+			ul.style.setProperty("margin", "0", "important");
+			ul.style.setProperty("padding", "0", "important");
+			ul.style.setProperty("list-style", "none", "important");
+		}
+		if (margin) {
+			li.style.setProperty("margin", margin, "important");
+		} else {
+			li.style.setProperty("margin", "0", "important");
+		}
+		wrapper.style.setProperty("margin", "0", "important");
+
+		var color = builder.readColorControlValue(
+			builder.getRepeaterControlInner(repeaterItem, "ecbb_meta_icon_color")
+		);
+		var bg = builder.readColorControlValue(
+			builder.getRepeaterControlInner(repeaterItem, "ecbb_meta_icon_background")
+		);
+		var typoOverrides = builder.readTypographyControlSnapshot(
+			repeaterItem,
+			wrapper,
+			preview,
+			null
+		);
+		if (!color) {
+			color =
+				builder.readTypographyControlColor(
+					repeaterItem,
+					wrapper,
+					preview,
+					null
+				) || typoOverrides.color;
+		}
+
+		icons.forEach(function (metaIcon) {
+			if (color) {
+				metaIcon.style.setProperty("color", color, "important");
+			} else {
+				metaIcon.style.removeProperty("color");
+			}
+			if (bg) {
+				metaIcon.style.setProperty("background-color", bg, "important");
+			} else {
+				metaIcon.style.removeProperty("background-color");
+			}
+			if (typoOverrides.fontSize) {
+				metaIcon.style.setProperty("font-size", typoOverrides.fontSize, "important");
+			} else {
+				metaIcon.style.removeProperty("font-size");
+			}
+			if (typoOverrides.lineHeight) {
+				metaIcon.style.setProperty("line-height", typoOverrides.lineHeight, "important");
+			} else {
+				metaIcon.style.removeProperty("line-height");
+			}
+		});
+	}
+
+builder.readActivePickrColor = function() {
 		var app = document.querySelector(".pcr-app.visible");
 		if (!app) {
 			return "";
@@ -425,30 +867,6 @@
 		}
 
 		return "";
-	}
-
-	builder.normalizeTypographyColor = function(value) {
-		if (!value) {
-			return "";
-		}
-		var trimmed = String(value).trim();
-		if (
-			!trimmed ||
-			trimmed === "transparent" ||
-			trimmed === "currentcolor" ||
-			trimmed === "inherit" ||
-			trimmed === "initial" ||
-			trimmed === "unset"
-		) {
-			return "";
-		}
-		if (/^rgba?\(/i.test(trimmed)) {
-			var rgbaParts = trimmed.match(/[\d.]+/g);
-			if (rgbaParts && rgbaParts.length >= 4 && parseFloat(rgbaParts[3]) <= 0) {
-				return "";
-			}
-		}
-		return trimmed;
 	}
 
 	builder.normalizeCssSizeValue = function(value, fallbackUnit) {
@@ -566,6 +984,13 @@
 		return builder.readTypographyByFuzzyInputMeta(controlInner, property);
 	}
 
+	builder.invalidatePreviewRepeaterCssCache = function(fieldId) {
+		if (!fieldId || !builder.preview.repeaterCssCache) {
+			return;
+		}
+		builder.preview.repeaterCssCache.delete(fieldId);
+	}
+
 	builder.readPreviewRepeaterCssValue = function(wrapper, preview, cssProperty) {
 		if (!wrapper || !preview || !preview.styleSheets) {
 			return "";
@@ -580,6 +1005,11 @@
 			cssProperty.indexOf("-") !== -1
 				? cssProperty
 				: cssProperty.replace(/([A-Z])/g, "-$1").toLowerCase();
+		var cacheKey = fieldId + "::" + prop;
+		if (builder.preview.repeaterCssCache && builder.preview.repeaterCssCache.has(cacheKey)) {
+			return builder.preview.repeaterCssCache.get(cacheKey);
+		}
+
 		var needles = [
 			'[data-field-id="' + fieldId + '"] a.event-button',
 			'[data-field-id="' + fieldId + '"] a.ecbb-event-card__button',
@@ -621,12 +1051,64 @@
 				}
 				var cssValue = rule.style.getPropertyValue(prop);
 				if (cssValue && String(cssValue).trim()) {
-					return String(cssValue).trim();
+					var resolved = String(cssValue).trim();
+					if (builder.preview.repeaterCssCache) {
+						builder.preview.repeaterCssCache.set(cacheKey, resolved);
+					}
+					return resolved;
 				}
 			}
 		}
 
+		if (builder.preview.repeaterCssCache) {
+			builder.preview.repeaterCssCache.set(cacheKey, "");
+		}
 		return "";
+	}
+
+	builder.readTypographyControlColor = function(repeaterItem, wrapper, preview, surfaces) {
+		var controlInner = builder.getRepeaterControlInner(repeaterItem, "ecbb_typography");
+		var color = "";
+
+		// Live pickr session wins over a stale saved control value.
+		if (document.querySelector(".pcr-app.visible")) {
+			color = builder.readActivePickrColor();
+		}
+
+		if (!color && controlInner) {
+			var colorWrap = controlInner.querySelector(
+				'[data-control-key="color"], [data-setting="color"], .control-color'
+			);
+			color = builder.readColorControlValue(colorWrap || controlInner);
+		}
+
+		if (!color) {
+			color = builder.readActivePickrColor();
+		}
+
+		if (!color && wrapper && preview) {
+			color = builder.readPreviewRepeaterCssValue(wrapper, preview, "color");
+		}
+
+		if (!color && wrapper && preview && preview.defaultView) {
+			color = preview.defaultView.getComputedStyle(wrapper).color;
+		}
+
+		if (!color && surfaces && surfaces.length && preview && preview.defaultView) {
+			var surface = surfaces[0];
+			// Meta icons keep inline builder paint; reading them back returns a stale first pick.
+			if (
+				!(
+					surface &&
+					surface.classList &&
+					surface.classList.contains("ecbb-event-card__meta-icon")
+				)
+			) {
+				color = preview.defaultView.getComputedStyle(surface).color;
+			}
+		}
+
+		return builder.normalizeTypographyColor(color);
 	}
 
 	builder.readTypographyControlSnapshot = function(repeaterItem, wrapper, preview, surfaces) {
@@ -731,104 +1213,6 @@
 		}
 	}
 
-	builder.readTextAlignControlValue = function(repeaterItem) {
-		var controlInner = builder.getRepeaterControlInner(repeaterItem, "ecbb_text_align");
-		if (!controlInner) {
-			return "";
-		}
-
-		var active = controlInner.querySelector(
-			".control-button.active, .control-button.is-active, [aria-pressed='true']"
-		);
-		if (active) {
-			var fromActive =
-				active.getAttribute("data-value") ||
-				active.getAttribute("data-align") ||
-				active.getAttribute("value") ||
-				"";
-			fromActive = String(fromActive).trim().toLowerCase();
-			if (
-				fromActive === "left" ||
-				fromActive === "center" ||
-				fromActive === "right" ||
-				fromActive === "justify"
-			) {
-				return fromActive;
-			}
-		}
-
-		var hidden = controlInner.querySelector('input[type="hidden"], input[type="text"]');
-		if (hidden && hidden.value) {
-			var hiddenValue = String(hidden.value).trim().toLowerCase();
-			if (
-				hiddenValue === "left" ||
-				hiddenValue === "center" ||
-				hiddenValue === "right" ||
-				hiddenValue === "justify"
-			) {
-				return hiddenValue;
-			}
-		}
-
-		return "";
-	}
-
-	builder.isLayoutOwnedPreviewNode = function(node, repeaterItem) {
-		if (!node || !repeaterItem) {
-			return false;
-		}
-		var part = builder.readRepeaterPartSlug(repeaterItem);
-		if (
-			( part === "read_more" ||
-				part === "event_tickets" ||
-				part === "event_rsvp" ) &&
-			!builder.isStyledButtonModeEnabled(repeaterItem) &&
-			node.matches(builder.config.layoutActionSurfaceSelector)
-		) {
-			return true;
-		}
-		if (
-			part === "categories" &&
-			node.matches(
-				".ecbb-event__term-chip, .ecbb-event-card__category, a.ecbb-event-card__category"
-			)
-		) {
-			return true;
-		}
-		return false;
-	}
-
-	builder.clearMirroredPreviewInlineStyles = function(repeaterItem) {
-		var ctx = builder.resolvePreviewRowContext(repeaterItem);
-		if (!ctx) {
-			return;
-		}
-		var wrapper = ctx.wrapper;
-		wrapper
-			.querySelectorAll(
-				".ecbb-event__term-chip, .ecbb-event__term, .ecbb-event-card__category, " + builder.config.layoutActionSurfaceSelector
-			)
-			.forEach(function (node) {
-				if (!builder.isLayoutOwnedPreviewNode(node, repeaterItem)) {
-					return;
-				}
-				node.style.removeProperty("color");
-				node.style.removeProperty("background-color");
-				node.style.removeProperty("padding");
-				node.style.removeProperty("font-size");
-				node.style.removeProperty("line-height");
-				node.style.removeProperty("font-family");
-				node.style.removeProperty("font-weight");
-				node.style.removeProperty("letter-spacing");
-				node.style.removeProperty("text-transform");
-				node.style.removeProperty("vertical-align");
-			});
-	}
-
-	/**
-	 * Bricks repeater live CSS ignores child selectors in the builder; mirror wrapper
-	 * color onto category chips / links so typography color updates instantly.
-	 */
 	builder.syncTypographyColorToPreviewTargets = function(repeaterItem) {
 		var ctx = builder.resolvePreviewRowContext(repeaterItem, { needView: true });
 		if (!ctx) {
@@ -876,270 +1260,6 @@
 			}
 			node.style.setProperty("color", typoColor);
 		});
-	}
-
-	/** View Details / tickets / RSVP: Bricks paints the row wrapper; paint the inner button. */
-	builder.syncLayoutActionButtonPreviewStyle = function(repeaterItem) {
-		if (!repeaterItem || !builder.isLayoutActionButtonPart(repeaterItem)) {
-			return;
-		}
-		if (builder.isStyledButtonModeEnabled(repeaterItem)) {
-			return;
-		}
-
-		var ctx = builder.resolvePreviewRowContext(repeaterItem, { needView: true });
-		if (!ctx) {
-			return;
-		}
-		var preview = ctx.preview;
-		var wrapper = ctx.wrapper;
-
-		var surfaces = builder.findLayoutActionButtonSurfaces(wrapper);
-		if (!surfaces.length) {
-			return;
-		}
-
-		if (builder.isStyle2CardActionButtonContext(preview, wrapper)) {
-			builder.syncStyle2ActionButtonTypographyColor(
-				repeaterItem,
-				wrapper,
-				preview,
-				surfaces
-			);
-			return;
-		}
-
-		var bg = builder.readColorControlValue(builder.getRepeaterControlInner(repeaterItem, "ecbb_background"));
-		var pad = builder.readSpacingControlValue(builder.getRepeaterControlInner(repeaterItem, "ecbb_padding"));
-		var typoOverrides = builder.readTypographyControlSnapshot(
-			repeaterItem,
-			wrapper,
-			preview,
-			surfaces
-		);
-		var typoColor =
-			builder.readTypographyControlColor(repeaterItem, wrapper, preview, surfaces) ||
-			typoOverrides.color;
-		var textAlign = builder.readTextAlignControlValue(repeaterItem);
-		var computed = preview.defaultView.getComputedStyle(
-			surfaces[0] || wrapper
-		);
-
-		builder.setWrapperTypographyFlags(wrapper, repeaterItem, typoColor, typoOverrides);
-		builder.syncLayoutButtonTypographyPreviewRule(repeaterItem, typoOverrides);
-
-		builder.collapseRepeaterWrapperTypographyShell(wrapper);
-		if (textAlign) {
-			wrapper.style.setProperty("text-align", textAlign, "important");
-		}
-
-		surfaces.forEach(function (node) {
-			if (bg) {
-				node.style.setProperty("background-color", bg, "important");
-			}
-			if (pad) {
-				node.style.setProperty("padding", pad, "important");
-			}
-			builder.applyTypographyToButtonPreviewSurface(node, computed, typoColor, typoOverrides);
-		});
-	}
-
-	/** Categories (Style 1 chips + Style 2 pills): Bricks paints the wrapper; paint each button. */
-	builder.syncCategoryChipPreviewStyle = function(repeaterItem) {
-		var ctx = builder.resolvePreviewRowContext(repeaterItem, {
-			matches: function (item) {
-				return builder.readRepeaterPartSlug(item) === "categories";
-			},
-			needView: true,
-		});
-		if (!ctx) {
-			return;
-		}
-		var preview = ctx.preview;
-		var wrapper = ctx.wrapper;
-
-		var bg = builder.readColorControlValue(builder.getRepeaterControlInner(repeaterItem, "ecbb_background"));
-		var pad = builder.readSpacingControlValue(builder.getRepeaterControlInner(repeaterItem, "ecbb_padding"));
-		var chips = wrapper.querySelectorAll(
-			".ecbb-event__term-chip, .ecbb-event-card__category"
-		);
-		var typoOverrides = builder.readTypographyControlSnapshot(
-			repeaterItem,
-			wrapper,
-			preview,
-			chips.length ? chips : null
-		);
-		var typoColor =
-			builder.readTypographyControlColor(
-				repeaterItem,
-				wrapper,
-				preview,
-				chips.length ? chips : null
-			) || typoOverrides.color;
-
-		if (!bg && !pad && !typoColor && !typoOverrides.fontSize && !typoOverrides.lineHeight) {
-			builder.clearMirroredPreviewInlineStyles(repeaterItem);
-			wrapper.classList.remove("ecbb-has-typo-fg", "ecbb-has-typo-size");
-			return;
-		}
-
-		builder.collapseRepeaterWrapperTypographyShell(wrapper);
-		builder.setWrapperTypographyFlags(wrapper, repeaterItem, typoColor, typoOverrides);
-
-		if (bg || pad) {
-			wrapper.style.setProperty("background-color", "transparent", "important");
-			if (pad) {
-				wrapper.style.setProperty("padding", "0", "important");
-			}
-		}
-
-		chips.forEach(function (chip) {
-			if (bg) {
-				chip.style.setProperty("background-color", bg);
-			} else {
-				chip.style.removeProperty("background-color");
-			}
-			if (pad) {
-				chip.style.setProperty("padding", pad);
-			} else {
-				chip.style.removeProperty("padding");
-			}
-			builder.applyTypographyToButtonPreviewSurface(chip, null, typoColor, typoOverrides);
-		});
-	}
-
-	/** Style 2 meta rows (venue / timing / cost): paint the leading icon sibling. */
-	builder.syncStyle2MetaIconPreviewStyle = function(repeaterItem) {
-		var ctx = builder.resolvePreviewRowContext(repeaterItem, {
-			matches: function (item) {
-				return builder.config.style2MetaIconParts.indexOf(builder.readRepeaterPartSlug(item)) !== -1;
-			},
-			needView: true,
-			wrapperTest: function (wrapper, preview) {
-				return builder.isStyle2LayoutPreview(preview);
-			},
-		});
-		if (!ctx) {
-			return;
-		}
-		var preview = ctx.preview;
-		var wrapper = ctx.wrapper;
-
-		var li = wrapper.closest("li.ecbb-event-card__meta-item");
-		if (!li) {
-			return;
-		}
-
-		var icon = li.querySelector(":scope > .ecbb-event-card__meta-icon");
-		var icons = [];
-		if (icon) {
-			icons.push(icon);
-		} else {
-			wrapper.querySelectorAll(".ecbb-event-card__meta-icon").forEach(function (inlineIcon) {
-				icons.push(inlineIcon);
-			});
-		}
-		if (!icons.length) {
-			return;
-		}
-
-		var ul = li.closest("ul.ecbb-event-card__meta");
-		var margin = builder.readSpacingControlValue(
-			builder.getRepeaterControlInner(repeaterItem, "ecbb_margin")
-		);
-		if (ul) {
-			ul.style.setProperty("margin", "0", "important");
-			ul.style.setProperty("padding", "0", "important");
-			ul.style.setProperty("list-style", "none", "important");
-		}
-		if (margin) {
-			li.style.setProperty("margin", margin, "important");
-		} else {
-			li.style.setProperty("margin", "0", "important");
-		}
-		wrapper.style.setProperty("margin", "0", "important");
-
-		var color = builder.readColorControlValue(
-			builder.getRepeaterControlInner(repeaterItem, "ecbb_meta_icon_color")
-		);
-		var bg = builder.readColorControlValue(
-			builder.getRepeaterControlInner(repeaterItem, "ecbb_meta_icon_background")
-		);
-		var typoOverrides = builder.readTypographyControlSnapshot(
-			repeaterItem,
-			wrapper,
-			preview,
-			null
-		);
-		if (!color) {
-			color =
-				builder.readTypographyControlColor(
-					repeaterItem,
-					wrapper,
-					preview,
-					null
-				) || typoOverrides.color;
-		}
-
-		icons.forEach(function (metaIcon) {
-			if (color) {
-				metaIcon.style.setProperty("color", color, "important");
-			} else {
-				metaIcon.style.removeProperty("color");
-			}
-			if (bg) {
-				metaIcon.style.setProperty("background-color", bg, "important");
-			} else {
-				metaIcon.style.removeProperty("background-color");
-			}
-			if (typoOverrides.fontSize) {
-				metaIcon.style.setProperty("font-size", typoOverrides.fontSize, "important");
-			} else {
-				metaIcon.style.removeProperty("font-size");
-			}
-			if (typoOverrides.lineHeight) {
-				metaIcon.style.setProperty("line-height", typoOverrides.lineHeight, "important");
-			} else {
-				metaIcon.style.removeProperty("line-height");
-			}
-		});
-	}
-
-	builder.syncTitleInnerBackgroundPreview = function(repeaterItem) {
-		var ctx = builder.resolvePreviewRowContext(repeaterItem, {
-			matches: function (item) {
-				return builder.readRepeaterPartControlValue(item) === "title";
-			},
-		});
-		if (!ctx) {
-			return;
-		}
-		var wrapper = ctx.wrapper;
-
-		var bg = builder.readColorControlValue(builder.getRepeaterControlInner(repeaterItem, "ecbb_background"));
-
-		wrapper.style.setProperty("background-color", "transparent", "important");
-
-		wrapper
-			.querySelectorAll(".ecbb-event__link, .ecbb-event__title-text")
-			.forEach(function (node) {
-				if (bg) {
-					node.style.setProperty("background-color", bg, "important");
-					node.style.setProperty("display", "inline-block");
-					node.style.setProperty("width", "fit-content");
-					node.style.setProperty("max-width", "100%");
-				} else {
-					node.style.removeProperty("background-color");
-				}
-			});
-	}
-
-	builder.scheduleTitleInnerBackgroundPreviewSync = function(repeaterItem) {
-		if (builder.sync.titleInnerBackground) {
-			builder.sync.titleInnerBackground.schedule(repeaterItem);
-			return;
-		}
-		builder.syncTitleInnerBackgroundPreview(repeaterItem);
 	}
 
 	builder.syncStyledButtonCssColorVariable = function(repeaterItem) {
@@ -1195,7 +1315,7 @@
 		builder.scheduleHoverPreviewStyleSync(repeaterItem);
 	}
 
-	builder.readHoverControlColor = function(repeaterItem, key) {
+builder.readHoverControlColor = function(repeaterItem, key) {
 		var color = builder.readColorControlValue(builder.getRepeaterControlInner(repeaterItem, key));
 		return builder.isVisibleHoverColor(color) ? color : "";
 	}
@@ -1208,80 +1328,15 @@
 		return builder.readHoverControlColor(repeaterItem, "ecbb_hover_background");
 	}
 
-	builder.isVisibleHoverColor = function(value) {
-		if (!value || typeof value !== "string") {
-			return false;
-		}
-		var trimmed = value.trim();
-		var lower = trimmed.toLowerCase();
-		if (
-			lower === "" ||
-			lower === "transparent" ||
-			lower === "currentcolor" ||
-			lower === "inherit" ||
-			lower === "initial" ||
-			lower === "unset"
-		) {
-			return false;
-		}
-		if (/^rgba?\(/i.test(trimmed)) {
-			var rgbaParts = trimmed.match(/[\d.]+/g);
-			if (rgbaParts && rgbaParts.length >= 4 && parseFloat(rgbaParts[3]) <= 0) {
-				return false;
-			}
-		}
-		if (/^hsla?\(/i.test(trimmed)) {
-			var hslaParts = trimmed.match(/[\d.]+/g);
-			if (hslaParts && hslaParts.length >= 4 && parseFloat(hslaParts[3]) <= 0) {
-				return false;
-			}
-		}
-		return true;
-	}
-
-	builder.isStyle2LayoutPreview = function(preview) {
-		return !!(
-			preview &&
-			preview.querySelector(
-				".ecbb-ev__item--style-2"
-			)
+	builder.buildStyle2CategoryDefaultHoverRule = function(scope) {
+		return (
+			scope +
+			" a.ecbb-event-card__category:hover{color:" +
+			builder.config.style2CategoryHoverFg +
+			"!important;background-color:" +
+			builder.config.style2CategoryHoverBg +
+			"!important;}"
 		);
-	}
-
-	builder.isStyle1OrGridMetaListPreviewRow = function(wrapper, preview) {
-		if (!wrapper || !preview || builder.isStyle2LayoutPreview(preview)) {
-			return false;
-		}
-		var li = wrapper.closest("li");
-		return !!(li && li.closest(".event-meta"));
-	}
-
-	builder.syncStyle1GridMetaListRowPreviewStyle = function(repeaterItem) {
-		var ctx = builder.resolvePreviewRowContext(repeaterItem, {
-			wrapperTest: function (wrapper, preview) {
-				return builder.isStyle1OrGridMetaListPreviewRow(wrapper, preview);
-			},
-		});
-		if (!ctx) {
-			return;
-		}
-		var preview = ctx.preview;
-		var wrapper = ctx.wrapper;
-
-		var li = wrapper.closest("li");
-		if (!li) {
-			return;
-		}
-
-		var icon = li.querySelector(":scope > .ecbb-event-card__meta-icon");
-		builder.applyUnifiedMetaListRowPreviewChrome(
-			repeaterItem,
-			li,
-			wrapper,
-			icon,
-			preview
-		);
-		builder.mirrorMetaRowIconColorFromText(wrapper, preview);
 	}
 
 	builder.repeaterHasCustomHoverColors = function(repeaterItem) {
@@ -1371,104 +1426,8 @@
 		);
 	}
 
-	builder.getOrCreateBuilderPreviewStyleElement = function(preview, styleId) {
-		var doc =
-			preview && preview.defaultView
-				? preview.defaultView.document
-				: document;
-		var el = doc.getElementById(styleId);
-		if (!el) {
-			el = doc.createElement("style");
-			el.id = styleId;
-			doc.head.appendChild(el);
-		}
-		return el;
-	}
-
 	builder.getOrCreateHoverPreviewStyleElement = function(preview) {
 		return builder.getOrCreateBuilderPreviewStyleElement(preview, "ecbb-builder-hover-css");
-	}
-
-	builder.rebuildLayoutButtonTypoPreviewStylesheet = function(preview) {
-		var el = builder.getOrCreateBuilderPreviewStyleElement(
-			preview,
-			"ecbb-builder-layout-btn-typo-css"
-		);
-		if (!el) {
-			return;
-		}
-		var chunks = [];
-		Object.keys(builder.hover.layoutBtnTypoRulesByRowId).forEach(function (key) {
-			if (builder.hover.layoutBtnTypoRulesByRowId[key]) {
-				chunks.push(builder.hover.layoutBtnTypoRulesByRowId[key]);
-			}
-		});
-		el.textContent = chunks.join("\n");
-	}
-
-	builder.buildLayoutButtonTypographyPreviewRule = function(rowId, typoOverrides) {
-		if (!rowId || !typoOverrides) {
-			return "";
-		}
-
-		var scope = '[data-field-id="' + rowId + '"]';
-		var surfaceSelectors =
-			scope +
-			" a.event-button," +
-			scope +
-			" > a.event-button," +
-			scope +
-			" > .ecbb-event__link," +
-			scope +
-			" .ecbb-event__link," +
-			scope +
-			" a.ecbb-event-card__button," +
-			scope +
-			" > a.ecbb-event-card__button";
-		var rule = "";
-
-		if (typoOverrides.fontSize) {
-			rule += surfaceSelectors + "{font-size:" + typoOverrides.fontSize + " !important;";
-			if (typoOverrides.lineHeight) {
-				rule += "line-height:" + typoOverrides.lineHeight + " !important;";
-			}
-			rule += "}";
-		}
-
-		if (typoOverrides.color) {
-			rule +=
-				surfaceSelectors +
-				"{color:" +
-				typoOverrides.color +
-				" !important;}";
-		}
-
-		if (typoOverrides.fontSize || typoOverrides.lineHeight) {
-			rule += scope + "{font-size:0 !important;line-height:0 !important;}";
-		}
-
-		return rule;
-	}
-
-	builder.syncLayoutButtonTypographyPreviewRule = function(repeaterItem, typoOverrides) {
-		var ctx = builder.resolvePreviewRowContext(repeaterItem);
-		if (!ctx) {
-			return;
-		}
-		if (builder.isStyle2CardActionButtonContext(ctx.preview, ctx.wrapper)) {
-			return;
-		}
-
-		var rowId = ctx.rowId;
-		var preview = ctx.preview;
-		var rule = builder.buildLayoutButtonTypographyPreviewRule(rowId, typoOverrides || {});
-		if (rule) {
-			builder.hover.layoutBtnTypoRulesByRowId[rowId] = rule;
-		} else {
-			delete builder.hover.layoutBtnTypoRulesByRowId[rowId];
-		}
-
-		builder.rebuildLayoutButtonTypoPreviewStylesheet(preview);
 	}
 
 	builder.rebuildHoverPreviewStylesheet = function(preview) {
@@ -1544,9 +1503,7 @@
 				builder.readRepeaterPartSlug(repeaterItem) === "categories" &&
 				builder.isStyle2LayoutPreview(preview)
 			) {
-				rule +=
-					scope +
-					" a.ecbb-event-card__category:hover{color:#0d55d8!important;background-color:#d4e4ff!important;}";
+				rule += builder.buildStyle2CategoryDefaultHoverRule(scope);
 			}
 			if (hoverColor) {
 				rule +=
@@ -1587,4 +1544,3 @@
 		builder.syncHoverPreviewStyleRules(repeaterItem);
 	}
 })(window.ECBB.builder);
-

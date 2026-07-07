@@ -73,7 +73,7 @@ if ( ! class_exists( 'ECBB_Cost_Formatter', false ) ) {
 			if ( isset( $aliases[ $code ] ) ) {
 				return $aliases[ $code ];
 			}
-			return array_key_exists( $code, self::ecbb_cost_currency_opts() ) ? $code : 'default';
+			return isset( $aliases[ $code ] ) ? $aliases[ $code ] : ( isset( self::symbols()[ $code ] ) ? $code : 'default' );
 		}
 
 		/** True when token is zero or a common “free” label. */
@@ -181,8 +181,10 @@ if ( ! class_exists( 'ECBB_Cost_Formatter', false ) ) {
 			if ( function_exists( 'tribe_get_cost' ) ) {
 				$formatted = trim( wp_strip_all_tags( html_entity_decode( (string) tribe_get_cost( $post_id, $with_sym ), ENT_QUOTES, 'UTF-8' ) ) );
 			}
-			$raw  = trim( wp_strip_all_tags( html_entity_decode( (string) get_post_meta( $post_id, '_EventCost', true ), ENT_QUOTES, 'UTF-8' ) ) );
-			$cost = $formatted !== '' ? $formatted : $raw;
+			$cost = $formatted;
+			if ( $cost === '' ) {
+				$cost = trim( wp_strip_all_tags( html_entity_decode( (string) get_post_meta( $post_id, '_EventCost', true ), ENT_QUOTES, 'UTF-8' ) ) );
+			}
 
 			if ( $cost === '' || self::ecbb_cost_is_free( $cost ) ) {
 				return __( 'Free', 'events-calendar-for-bricks' );

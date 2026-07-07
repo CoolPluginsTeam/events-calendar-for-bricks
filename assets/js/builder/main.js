@@ -6,6 +6,10 @@
 	"use strict";
 	builder.initPreviewSyncRegistry = function() {
 		builder.sync.registry.length = 0;
+		if (builder.sync.handlersByKey) {
+			builder.sync.handlersByKey.clear();
+		}
+		builder.sync.handlersByKeyFallback = {};
 
 		builder.createPreviewSyncHandler({
 			id: "layoutActionButtonPreview",
@@ -39,6 +43,13 @@
 
 		builder.createPreviewSyncHandler({
 			id: "style1GridMetaListRowPreview",
+			matches: function (item) {
+				var part = builder.readRepeaterPartSlug(item);
+				return (
+					part !== "" &&
+					builder.config.style2MetaIconParts.indexOf(part) !== -1
+				);
+			},
 			controlKeys: [
 				"ecbb_background",
 				"ecbb_margin",
@@ -109,15 +120,37 @@
 			return;
 		}
 		var keys = builder.getRepeaterControlKeysFromEvent(e);
+		var seen = typeof Set !== "undefined" ? new Set() : null;
+		var seenFallback = {};
 		var i;
 		var k;
 		var j;
-		for (i = 0; i < builder.sync.registry.length; i++) {
-			for (j = 0; j < keys.length; j++) {
-				k = keys[j];
-				if (k && builder.sync.registry[i].handlesKey(k)) {
-					builder.sync.registry[i].schedule(item);
+		var handlers;
+		for (j = 0; j < keys.length; j++) {
+			k = keys[j];
+			if (!k) {
+				continue;
+			}
+			handlers = builder.sync.handlersByKey
+				? builder.sync.handlersByKey.get(k)
+				: (builder.sync.handlersByKeyFallback
+					? builder.sync.handlersByKeyFallback[k]
+					: null);
+			if (!handlers) {
+				continue;
+			}
+			for (i = 0; i < handlers.length; i++) {
+				if (seen) {
+					if (seen.has(handlers[i])) {
+						continue;
+					}
+					seen.add(handlers[i]);
+				} else if (seenFallback[handlers[i].id]) {
+					continue;
+				} else {
+					seenFallback[handlers[i].id] = true;
 				}
+				handlers[i].schedule(item);
 			}
 		}
 	}

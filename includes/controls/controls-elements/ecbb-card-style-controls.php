@@ -44,6 +44,25 @@ if ( ! class_exists( 'ECBB_Card_Style_Controls', false ) ) {
 			],
 		];
 
+		$element->controls['ecbb_card_text_color'] = [
+			'tab'         => 'style',
+			'group'       => 'events_card',
+			'label'       => esc_html__( 'Text color', 'events-calendar-for-bricks' ),
+			'type'        => 'color',
+			'placeholder' => '',
+			'responsive'  => true,
+			'css'         => [
+				[
+					'property' => '--ecbb-card-fg',
+					'selector' => '&',
+				],
+				[
+					'property' => 'color',
+					'selector' => '& .event-list-card__body, & .ecbb-event-card__content, & .event-grid-card__content',
+				],
+			],
+		];
+
 		$element->controls['ecbb_sep_card_border'] = [
 			'tab'   => 'style',
 			'group' => 'events_card',
@@ -502,7 +521,7 @@ if ( ! class_exists( 'ECBB_Card_Style_Controls', false ) ) {
 		'list1' => [
 			'toggle_key'      => 'list1_show_category_badge',
 			'toggle_required' => [
-				[ 'show_event_image', '!=', true ],
+				[ 'hide_event_image', '!=', true ],
 					[ 'layout_template', '=', 'list' ],
 					[ 'list_item_style', '=', 'style-1' ],
 				],
@@ -513,7 +532,7 @@ if ( ! class_exists( 'ECBB_Card_Style_Controls', false ) ) {
 		'grid'  => [
 			'toggle_key'      => 'grid_show_category_badge',
 			'toggle_required' => [
-				[ 'show_event_image', '!=', true ],
+				[ 'hide_event_image', '!=', true ],
 					[ 'layout_template', '=', 'grid' ],
 				],
 				'sep_key'         => 'ecbb_sep_style_image_category_grid',

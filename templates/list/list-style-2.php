@@ -81,10 +81,9 @@ if ( ! class_exists( 'ECBB_List_2', false ) ) {
 			if ( $post_id < 1 ) {
 				return [ false, false ];
 			}
-			$start_raw = \ECBB_Markup::ecbb_event_start_date_raw( $post_id );
-			$end_raw   = \ECBB_Markup::ecbb_event_end_date_raw( $post_id );
-			$start_ts  = $start_raw ? strtotime( $start_raw ) : false;
-			$end_ts    = $end_raw ? strtotime( $end_raw ) : $start_ts;
+			$dates    = ECBB_Event_Data::ecbb_event_meta_dates( $post_id );
+			$start_ts = ! empty( $dates['start'] ) ? strtotime( $dates['start'] ) : false;
+			$end_ts   = ! empty( $dates['end'] ) ? strtotime( $dates['end'] ) : $start_ts;
 			if ( ! $start_ts ) {
 				return [ false, false ];
 			}

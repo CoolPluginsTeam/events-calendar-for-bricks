@@ -19,12 +19,6 @@ if ( ! class_exists( 'ECBB_Part_Options', false ) ) {
 			return array_merge( $options, ECBB_Meta_Combo::ecbb_meta_combo_options_style1() );
 		}
 
-		public static function ecbb_part_options() {
-			$options = self::ecbb_part_options_shared();
-
-			return array_merge( $options, ECBB_Meta_Combo::ecbb_meta_combo_options_style2() );
-		}
-
 		public static function ecbb_part_options_shared() {
 			return [
 			'title'       => esc_html__( 'Title', 'events-calendar-for-bricks' ),

@@ -358,17 +358,7 @@ if ( ! class_exists( 'ECBB_Part_Renderer', false ) ) {
 		}
 
 		public static function ecbb_render_part_event_tickets( $post, array $item, $idx, $style, $skin = '' ) {
-			$url = '';
-			if ( function_exists( 'tribe_get_event' ) ) {
-				$ev = tribe_get_event( $post->ID );
-				if ( $ev && ! empty( $ev->website ) ) {
-					$url = esc_url_raw( (string) $ev->website );
-				}
-			}
-			if ( $url === '' ) {
-				$m   = get_post_meta( $post->ID, '_EventUrl', true );
-				$url = $m ? esc_url_raw( (string) $m ) : '';
-			}
+			$url = esc_url_raw( ECBB_Event_Data::ecbb_part_detail_text( $post->ID, 'event_website' ) );
 			if ( $url === '' ) {
 				return '';
 			}

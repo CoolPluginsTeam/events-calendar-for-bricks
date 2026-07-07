@@ -113,13 +113,6 @@ if (! class_exists('ECBB_Query', false)) {
 				return array_values(array_unique($category_slugs));
 			}
 
-			if (! empty($settings['category_slug'])) {
-				$sanitized_slug = sanitize_title((string) $settings['category_slug']);
-				if ('' !== $sanitized_slug) {
-					return [$sanitized_slug];
-				}
-			}
-
 			return [];
 		}
 
