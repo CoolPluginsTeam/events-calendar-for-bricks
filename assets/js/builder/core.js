@@ -72,6 +72,8 @@
 		iframeEl: null,
 		iframeDoc: null,
 		repeaterCssCache: typeof Map !== "undefined" ? new Map() : null,
+		resyncTimer: 0,
+		resyncInFlight: false,
 	};
 	builder.hover = {
 		rulesByRowId: {},

@@ -298,25 +298,56 @@
 				builder.invalidateBricksPreviewDocumentCache();
 			});
 		}
-		var previewIframeMutationObserver = new MutationObserver(builder.scheduleRepeaterRowScan);
+		var previewIframeMutationObserver = new MutationObserver(function () {
+			builder.schedulePreviewResync(true);
+		});
 		previewIframeMutationObserver.observe(preview.body, {
 			childList: true,
 			subtree: true,
 		});
 	}
 
-	builder.scanRepeaterRowsAndSyncPreview = function() {
-		document
-			.querySelectorAll(
-				'#bricks-panel-element [data-control-key^="parts_"] .repeater-item'
-			)
-			.forEach(function (item) {
+	builder.getEventPartsRepeaterPanelScope = function() {
+		return (
+			document.querySelector("#bricks-panel-element") ||
+			builder.getBricksBuilderPanelRoot()
+		);
+	};
+
+	builder.scanRepeaterRowsForTabs = function() {
+		var scope = builder.getEventPartsRepeaterPanelScope();
+		scope.querySelectorAll(".repeater-item").forEach(function (item) {
+			if (!builder.isEventPartsRepeaterRow(item)) {
+				return;
+			}
 			builder.ensureRepeaterContentStyleTabs(item);
 			builder.syncRepeaterHoverPanelState(item);
 			builder.initRepeaterPanelAccordions(item);
 		});
+	};
+
+	builder.schedulePreviewResync = function(includeDelayed) {
+		if (builder.preview.resyncTimer) {
+			clearTimeout(builder.preview.resyncTimer);
+		}
+		builder.preview.resyncTimer = setTimeout(function () {
+			builder.preview.resyncTimer = 0;
+			if (builder.preview.resyncInFlight) {
+				return;
+			}
+			builder.preview.resyncInFlight = true;
+			try {
+				builder.runAllPreviewSyncHandlers(includeDelayed !== false);
+			} finally {
+				builder.preview.resyncInFlight = false;
+			}
+		}, 120);
+	};
+
+	builder.scanRepeaterRowsAndSyncPreview = function() {
+		builder.scanRepeaterRowsForTabs();
 		builder.hookPreviewIframeMutationResync();
-		builder.runAllPreviewSyncHandlers(true);
+		builder.schedulePreviewResync(true);
 	}
 
 	builder.isRepeaterSortActive = function() {

@@ -27,7 +27,7 @@
 			builder.sync.handlersByKeyFallback = {};
 		}
 		for (i = 0; i < controlKeys.length; i++) {
-			key = controlKeys[i];
+			var key = controlKeys[i];
 			if (!key) {
 				continue;
 			}
