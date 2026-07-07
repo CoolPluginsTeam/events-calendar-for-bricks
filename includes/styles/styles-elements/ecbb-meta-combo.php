@@ -97,7 +97,7 @@ if ( ! class_exists( 'ECBB_Meta_Combo', false ) ) {
 		}
 
 		public static function ecbb_meta_combo_slugs_style1() {
-			return self::ecbb_meta_combo_slugs_for_segments( [ 'venue', 'time' ] );
+			return self::ecbb_meta_combo_slugs_style2();
 		}
 
 		public static function ecbb_meta_combo_options( array $slugs ) {

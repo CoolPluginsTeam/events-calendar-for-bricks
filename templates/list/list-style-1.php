@@ -64,14 +64,6 @@ if ( ! class_exists( 'ECBB_List_1', false ) ) {
 			return $row;
 		}
 
-		protected static function ecbb_filter_parts( array $clean ) {
-			$blocked = class_exists( 'ECBB_Styles', false )
-				? array_values( array_diff( \ECBB_Styles::ecbb_meta_combo_all_slugs(), \ECBB_Styles::ecbb_meta_combo_slugs_style1() ) )
-				: [ 'venue_time_cost' ];
-
-			return static::ecbb_filter_blocked_parts( $clean, $blocked );
-		}
-
 		protected static function ecbb_card_base_class() {
 			return 'event-list-card ecbb-ev__item-inner ecbb-ev__item-inner--style1';
 		}

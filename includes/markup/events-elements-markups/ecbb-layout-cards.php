@@ -298,7 +298,12 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 					$meta_rows[] = [
 						'idx'   => (int) $i,
 						'item'  => $item,
-						'price' => ( $ui === 'event_cost' || $slug === 'event_cost' ),
+						'price' => ( $ui === 'event_cost' || $slug === 'event_cost' )
+							|| (
+								class_exists( 'ECBB_Styles', false )
+								&& \ECBB_Styles::ecbb_is_meta_combo_slug( $ui )
+								&& \ECBB_Styles::ecbb_meta_combo_has_segment( $ui, 'cost' )
+							),
 					];
 					continue;
 				}
