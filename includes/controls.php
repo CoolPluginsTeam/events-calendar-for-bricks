@@ -525,7 +525,7 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 				'required'    => [ 'part', '=', 'image' ],
 				'css'         => self::ecbb_field_css(
 					'width',
-					'.ecbb-event__image, .ecbb-event__img-stack'
+					'.ecbb-event__image'
 				),
 			],
 			'ecbb_image_height' => [

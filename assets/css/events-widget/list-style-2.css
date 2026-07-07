@@ -337,15 +337,11 @@
 	transform: translateY(-2px) !important;
 }
 
-.ecbb-ev .ecbb-style2-categories:not(.ecbb-no-hover):not(.ecbb-has-hover-fg) a.ecbb-event-card__category:hover,
-.ecbb-ev .ecbb-style2-categories:not(.ecbb-no-hover):not(.ecbb-has-hover-fg) a.ecbb-event-card__category:focus-visible,
 .ecbb-ev .ecbb-event-card__top:not(.ecbb-no-hover):not(.ecbb-has-hover-fg) a.ecbb-event-card__category:hover,
 .ecbb-ev .ecbb-event-card__top:not(.ecbb-no-hover):not(.ecbb-has-hover-fg) a.ecbb-event-card__category:focus-visible {
 	color: var(--ecbb-hover-fg, var(--ecbb-chip-fg, var(--ecbb-accent))) !important;
 }
 
-.ecbb-ev .ecbb-style2-categories:not(.ecbb-no-hover):not(.ecbb-has-hover-bg) a.ecbb-event-card__category:hover,
-.ecbb-ev .ecbb-style2-categories:not(.ecbb-no-hover):not(.ecbb-has-hover-bg) a.ecbb-event-card__category:focus-visible,
 .ecbb-ev .ecbb-event-card__top:not(.ecbb-no-hover):not(.ecbb-has-hover-bg) a.ecbb-event-card__category:hover,
 .ecbb-ev .ecbb-event-card__top:not(.ecbb-no-hover):not(.ecbb-has-hover-bg) a.ecbb-event-card__category:focus-visible {
 	background-color: var(--ecbb-accent-soft, #d4e4ff) !important;

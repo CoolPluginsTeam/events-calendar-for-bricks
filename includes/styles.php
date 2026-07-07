@@ -1099,14 +1099,6 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 			return $row;
 		}
 
-		public static function ecbb_part_slug_venue_time() {
-			return 'venue_time';
-		}
-
-		public static function ecbb_part_slug_venue_time_cost() {
-			return 'venue_time_cost';
-		}
-
 		public static function ecbb_part_options_shared() {
 			return [
 			'title'       => esc_html__( 'Title', 'events-calendar-for-bricks' ),

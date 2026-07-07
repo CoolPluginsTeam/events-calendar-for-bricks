@@ -393,17 +393,6 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 		}
 
 		public static function ecbb_render_meta_lists( $post, array $meta_primary, array $meta_price, $skin, $layout, callable $emit_li ) {
-			if ( $layout === 'style1' ) {
-				$rows = $meta_primary;
-				if ( $rows === [] ) {
-					$rows = $meta_price;
-				}
-				if ( $rows !== [] ) {
-					self::ecbb_render_style1_meta_lists( $post, $rows, $emit_li );
-				}
-				return;
-			}
-
 			$all = array_merge( $meta_primary, $meta_price );
 			if ( $all === [] ) {
 				return;

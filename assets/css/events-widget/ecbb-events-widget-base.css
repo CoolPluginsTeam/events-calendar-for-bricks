@@ -275,10 +275,6 @@
 	height: 1.2em;
 }
 
-.ecbb-ev .ecbb-event__meta-sep {
-	display: none;
-}
-
 .ecbb-ev .ecbb-event-card__meta-item .ecbb-event__meta-group {
 	min-width: 0;
 }
@@ -503,43 +499,6 @@
 	display: inline-block;
 	width: fit-content;
 	max-width: 100%;
-}
-
-/* Featured image: optional second WP size on hover (crossfade). */
-.ecbb-event-part--image.ecbb-is-dual-img .ecbb-event__img-stack,
-.ecbb-style2-image.ecbb-is-dual-img .ecbb-event__img-stack {
-	position: relative;
-	display: block;
-	line-height: 0;
-}
-
-.ecbb-event-part--image.ecbb-is-dual-img .ecbb-event__image--base,
-.ecbb-style2-image.ecbb-is-dual-img .ecbb-event__image--base {
-	transition: opacity 0.35s ease;
-	vertical-align: top;
-}
-
-.ecbb-event-part--image.ecbb-is-dual-img .ecbb-event__image--hover,
-.ecbb-style2-image.ecbb-is-dual-img .ecbb-event__image--hover {
-	position: absolute;
-	left: 0;
-	top: 0;
-	width: 100%;
-	height: 100%;
-	opacity: 0;
-	transition: opacity 0.35s ease;
-	pointer-events: none;
-}
-
-.ecbb-event-part--image.ecbb-is-dual-img:not(.ecbb-no-hover):hover .ecbb-event__image--hover,
-.ecbb-style2-image.ecbb-is-dual-img:not(.ecbb-no-hover):hover .ecbb-event__image--hover {
-	opacity: 1;
-	pointer-events: auto;
-}
-
-.ecbb-event-part--image.ecbb-is-dual-img:not(.ecbb-no-hover):hover .ecbb-event__image--base,
-.ecbb-style2-image.ecbb-is-dual-img:not(.ecbb-no-hover):hover .ecbb-event__image--base {
-	opacity: 0;
 }
 
 /* Layout shells: neutral ecbb wrappers (layout CSS files own colors). */
