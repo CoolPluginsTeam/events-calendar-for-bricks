@@ -351,16 +351,19 @@ if ( ! class_exists( 'ECBB_Settings_Normalizer', false ) ) {
 				$settings['grid_show_category_badge']  = $legacy_val;
 			}
 
-			if ( array_key_exists( 'show_event_image', $settings ) ) {
-				$raw = $settings['show_event_image'];
-				if ( is_bool( $raw ) ) {
-					$settings['show_event_image'] = $raw ? 'show' : 'hide';
-				} elseif ( $raw === true || $raw === 1 || $raw === '1' || $raw === 'yes' || $raw === 'on' ) {
-					$settings['show_event_image'] = 'show';
-				} elseif ( $raw === false || $raw === 0 || $raw === '0' || $raw === 'no' || $raw === 'off' || $raw === '' || $raw === null ) {
-					$settings['show_event_image'] = 'hide';
-				}
+		if ( array_key_exists( 'show_event_image', $settings ) ) {
+			$raw = $settings['show_event_image'];
+			if ( $raw === 'show' || $raw === 'hide' ) {
+				// Legacy select string — keep as-is.
+			} elseif ( is_bool( $raw ) ) {
+				// Checkbox: true = hide image, false = show image.
+				$settings['show_event_image'] = $raw ? 'hide' : 'show';
+			} elseif ( $raw === 1 || $raw === '1' || $raw === 'yes' || $raw === 'on' ) {
+				$settings['show_event_image'] = 'hide';
+			} elseif ( $raw === 0 || $raw === '0' || $raw === 'no' || $raw === 'off' || $raw === '' || $raw === null ) {
+				$settings['show_event_image'] = 'show';
 			}
+		}
 
 			foreach ( [ 'list1_show_category_badge', 'grid_show_category_badge', 'style2_show_date_badge', 'list1_show_date_column' ] as $key ) {
 				if ( ! array_key_exists( $key, $settings ) ) {
@@ -370,7 +373,8 @@ if ( ! class_exists( 'ECBB_Settings_Normalizer', false ) ) {
 				if ( $raw === 'show' || $raw === 'hide' ) {
 					continue;
 				}
-				$settings[ $key ] = ECBB_Markup::ecbb_parse_bricks_checkbox( $raw ) ? 'show' : 'hide';
+				// Checkbox: true = hide, false/absent = show.
+			$settings[ $key ] = ECBB_Markup::ecbb_parse_bricks_checkbox( $raw ) ? 'hide' : 'show';
 			}
 
 			return $settings;

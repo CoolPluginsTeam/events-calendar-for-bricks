@@ -263,14 +263,20 @@ if ( ! class_exists( 'ECBB_Plugin', false ) ) {
 
 			self::ecbb_load_markup_dependencies();
 
-			$settings = \ECBB_Markup::ecbb_norm_settings_hover( $settings );
+		$settings = \ECBB_Markup::ecbb_norm_settings_hover( $settings );
 
-			$settings = \ECBB_Markup::ecbb_migrate_cost_currency( $settings );
+		$settings = \ECBB_Markup::ecbb_migrate_cost_currency( $settings );
 
-			$settings = \ECBB_Markup::ecbb_norm_layout_shell_settings( $settings );
+		$settings = \ECBB_Markup::ecbb_norm_layout_shell_settings( $settings );
 
-			return $settings;
+		// Migrate legacy select value ('show'/'hide') to new checkbox boolean
+		// (true = hide image, false/absent = show image).
+		if ( isset( $settings['show_event_image'] ) && is_string( $settings['show_event_image'] ) ) {
+			$settings['show_event_image'] = ( $settings['show_event_image'] === 'hide' );
 		}
+
+		return $settings;
+	}
 
 		/**
 		* Register custom elements
