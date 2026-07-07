@@ -8,8 +8,9 @@
 	gap: 0;
 	align-items: stretch;
 	background: var(--ecbb-card-bg, var(--color-card-bg));
+	color: var(--ecbb-card-fg, inherit);
 	border: 1px solid var(--color-border);
-	border-radius: 20px;
+	border-radius: var(--ecbb-card-radius, 20px);
 	width: 100%;
 }
 
@@ -34,28 +35,60 @@
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	padding-top: 2px;
-	padding-right: 15px;
+	align-self: stretch;
+	justify-content: flex-start;
+	padding: 2px 15px 2px 2px;
 	color: var(--color-primary);
 	border-right: 1px solid var(--color-border);
+	min-height: 0;
+}
+
+.ecbb-ev .event-list-card__date-inner {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
 	gap: 5px;
+	background: var(--ecbb-list1-date-bg, transparent);
+	font-size: 11px;
+	font-weight: 500;
+	line-height: 1;
+	text-transform: uppercase;
+	color: inherit;
+}
+
+.ecbb-ev.ecbb-list1-date-align--top .event-list-card__date {
+	justify-content: flex-start;
+}
+
+.ecbb-ev.ecbb-list1-date-align--center .event-list-card__date {
+	justify-content: center;
+}
+
+.ecbb-ev.ecbb-list1-date-align--bottom .event-list-card__date {
+	justify-content: flex-end;
 }
 
 .ecbb-ev .event-list-card__day {
 	display: block;
-	font-size: 35px;
+	font-size: 3.182em;
 	font-weight: 700;
 	line-height: 0.95;
 	letter-spacing: -0.04em;
+	font-family: inherit;
+	text-transform: inherit;
+	color: inherit;
 }
 
 .ecbb-ev .event-list-card__month {
 	display: block;
 	margin-top: 5px;
-	font-size: 11px;
-	font-weight: 500;
-	line-height: 1;
-	text-transform: uppercase;
+	font-size: 1em;
+	font-weight: inherit;
+	line-height: inherit;
+	letter-spacing: inherit;
+	font-family: inherit;
+	text-transform: inherit;
+	color: inherit;
 }
 
 .ecbb-ev .event-list-card__date--month_day .event-list-card__month {
@@ -107,12 +140,30 @@
 }
 
 .ecbb-ev .event-meta--list {
-	gap: 12px 18px;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: var(--ecbb-meta-row-gap, 12px);
 	margin: 0;
 	padding: 0;
 	list-style: none;
 	font-size: 14px;
 	line-height: 1.4;
+	width: 100%;
+}
+
+/* Combo rows (venue + time, etc.): full-width horizontal segment groups. */
+.ecbb-ev .event-meta--list > li.ecbb-meta-list-row:has(.ecbb-event__meta-group) {
+	display: flex;
+	align-items: center;
+	width: 100%;
+	max-width: 100%;
+}
+
+.ecbb-ev .event-meta--list > li.ecbb-meta-list-row .ecbb-event__meta-group {
+	flex-wrap: nowrap;
+	width: 100%;
+	min-width: 0;
 }
 
 /* Style 1 meta row: icon + text are one styled unit (the <li>). */
@@ -237,9 +288,14 @@
 	.ecbb-ev .event-list-card__date {
 		flex-direction: row;
 		align-items: baseline;
-		gap: 7px;
 		padding-right: 0;
 		border-right: none;
+	}
+
+	.ecbb-ev .event-list-card__date-inner {
+		flex-direction: row;
+		align-items: baseline;
+		gap: 7px;
 	}
 
 	.ecbb-ev .event-list-card__day {

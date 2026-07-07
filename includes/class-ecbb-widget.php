@@ -48,7 +48,12 @@ class ECBB_Widget extends \Bricks\Element
 		];
 
 		$this->control_groups['events_card'] = [
-			'title' => esc_html__( 'Events card', 'events-calendar-for-bricks' ),
+			'title' => esc_html__( 'Events Cards', 'events-calendar-for-bricks' ),
+			'tab'   => 'style',
+		];
+
+		$this->control_groups['style1_date'] = [
+			'title' => esc_html__( 'Date', 'events-calendar-for-bricks' ),
 			'tab'   => 'style',
 		];
 
@@ -469,9 +474,10 @@ class ECBB_Widget extends \Bricks\Element
 	 * @return string Sanitized CSS or empty string.
 	 */
 	private function ecbb_build_widget_css( $scope_class, array $settings, array $parts_effective, array $layout ) {
-		$style_css = [];
-		$hover_css = [];
-		if ( class_exists( 'ECBB_Styles', false ) ) {
+		$style_css  = [];
+		$hover_css  = [];
+		$has_styles = class_exists( 'ECBB_Styles', false );
+		if ( $has_styles ) {
 			list( $style_css, $hover_css ) = \ECBB_Styles::ecbb_parts_css(
 				$parts_effective,
 				$scope_class,
@@ -480,15 +486,15 @@ class ECBB_Widget extends \Bricks\Element
 			);
 		}
 
-		$gap_css = class_exists( 'ECBB_Styles', false )
+		$gap_css = $has_styles
 			? \ECBB_Styles::ecbb_gap_responsive_css( $settings, '.' . $scope_class )
 			: '';
 
-		$grid_css = ( $layout['template'] === 'grid' && class_exists( 'ECBB_Styles', false ) )
+		$grid_css = ( $layout['template'] === 'grid' && $has_styles )
 			? \ECBB_Styles::ecbb_grid_cols_css( $settings, '.' . $scope_class )
 			: '';
 
-		$shell_css = class_exists( 'ECBB_Styles', false )
+		$shell_css = $has_styles
 			? \ECBB_Styles::ecbb_layout_shell_css(
 				$settings,
 				$scope_class,
@@ -640,8 +646,8 @@ class ECBB_Widget extends \Bricks\Element
 			$this->set_attribute( '_root', 'class', 'ecbb-vig--' . sanitize_html_class( $vignette ) );
 		}
 
-		foreach ( \ECBB_Markup::ecbb_shell_hover_root_classes( $settings ) as $hover_class ) {
-			$this->set_attribute( '_root', 'class', $hover_class );
+		foreach ( \ECBB_Markup::ecbb_shell_style_root_classes( $settings ) as $shell_class ) {
+			$this->set_attribute( '_root', 'class', $shell_class );
 		}
 
 		$layout   = $this->ecbb_get_layout_context();

@@ -400,6 +400,41 @@ if ( ! class_exists( 'ECBB_Settings_Normalizer', false ) ) {
 			return $classes;
 		}
 
+		/**
+		 * Root CSS classes for Style tab shell presets (hover, date alignment, badge hover).
+		 *
+		 * @param array<string,mixed> $settings Widget settings.
+		 * @return string[]
+		 */
+		public static function ecbb_shell_style_root_classes( array $settings ) {
+			$classes = self::ecbb_shell_hover_root_classes( $settings );
+
+			if ( self::ecbb_show_list1_date_column( $settings ) ) {
+				$align = isset( $settings['ecbb_list1_date_align'] ) ? sanitize_key( (string) $settings['ecbb_list1_date_align'] ) : 'top';
+				if ( ! in_array( $align, [ 'top', 'center', 'bottom' ], true ) ) {
+					$align = 'top';
+				}
+				$classes[] = 'ecbb-list1-date-align--' . $align;
+			}
+
+			if ( ! class_exists( 'ECBB_Controls', false ) ) {
+				return $classes;
+			}
+
+			if ( self::ecbb_show_shell_category_badge( $settings ) ) {
+				$layout = self::ecbb_sanitize_layout_template( $settings );
+				$anim_key = $layout['template'] === 'grid'
+					? 'ecbb_shell_category_hover_animation_grid'
+					: 'ecbb_shell_category_hover_animation';
+				$cat_hover = \ECBB_Controls::ecbb_sanitize_hover_animation_slug( $settings[ $anim_key ] ?? '' );
+				if ( $cat_hover !== '' && $cat_hover !== 'none' ) {
+					$classes[] = 'ecbb-shell-cat-hover--' . sanitize_html_class( $cat_hover );
+				}
+			}
+
+			return $classes;
+		}
+
 		/** True when a shell show/hide select (or legacy checkbox) is on. */
 		public static function ecbb_shell_select_on( array $settings, $key, $default = 'show' ) {
 			if ( ! array_key_exists( $key, $settings ) ) {

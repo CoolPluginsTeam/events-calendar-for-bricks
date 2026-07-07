@@ -58,7 +58,9 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 			$day   = '<span class="event-list-card__day">' . esc_html( date_i18n( 'd', $start_ts ) ) . '</span>';
 			$month = '<span class="event-list-card__month">' . esc_html( date_i18n( 'M', $start_ts ) ) . '</span>';
 			$inner = ( $order === 'day_month' ) ? $day . $month : $month . $day;
-			return '<div class="event-list-card__date event-list-card__date--' . esc_attr( $order ) . '">' . $inner . '</div>';
+			return '<div class="event-list-card__date event-list-card__date--' . esc_attr( $order ) . '">'
+				. '<div class="event-list-card__date-inner">' . $inner . '</div>'
+				. '</div>';
 		}
 
 		public static function ecbb_list2_date_badge( $post, $settings = [] ) {
@@ -690,10 +692,8 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 
 		public static function ecbb_shell_skip_part( $slug, $layout ) {
 			$slug = (string) $slug;
-			if ( in_array( $slug, [ 'image', 'read_more', 'event_date', 'event_day' ], true ) ) {
-				return true;
-			}
-			if ( $slug === 'categories' && $layout === 'style1' ) {
+			unset( $layout );
+			if ( in_array( $slug, [ 'read_more', 'event_date', 'event_day' ], true ) ) {
 				return true;
 			}
 			return false;

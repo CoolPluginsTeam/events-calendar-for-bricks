@@ -51,10 +51,6 @@ if ( ! class_exists( 'ECBB_List_2', false ) ) {
 			return \ECBB_Markup::ecbb_parts_preserve_bricks_rows( $parts, self::ecbb_default_parts() );
 		}
 
-		protected static function ecbb_filter_parts( array $clean ) {
-			return static::ecbb_filter_blocked_parts( $clean, [ 'image' ] );
-		}
-
 		protected static function ecbb_normalize_row( array $row ) {
 			if ( class_exists( 'ECBB_Styles', false ) ) {
 				$row = \ECBB_Styles::ecbb_normalize_meta_combo_row( $row );

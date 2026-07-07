@@ -9,12 +9,14 @@
 	align-items: stretch;
 	padding: 22px 36px 22px 22px;
 	background: var(--ecbb-card-bg, var(--color-card-bg));
+	color: var(--ecbb-card-fg, inherit);
 	border: 1px solid var(--color-border);
-	border-radius: 22px;
+	border-radius: var(--ecbb-card-radius, 22px);
 	box-shadow: 0 14px 34px rgba(15, 23, 42, 0.06);
 	width: 100%;
 	--ecbb-card-hover-border-color: rgba(13, 82, 210, 0.14);
 	--ecbb-card-hover-shadow: 0 20px 46px rgba(15, 23, 42, 0.1);
+	--ecbb-meta-gap: 24px;
 }
 
 .ecbb-ev .ecbb-event-card__image-wrap {
@@ -69,7 +71,7 @@
 	display: flex;
 	min-width: 0;
 	flex-direction: column;
-	gap: 12px;
+	gap: var(--ecbb-meta-gap, 24px);
 	padding: 14px 0;
 }
 
@@ -136,40 +138,49 @@
 }
 
 .ecbb-ev .ecbb-event-card__meta {
-	display: flex;
-	flex-wrap: nowrap;
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
 	align-items: center;
-	gap: 24px 44px;
+	column-gap: var(--ecbb-meta-segment-gap, var(--ecbb-meta-gap, 24px));
+	row-gap: var(--ecbb-meta-row-gap, var(--ecbb-meta-gap, 24px));
+	width: 100%;
+	margin: 0;
+	padding: 0;
+	list-style: none;
 }
 
-.ecbb-ev .ecbb-event-card__meta-item {
-	display: inline-flex;
+/* Combo rows: unwrap list item wrappers so segments share one equal-width grid. */
+.ecbb-ev .ecbb-event-card__meta-item:has(.ecbb-event__meta-group) {
+	display: contents;
+}
+
+.ecbb-ev .ecbb-event-card__meta-item:has(.ecbb-event__meta-group) > .ecbb-event-part {
+	display: contents;
+	margin: 0;
+	padding: 0;
+	background: transparent;
+	border: none;
+}
+
+.ecbb-ev .ecbb-event-card__meta-item:has(.ecbb-event__meta-group) .ecbb-event__meta-group {
+	display: contents;
+}
+
+/* Single-field meta rows (no combo) span the full grid width. */
+.ecbb-ev .ecbb-event-card__meta-item:not(:has(.ecbb-event__meta-group)) {
+	display: flex;
 	align-items: center;
 	gap: 13px;
+	grid-column: 1 / -1;
 	min-width: 0;
-	flex: 1 1 0;
+	width: 100%;
+	flex: 0 0 auto;
 	color: #001d3d;
 	font-size: 13px;
 	font-weight: 500;
 	line-height: 1.35;
 	overflow: hidden;
-}
-
-.ecbb-ev .ecbb-event-card .ecbb-event-card__meta-item > .ecbb-event-part {
-	display: block;
-	min-width: 0;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-/* Composite meta (venue + time + cost): spaced segments with boxed icons. */
-.ecbb-ev .ecbb-event-card__meta-item .ecbb-event__meta-group {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 44px;
-	width: 100%;
+	margin: 0;
 }
 
 .ecbb-ev .ecbb-event-card__meta-item .ecbb-event__meta-segment {
@@ -177,8 +188,18 @@
 	align-items: center;
 	gap: 13px;
 	min-width: 0;
-	flex: 0 1 auto;
 	max-width: 100%;
+}
+
+.ecbb-ev .ecbb-event-card .ecbb-event-card__meta-item:not(:has(.ecbb-event__meta-group)) > .ecbb-event-part {
+	display: flex;
+	flex: 1 1 auto;
+	min-width: 0;
+	overflow: hidden;
+	margin: 0;
+	padding: 0;
+	background: transparent;
+	border: none;
 }
 
 .ecbb-ev .ecbb-event-card__meta-item .ecbb-event__meta-text {
@@ -228,9 +249,8 @@
 
 @media (max-width: 860px) {
 	.ecbb-ev .ecbb-event-card__meta {
-		flex-direction: column;
-		align-items: stretch;
-		gap: 18px;
+		column-gap: var(--ecbb-meta-segment-gap, var(--ecbb-meta-gap, 24px));
+		row-gap: var(--ecbb-meta-row-gap, var(--ecbb-meta-gap, 24px));
 	}
 }
 
@@ -268,13 +288,16 @@
 		margin: 20px 0 18px;
 	}
 
-	.ecbb-ev .ecbb-event-card__meta-item {
+	.ecbb-ev .ecbb-event-card {
+		--ecbb-meta-gap: 16px;
+	}
+
+	.ecbb-ev .ecbb-event-card__meta-item:not(:has(.ecbb-event__meta-group)) {
 		min-width: 0;
-		flex: 1 1 auto;
 		width: 100%;
 	}
 
-	.ecbb-ev .ecbb-event-card .ecbb-event-card__meta-item > .ecbb-event-part {
+	.ecbb-ev .ecbb-event-card .ecbb-event-card__meta-item:not(:has(.ecbb-event__meta-group)) > .ecbb-event-part {
 		white-space: normal;
 		overflow: visible;
 		text-overflow: clip;

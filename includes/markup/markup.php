@@ -50,7 +50,7 @@ if ( ! class_exists( 'ECBB_Markup', false ) ) {
 						'ecbb_hover_on_values', 'ecbb_hover_is_on', 'ecbb_norm_hover_row',
 						'ecbb_norm_parts_hover', 'ecbb_norm_settings_hover', 'ecbb_resolve_parts',
 						'ecbb_migrate_cost_currency', 'ecbb_layout_settings', 'ecbb_norm_layout_shell_settings',
-						'ecbb_shell_hover_root_classes',
+						'ecbb_shell_hover_root_classes', 'ecbb_shell_style_root_classes',
 						'ecbb_shell_select_on', 'ecbb_show_event_image', 'ecbb_show_shell_category_badge',
 						'ecbb_show_style2_date_badge', 'ecbb_show_list1_date_column', 'ecbb_style2_date_badge_order', 'ecbb_list1_date_column_order',
 					],

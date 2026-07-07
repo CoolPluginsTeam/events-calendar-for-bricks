@@ -8,8 +8,9 @@
 	flex-direction: column;
 	height: 100%;
 	background: var(--ecbb-card-bg, var(--color-card-bg));
+	color: var(--ecbb-card-fg, inherit);
 	border: 1px solid var(--color-border);
-	border-radius: 15px;
+	border-radius: var(--ecbb-card-radius, 15px);
 	box-shadow: var(--shadow-card);
 	width: 100%;
 	--ecbb-card-hover-border-color: rgba(33, 71, 199, 0.18);
@@ -128,10 +129,23 @@
 .ecbb-ev .event-meta--grid {
 	flex: 0 0 auto;
 	flex-direction: column;
-	gap: 13px;
+	align-items: flex-start;
+	gap: var(--ecbb-meta-row-gap, 13px);
 	margin-bottom: 15px;
 	font-size: 14px;
 	line-height: 1.35;
+	width: 100%;
+}
+
+.ecbb-ev .event-meta--grid > li:has(.ecbb-event__meta-group) {
+	width: 100%;
+	max-width: 100%;
+}
+
+.ecbb-ev .event-meta--grid .ecbb-event__meta-group {
+	flex-wrap: nowrap;
+	width: 100%;
+	min-width: 0;
 }
 
 .ecbb-ev .event-grid-card__content > .event-button--filled,

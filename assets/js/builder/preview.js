@@ -304,16 +304,12 @@
 		li.style.setProperty("border-radius", "10px", "important");
 
 		if (ul) {
-			if (margin) {
-				ul.style.setProperty("margin", margin, "important");
-			} else {
-				ul.style.removeProperty("margin");
-			}
+			ul.style.setProperty("margin", "0", "important");
 			ul.style.setProperty("padding", "0", "important");
 			ul.style.setProperty("list-style", "none", "important");
 		}
 
-		li.style.setProperty("margin", "0", "important");
+		li.style.setProperty("margin", margin || "0", "important");
 		wrapper.style.setProperty("margin", "0", "important");
 		wrapper.style.setProperty("padding", "0", "important");
 		wrapper.style.setProperty("background-color", "transparent", "important");
@@ -1073,15 +1069,15 @@
 			builder.getRepeaterControlInner(repeaterItem, "ecbb_margin")
 		);
 		if (ul) {
-			if (margin) {
-				ul.style.setProperty("margin", margin, "important");
-			} else {
-				ul.style.removeProperty("margin");
-			}
+			ul.style.setProperty("margin", "0", "important");
 			ul.style.setProperty("padding", "0", "important");
 			ul.style.setProperty("list-style", "none", "important");
 		}
-		li.style.setProperty("margin", "0", "important");
+		if (margin) {
+			li.style.setProperty("margin", margin, "important");
+		} else {
+			li.style.setProperty("margin", "0", "important");
+		}
 		wrapper.style.setProperty("margin", "0", "important");
 
 		var color = builder.readColorControlValue(
