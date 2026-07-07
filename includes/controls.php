@@ -211,12 +211,12 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 		 *
 		 * @return array<int,array{0:string,1:string,2:mixed}>
 		 */
-		public static function ecbb_req_shell_category_style_list1() {
-			return [
-				[ 'show_event_image', '!=', 'hide' ],
+	public static function ecbb_req_shell_category_style_list1() {
+		return [
+			[ 'show_event_image', '!=', true ],
 				[ 'layout_template', '=', 'list' ],
 				[ 'list_item_style', '!=', 'style-2' ],
-				[ 'list1_show_category_badge', '!=', 'hide' ],
+				[ 'list1_show_category_badge', '!=', true ],
 			];
 		}
 
@@ -225,11 +225,11 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 		 *
 		 * @return array<int,array{0:string,1:string,2:mixed}>
 		 */
-		public static function ecbb_req_shell_category_style_grid() {
-			return [
-				[ 'show_event_image', '!=', 'hide' ],
+	public static function ecbb_req_shell_category_style_grid() {
+		return [
+			[ 'show_event_image', '!=', true ],
 				[ 'layout_template', '=', 'grid' ],
-				[ 'grid_show_category_badge', '!=', 'hide' ],
+				[ 'grid_show_category_badge', '!=', true ],
 			];
 		}
 
@@ -238,14 +238,14 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 		 *
 		 * @return array<int,array{0:string,1:string,2:mixed}>
 		 */
-		public static function ecbb_req_shell_date_badge_style() {
-			return [
-				[ 'show_event_image', '!=', 'hide' ],
+	public static function ecbb_req_shell_date_badge_style() {
+		return [
+			[ 'show_event_image', '!=', true ],
 				[ 'layout_template', '=', 'list' ],
 				[ 'list_item_style', '=', 'style-2' ],
-				[ 'style2_show_date_badge', '!=', 'hide' ],
-			];
-		}
+			[ 'style2_show_date_badge', '!=', true ],
+		];
+	}
 
 		/**
 		 * Style tab - List Style 1 date column (independent of featured image).
@@ -256,9 +256,9 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			return [
 				[ 'layout_template', '=', 'list' ],
 				[ 'list_item_style', '=', 'style-1' ],
-				[ 'list1_show_date_column', '!=', 'hide' ],
-			];
-		}
+			[ 'list1_show_date_column', '!=', true ],
+		];
+	}
 
 		/**
 		 * Style tab — List Style 2 card divider.
@@ -277,20 +277,20 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 		 *
 		 * @return array<int,array{0:string,1:string,2:mixed}>
 		 */
-		public static function ecbb_req_featured_image_style() {
-			return [
-				[ 'show_event_image', '!=', 'hide' ],
-			];
-		}
+	public static function ecbb_req_featured_image_style() {
+		return [
+			[ 'show_event_image', '!=', true ],
+		];
+	}
 
 		/**
 		 * Style tab — vignette overlay when a pattern is selected.
 		 *
 		 * @return array<int,array{0:string,1:string,2:mixed}>
 		 */
-		public static function ecbb_req_featured_image_vignette() {
-			return [
-				[ 'show_event_image', '!=', 'hide' ],
+	public static function ecbb_req_featured_image_vignette() {
+		return [
+			[ 'show_event_image', '!=', true ],
 				[ 'ecbb_featured_image_vignette', '!=', '' ],
 				[ 'ecbb_featured_image_vignette', '!=', 'none' ],
 			];
@@ -810,10 +810,10 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 	 */
 	private static function ecbb_category_badge_layout_configs() {
 		return [
-			'list1' => [
-				'toggle_key'      => 'list1_show_category_badge',
-				'toggle_required' => [
-					[ 'show_event_image', '=', 'show' ],
+		'list1' => [
+			'toggle_key'      => 'list1_show_category_badge',
+			'toggle_required' => [
+				[ 'show_event_image', '!=', true ],
 					[ 'layout_template', '=', 'list' ],
 					[ 'list_item_style', '=', 'style-1' ],
 				],
@@ -822,10 +822,10 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 				'typography_key'  => 'ecbb_shell_category_typography',
 				'style_required'  => self::ecbb_req_shell_category_style_list1(),
 			],
-			'grid'  => [
-				'toggle_key'      => 'grid_show_category_badge',
-				'toggle_required' => [
-					[ 'show_event_image', '=', 'show' ],
+		'grid'  => [
+			'toggle_key'      => 'grid_show_category_badge',
+			'toggle_required' => [
+				[ 'show_event_image', '!=', true ],
 					[ 'layout_template', '=', 'grid' ],
 				],
 				'sep_key'         => 'ecbb_sep_style_image_category_grid',
@@ -853,14 +853,9 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 		$element->controls[ $c['toggle_key'] ] = [
 			'tab'      => 'content',
 			'group'    => 'layouts',
-			'label'    => esc_html__( 'Show category on image', 'events-calendar-for-bricks' ),
-			'type'     => 'select',
-			'options'  => [
-				'show' => esc_html__( 'Show', 'events-calendar-for-bricks' ),
-				'hide' => esc_html__( 'Hide', 'events-calendar-for-bricks' ),
-			],
-			'default'  => 'show',
-			'inline'   => true,
+			'label'    => esc_html__( 'Hide category on image', 'events-calendar-for-bricks' ),
+			'type'     => 'checkbox',
+			'default'  => false,
 			'rerender' => true,
 			'required' => $c['toggle_required'],
 		];
@@ -975,14 +970,9 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 		$element->controls['show_event_image'] = [
 			'tab'      => 'content',
 			'group'    => 'layouts',
-			'label'    => esc_html__( 'Show featured image', 'events-calendar-for-bricks' ),
-			'type'     => 'select',
-			'options'  => [
-				'show' => esc_html__( 'Show', 'events-calendar-for-bricks' ),
-				'hide' => esc_html__( 'Hide', 'events-calendar-for-bricks' ),
-			],
-			'default'  => 'show',
-			'inline'   => true,
+			'label'    => esc_html__( 'Hide featured image', 'events-calendar-for-bricks' ),
+			'type'     => 'checkbox',
+			'default'  => false,
 			'rerender' => true,
 		];
 
@@ -997,14 +987,9 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 		$element->controls['list1_show_date_column'] = [
 			'tab'      => 'content',
 			'group'    => 'layouts',
-			'label'    => esc_html__( 'Show date column', 'events-calendar-for-bricks' ),
-			'type'     => 'select',
-			'options'  => [
-				'show' => esc_html__( 'Show', 'events-calendar-for-bricks' ),
-				'hide' => esc_html__( 'Hide', 'events-calendar-for-bricks' ),
-			],
-			'default'  => 'show',
-			'inline'   => true,
+			'label'    => esc_html__( 'Hide date column', 'events-calendar-for-bricks' ),
+			'type'     => 'checkbox',
+			'default'  => false,
 			'rerender' => true,
 			'required' => [
 				[ 'layout_template', '=', 'list' ],
@@ -1024,30 +1009,25 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			'required' => [
 				[ 'layout_template', '=', 'list' ],
 				[ 'list_item_style', '=', 'style-1' ],
-				[ 'list1_show_date_column', '!=', 'hide' ],
+				[ 'list1_show_date_column', '!=', true ],
 			],
 		];
 
 		$element->controls['style2_show_date_badge'] = [
-			'tab'         => 'content',
-			'group'       => 'layouts',
-			'label'       => esc_html__( 'Show date badge on image', 'events-calendar-for-bricks' ),
-			'type'        => 'select',
-			'options'     => [
-				'show' => esc_html__( 'Show', 'events-calendar-for-bricks' ),
-				'hide' => esc_html__( 'Hide', 'events-calendar-for-bricks' ),
-			],
-			'default'     => 'show',
-			'inline'      => true,
-			'rerender'    => true,
-			'required'    => [
-				[ 'show_event_image', '!=', 'hide' ],
+			'tab'      => 'content',
+			'group'    => 'layouts',
+			'label'    => esc_html__( 'Hide date badge on image', 'events-calendar-for-bricks' ),
+			'type'     => 'checkbox',
+			'default'  => false,
+			'rerender' => true,
+			'required' => [
+				[ 'show_event_image', '!=', true ],
 				[ 'layout_template', '=', 'list' ],
 				[ 'list_item_style', '=', 'style-2' ],
 			],
 		];
 
-		$element->controls['style2_date_badge_order'] = [
+	$element->controls['style2_date_badge_order'] = [
 			'tab'      => 'content',
 			'group'    => 'layouts',
 			'label'    => esc_html__( 'Date column order', 'events-calendar-for-bricks' ),
@@ -1056,12 +1036,12 @@ if ( ! class_exists( 'ECBB_Controls', false ) ) {
 			'default'  => 'month_day',
 			'inline'   => true,
 			'rerender' => true,
-			'required' => [
-				[ 'layout_template', '=', 'list' ],
-				[ 'list_item_style', '=', 'style-2' ],
-				[ 'show_event_image', '!=', 'hide' ],
-				[ 'style2_show_date_badge', '!=', 'hide' ],
-			],
+		'required' => [
+			[ 'layout_template', '=', 'list' ],
+			[ 'list_item_style', '=', 'style-2' ],
+		[ 'show_event_image', '!=', true ],
+		[ 'style2_show_date_badge', '!=', true ],
+		],
 		];
 
 		$element->controls['grid_cols'] = [
