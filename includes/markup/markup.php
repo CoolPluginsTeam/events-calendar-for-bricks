@@ -98,7 +98,13 @@ if ( ! class_exists( 'ECBB_Markup', false ) ) {
 		}
 
 		/** Shared bool coercion for generic values and Bricks checkbox controls. */
-		private static function ecbb_checkbox_to_bool( $value ) {
+		private static function ecbb_to_bool( $value, $default = false ) {
+			if ( $value === null ) {
+				return $default;
+			}
+			if ( is_bool( $value ) ) {
+				return $value;
+			}
 			if ( $value === false || $value === 0 || $value === '0' || $value === 'no' || $value === 'off' ) {
 				return false;
 			}
@@ -108,10 +114,23 @@ if ( ! class_exists( 'ECBB_Markup', false ) ) {
 			if ( is_array( $value ) && $value === [] ) {
 				return false;
 			}
-			if ( $value === null || $value === '' ) {
+			if ( $value === '' ) {
 				return false;
 			}
+			if ( is_numeric( $value ) ) {
+				return (int) $value === 1;
+			}
 			if ( is_string( $value ) ) {
+				$s = strtolower( trim( $value ) );
+				if ( $s === '' ) {
+					return false;
+				}
+				if ( in_array( $s, [ 'no', 'off', 'false', '0', 'hide', 'hidden' ], true ) ) {
+					return false;
+				}
+				if ( in_array( $s, [ 'yes', 'true', '1', 'show', 'on' ], true ) ) {
+					return true;
+				}
 				$s = strtolower( sanitize_text_field( $value ) );
 				if ( in_array( $s, [ 'no', 'off', 'false', '0', 'hide', 'hidden' ], true ) ) {
 					return false;
@@ -123,34 +142,9 @@ if ( ! class_exists( 'ECBB_Markup', false ) ) {
 			return (bool) $value;
 		}
 
-		private static function ecbb_generic_to_bool( $value, $default = false ) {
-			if ( $value === null ) {
-				return $default;
-			}
-			if ( is_bool( $value ) ) {
-				return $value;
-			}
-			if ( is_numeric( $value ) ) {
-				return (int) $value === 1;
-			}
-			if ( is_string( $value ) ) {
-				$value = strtolower( trim( $value ) );
-				if ( $value === '' ) {
-					return false;
-				}
-				if ( in_array( $value, [ '1', 'true', 'yes', 'on' ], true ) ) {
-					return true;
-				}
-				if ( in_array( $value, [ '0', 'false', 'no', 'off' ], true ) ) {
-					return false;
-				}
-			}
-			return (bool) $value;
-		}
-
 		/** True for 1, yes, on, true (string or scalar). */
 		public static function ecbb_is_truthy( $value, $default = false ) {
-			return self::ecbb_generic_to_bool( $value, $default );
+			return self::ecbb_to_bool( $value, $default );
 		}
 
 		/** Bricks color control value → CSS color string, or empty. */
@@ -239,16 +233,13 @@ if ( ! class_exists( 'ECBB_Markup', false ) ) {
 			if ( in_array( $lower, [ 'transparent', 'currentcolor', 'inherit', 'initial', 'unset' ], true ) ) {
 				return '';
 			}
-			if ( preg_match( '/^rgba?\(([^)]+)\)$/i', $color, $m ) ) {
-				$parts = array_map( 'trim', explode( ',', $m[1] ) );
-				if ( count( $parts ) >= 4 && (float) $parts[3] <= 0 ) {
-					return '';
-				}
-			}
-			if ( preg_match( '/^hsla?\(([^)]+)\)$/i', $color, $m ) ) {
-				$parts = array_map( 'trim', explode( ',', $m[1] ) );
-				if ( count( $parts ) >= 4 && (float) $parts[3] <= 0 ) {
-					return '';
+			foreach ( [ '/^rgba?\(([^)]+)\)$/i', '/^hsla?\(([^)]+)\)$/i' ] as $pattern ) {
+				if ( preg_match( $pattern, $color, $m ) ) {
+					$parts = array_map( 'trim', explode( ',', $m[1] ) );
+					if ( count( $parts ) >= 4 && (float) $parts[3] <= 0 ) {
+						return '';
+					}
+					break;
 				}
 			}
 			return $color;
@@ -265,7 +256,7 @@ if ( ! class_exists( 'ECBB_Markup', false ) ) {
 
 		/** Bricks checkbox / show-hide saved value → bool. */
 		public static function ecbb_parse_bricks_checkbox( $value ) {
-			return self::ecbb_checkbox_to_bool( $value );
+			return self::ecbb_to_bool( $value, false );
 		}
 	}
 }

@@ -141,8 +141,8 @@
 .ecbb-ev a.event-badge--blue:hover,
 .ecbb-ev .event-list-card:hover a.event-badge--blue:hover,
 .ecbb-ev .event-grid-card:hover a.event-badge--blue:hover {
-	color: var(--ecbb-shell-cat-color, var(--color-card-bg));
-	background: var(--ecbb-shell-cat-bg, var(--badge-blue));
+	color: var(--ecbb-shell-cat-hover-color, var(--ecbb-shell-cat-color, var(--color-card-bg)));
+	background: var(--ecbb-shell-cat-hover-bg, var(--ecbb-shell-cat-bg, var(--badge-blue)));
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -388,8 +388,11 @@
 
 /* Layout CTA rows: Bricks typography also paints the wrapper; collapse it so font-size sizes the button only. */
 .ecbb-event-part--read-more:not(.ecbb-has-btn),
+.ecbb-style2-read-more:not(.ecbb-has-btn),
 .ecbb-event-part--event-tickets:not(.ecbb-has-btn),
-.ecbb-event-part--event-rsvp:not(.ecbb-has-btn) {
+.ecbb-style2-event-tickets:not(.ecbb-has-btn),
+.ecbb-event-part--event-rsvp:not(.ecbb-has-btn),
+.ecbb-style2-event-rsvp:not(.ecbb-has-btn) {
 	font-size: 0 !important;
 	line-height: 0 !important;
 }
@@ -419,10 +422,12 @@
 }
 
 /* Repeater typography color on layout buttons (builder live preview + frontend). */
-.ecbb-event-part.ecbb-has-typo-fg:not(.ecbb-has-btn) > .ecbb-event__link,
-.ecbb-event-part.ecbb-has-typo-fg:not(.ecbb-has-btn) .ecbb-event__link,
-.ecbb-event-part.ecbb-has-typo-fg:not(.ecbb-has-btn) > a.event-button,
-.ecbb-event-part.ecbb-has-typo-fg:not(.ecbb-has-btn) a.event-button,
+.ecbb-event-part.ecbb-has-typo-fg:not(.ecbb-has-btn) > .ecbb-event__link:not(.ecbb-event-card__button):not(.event-button),
+.ecbb-event-part.ecbb-has-typo-fg:not(.ecbb-has-btn) .ecbb-event__link:not(.ecbb-event-card__button):not(.event-button),
+.ecbb-event-part.ecbb-has-typo-fg:not(.ecbb-has-btn) > a.event-button:not(.ecbb-event-card__button),
+.ecbb-event-part.ecbb-has-typo-fg:not(.ecbb-has-btn) a.event-button:not(.ecbb-event-card__button),
+.ecbb-event-part.ecbb-has-typo-fg:not(.ecbb-has-btn) > a.ecbb-event-card__button,
+.ecbb-event-part.ecbb-has-typo-fg:not(.ecbb-has-btn) a.ecbb-event-card__button,
 .ecbb-event-part.ecbb-has-typo-fg:not(.ecbb-has-btn) > .ecbb-event__plain,
 .ecbb-event-part.ecbb-has-typo-fg:not(.ecbb-has-btn) .ecbb-event__plain {
 	color: var(--ecbb-btn-fg) !important;
@@ -450,7 +455,10 @@
 .ecbb-event-part.ecbb-has-hover-fg:not(.ecbb-no-hover) .ecbb-event__term-chip:hover,
 .ecbb-event-part.ecbb-has-hover-fg:not(.ecbb-no-hover) .ecbb-event__term:hover,
 .ecbb-event-part.ecbb-has-hover-fg:not(.ecbb-no-hover) .ecbb-event__title-text:hover,
-.ecbb-event-part.ecbb-has-hover-fg:not(.ecbb-no-hover) .ecbb-event-card__category:hover {
+.ecbb-event-part.ecbb-has-hover-fg:not(.ecbb-no-hover) .ecbb-event-card__category:hover,
+.ecbb-event-part.ecbb-has-hover-fg:not(.ecbb-no-hover) > .ecbb-event-card__category:hover,
+.ecbb-ev .ecbb-event-card__top.ecbb-has-hover-fg:not(.ecbb-no-hover) a.ecbb-event-card__category:hover,
+.ecbb-ev .event-grid-card__categories.ecbb-has-hover-fg:not(.ecbb-no-hover) a.ecbb-event-card__category:hover {
 	color: var(--ecbb-hover-fg) !important;
 }
 
@@ -463,7 +471,10 @@
 .ecbb-event-part.ecbb-has-hover-bg:not(.ecbb-no-hover) .ecbb-event__term-chip:hover,
 .ecbb-event-part.ecbb-has-hover-bg:not(.ecbb-no-hover) .ecbb-event__term:hover,
 .ecbb-event-part.ecbb-has-hover-bg:not(.ecbb-no-hover) .ecbb-event__title-text:hover,
-.ecbb-event-part.ecbb-has-hover-bg:not(.ecbb-no-hover) .ecbb-event-card__category:hover {
+.ecbb-event-part.ecbb-has-hover-bg:not(.ecbb-no-hover) .ecbb-event-card__category:hover,
+.ecbb-event-part.ecbb-has-hover-bg:not(.ecbb-no-hover) > .ecbb-event-card__category:hover,
+.ecbb-ev .ecbb-event-card__top.ecbb-has-hover-bg:not(.ecbb-no-hover) a.ecbb-event-card__category:hover,
+.ecbb-ev .event-grid-card__categories.ecbb-has-hover-bg:not(.ecbb-no-hover) a.ecbb-event-card__category:hover {
 	background-color: var(--ecbb-hover-bg) !important;
 }
 
@@ -472,6 +483,8 @@
 .ecbb-event-part:not(.ecbb-no-hover) .ecbb-event__term,
 .ecbb-event-part:not(.ecbb-no-hover) .ecbb-event__term-chip,
 .ecbb-event-part:not(.ecbb-no-hover) .ecbb-event-card__category,
+.ecbb-ev .ecbb-event-card__top:not(.ecbb-no-hover) a.ecbb-event-card__category,
+.ecbb-ev .event-grid-card__categories:not(.ecbb-no-hover) a.ecbb-event-card__category,
 .ecbb-event-part--title:not(.ecbb-no-hover),
 .ecbb-event-part--categories:not(.ecbb-no-hover),
 .ecbb-event-part--tags:not(.ecbb-no-hover),
@@ -514,8 +527,8 @@
 
 .ecbb-no-hover:not(.ecbb-has-btn):not(.ecbb-event-part--title):hover,
 .ecbb-no-hover:not(.ecbb-has-btn):not(.ecbb-event-part--title):focus-within,
-.ecbb-no-hover:not(.ecbb-has-btn):not(.ecbb-event-part--title) .ecbb-event__link:hover,
-.ecbb-no-hover:not(.ecbb-has-btn):not(.ecbb-event-part--title) a:hover,
+.ecbb-no-hover:not(.ecbb-has-btn):not(.ecbb-event-part--title) .ecbb-event__link:not(.ecbb-event-card__button):not(.event-button):hover,
+.ecbb-no-hover:not(.ecbb-has-btn):not(.ecbb-event-part--title) a:not(.ecbb-event-card__button):not(.event-button):hover,
 .ecbb-no-hover:not(.ecbb-has-btn):not(.ecbb-event-part--title) .ecbb-event-card__category:hover,
 .ecbb-no-hover:not(.ecbb-has-btn):not(.ecbb-event-part--title) .ecbb-event__term:hover,
 .ecbb-no-hover:not(.ecbb-has-btn):not(.ecbb-event-part--title) .ecbb-event__term-chip:hover {

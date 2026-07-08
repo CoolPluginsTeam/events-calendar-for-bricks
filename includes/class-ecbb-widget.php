@@ -162,10 +162,6 @@ class ECBB_Widget extends \Bricks\Element
 		return \ECBB_Markup::ecbb_layout_surface_class( $part, $skin !== '' ? $skin : 'grid' );
 	}
 
-	private function ecbb_part_wrap_attrs( array $item, $idx, $style = '' ) {
-		return \ECBB_Markup::ecbb_part_wrap_attrs( $item, $idx, $style );
-	}
-
 	/**
 	 * Print an Event part opening tag.
 	 *
@@ -173,14 +169,13 @@ class ECBB_Widget extends \Bricks\Element
 	 * @param string              $class Wrapper class names.
 	 * @param array<string,mixed> $item  Repeater row.
 	 * @param int                 $idx   Row index.
-	 * @param string              $style Inline style declaration string.
 	 * @return void
 	 */
-	private function ecbb_print_part_open_tag( $tag, $class, array $item, $idx, $style = '' ) {
+	private function ecbb_print_part_open_tag( $tag, $class, array $item, $idx ) {
 		$tag = in_array( $tag, [ 'div', 'h3', 'p' ], true ) ? $tag : 'div';
 
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- tag is allow-listed; ecbb_part_wrap_attrs() returns escaped attribute fragments.
-		echo '<' . tag_escape( $tag ) . ' class="' . esc_attr( $class ) . '"' . $this->ecbb_part_wrap_attrs( $item, $idx, $style ) . '>';
+		echo '<' . tag_escape( $tag ) . ' class="' . esc_attr( $class ) . '"' . \ECBB_Markup::ecbb_part_wrap_attrs( $item, $idx ) . '>';
 	}
 
 	/**
@@ -355,12 +350,11 @@ class ECBB_Widget extends \Bricks\Element
 			return;
 		}
 
-		if ( $len_mode === 'short' ) {
-			$content = wpautop( wp_trim_words( $plain, 55 ) );
-		} elseif ( $len_mode === 'custom' ) {
-			$content = wpautop( wp_trim_words( $plain, $words ) );
-		} else {
+		if ( $len_mode === 'full' ) {
 			$content = wpautop( $plain );
+		} else {
+			$limit   = $len_mode === 'custom' ? $words : 55;
+			$content = wpautop( wp_trim_words( $plain, $limit ) );
 		}
 
 		$surface = trim( $this->ecbb_part_surface_class( 'description', $skin ) );
@@ -412,15 +406,8 @@ class ECBB_Widget extends \Bricks\Element
 		$use_style2_shell = ( $template === 'list' && $item_chrome === 'style-2' );
 		$use_grid_shell   = ( $template === 'grid' );
 
-		if ( $use_style1_shell ) {
-			$item_classes = 'ecbb-ev__item ecbb-ev__item--style-1 repeater-item';
-		} elseif ( $use_style2_shell ) {
-			$item_classes = 'ecbb-ev__item ecbb-ev__item--style-2 repeater-item';
-		} elseif ( $use_grid_shell ) {
-			$item_classes = 'ecbb-ev__item ecbb-ev__item--grid repeater-item';
-		} else {
-			$item_classes = 'ecbb-ev__item ecbb-ev__item--' . $item_chrome . ' repeater-item';
-		}
+		$suffix       = $use_grid_shell ? 'grid' : $item_chrome;
+		$item_classes = 'ecbb-ev__item ecbb-ev__item--' . $suffix . ' repeater-item';
 
 		return [
 			'template'         => $template,
@@ -454,11 +441,13 @@ class ECBB_Widget extends \Bricks\Element
 			$parts_effective === []
 			|| \ECBB_Markup::ecbb_parts_is_empty( $parts_effective )
 		) {
-			return [
-				[ 'part' => 'title', 'link' => true ],
-				[ 'part' => 'description' ],
-				[ 'part' => 'date', 'date_text_transform' => 'uppercase' ],
-			];
+			return \ECBB_Markup::ecbb_parts_assign_ids(
+				[
+					[ 'part' => 'title', 'link' => true ],
+					[ 'part' => 'description' ],
+					[ 'part' => 'date', 'date_text_transform' => 'uppercase' ],
+				]
+			);
 		}
 
 		return is_array( $parts_effective ) ? $parts_effective : [];
@@ -516,7 +505,10 @@ class ECBB_Widget extends \Bricks\Element
 			return '';
 		}
 
-		return wp_strip_all_tags( str_replace( '</style', '<\/style', implode( "\n", $all_css ) ) );
+		$css = implode( "\n", $all_css );
+		$css = preg_replace( '#</style#i', '<\\/style', $css );
+
+		return wp_strip_all_tags( $css );
 	}
 
 	/**

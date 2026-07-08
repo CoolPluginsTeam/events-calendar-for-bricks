@@ -75,11 +75,12 @@ if ( ! class_exists( 'ECBB_Part_Chrome', false ) ) {
 			) {
 				$classes .= ' ecbb-no-hover';
 			} elseif (
-		ECBB_Settings_Normalizer::ecbb_part_has_hover($ui_part)
-		&& ! self::ecbb_hover_style_active($item)
-		) {
-			$classes .= ' ecbb-no-hover';
-		}
+				ECBB_Settings_Normalizer::ecbb_part_has_hover( $ui_part )
+				&& ! self::ecbb_hover_style_active( $item )
+				&& ! in_array( $ui_part, [ 'read_more', 'event_tickets', 'event_rsvp' ], true )
+			) {
+				$classes .= ' ecbb-no-hover';
+			}
 		if (
 		self::ecbb_btn_style_active($row)
 		&& class_exists( 'ECBB_Styles', false )
@@ -112,9 +113,8 @@ if ( ! class_exists( 'ECBB_Part_Chrome', false ) ) {
 			return 'ecbb-p' . absint($idx);
 		}
 
-		public static function ecbb_part_wrap_attrs(array $item, $idx, $style = '')
+		public static function ecbb_part_wrap_attrs(array $item, $idx)
 		{
-			unset( $style );
 			return self::ecbb_part_dom_id_attr($item, $idx);
 		}
 

@@ -45,6 +45,7 @@ if ( ! class_exists( 'ECBB_Styles', false ) ) {
 				$bind(
 					[
 						'ecbb_repeater_align_selector', 'ecbb_repeater_hover_selector',
+						'ecbb_repeater_hover_surface_suffixes', 'ecbb_repeater_hover_li_has_suffixes',
 						'ecbb_repeater_type_css', 'ecbb_button_parts',
 					],
 					'ECBB_Selector_Factory'

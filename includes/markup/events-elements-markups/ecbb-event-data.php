@@ -240,6 +240,24 @@ if ( ! class_exists( 'ECBB_Event_Data', false ) ) {
 			return self::ecbb_event_meta_dates( $event_id )['end'];
 		}
 
+		/** Start and end Unix timestamps for an event. */
+		public static function ecbb_date_bounds( $post_id ) {
+			$post_id = absint( $post_id );
+			if ( $post_id < 1 ) {
+				return [ false, false ];
+			}
+			$dates    = self::ecbb_event_meta_dates( $post_id );
+			$start_ts = ! empty( $dates['start'] ) ? strtotime( $dates['start'] ) : false;
+			$end_ts   = ! empty( $dates['end'] ) ? strtotime( $dates['end'] ) : $start_ts;
+			if ( ! $start_ts ) {
+				return [ false, false ];
+			}
+			if ( ! $end_ts ) {
+				$end_ts = $start_ts;
+			}
+			return [ $start_ts, $end_ts ];
+		}
+
 		/** Cached `_EventVenueID` (0 when missing). */
 		private static function ecbb_event_meta_venue_id( $event_id ) {
 			$event_id = (int) $event_id;
@@ -324,17 +342,87 @@ if ( ! class_exists( 'ECBB_Event_Data', false ) ) {
 			return '';
 		}
 
-		public static function ecbb_venue_address( $event_id ) {
+		private static function ecbb_venue_address_ids( $event_id ) {
 			$event_id = (int) $event_id;
 			if ( $event_id < 1 ) {
-				return '';
+				return [];
 			}
 			$ids = [ $event_id ];
 			$vid = self::ecbb_venue_id( $event_id );
 			if ( $vid > 0 ) {
 				array_unshift( $ids, $vid );
 			}
-			$ids = array_values( array_unique( $ids ) );
+			return array_values( array_unique( $ids ) );
+		}
+
+		private static function ecbb_build_address_bits_from_venue_meta( $venue_id ) {
+			$venue_id = (int) $venue_id;
+			if ( $venue_id < 1 ) {
+				return [];
+			}
+			$state = get_post_meta( $venue_id, '_VenueStateProvince', true );
+			if ( $state === '' || $state === null ) {
+				$state = get_post_meta( $venue_id, '_VenueState', true );
+			}
+
+			return array_filter(
+				array_map(
+					'trim',
+					[
+						(string) get_post_meta( $venue_id, '_VenueAddress', true ),
+						(string) get_post_meta( $venue_id, '_VenueCity', true ),
+						trim( (string) $state . ' ' . (string) get_post_meta( $venue_id, '_VenueZip', true ) ),
+						(string) get_post_meta( $venue_id, '_VenueCountry', true ),
+					]
+				)
+			);
+		}
+
+		private static function ecbb_build_address_bits_from_event( $event_id ) {
+			$event_id = (int) $event_id;
+			if ( $event_id < 1 ) {
+				return [];
+			}
+
+			return array_filter(
+				array_map(
+					'trim',
+					[
+						self::ecbb_part_detail_text( $event_id, 'venue_street' ),
+						self::ecbb_part_detail_text( $event_id, 'venue_city' ),
+						trim(
+							self::ecbb_part_detail_text( $event_id, 'venue_state' )
+							. ' '
+							. self::ecbb_part_detail_text( $event_id, 'venue_zip' )
+						),
+						self::ecbb_part_detail_text( $event_id, 'venue_country' ),
+					]
+				)
+			);
+		}
+
+		private static function ecbb_join_name_with( $name, $second ) {
+			$name   = trim( (string) $name );
+			$second = trim( (string) $second );
+			if ( $name === '' && $second === '' ) {
+				return '';
+			}
+			if ( $name === '' ) {
+				return $second;
+			}
+			if ( $second === '' ) {
+				return $name;
+			}
+			return $name . ', ' . $second;
+		}
+
+		public static function ecbb_venue_address( $event_id ) {
+			$event_id = (int) $event_id;
+			if ( $event_id < 1 ) {
+				return '';
+			}
+			$ids = self::ecbb_venue_address_ids( $event_id );
+			$vid = self::ecbb_venue_id( $event_id );
 
 			$address = self::ecbb_resolve_tribe_full_address( $ids, $event_id );
 			if ( $address !== '' ) {
@@ -342,72 +430,35 @@ if ( ! class_exists( 'ECBB_Event_Data', false ) ) {
 			}
 
 			if ( $vid > 0 ) {
-				$state = get_post_meta( $vid, '_VenueStateProvince', true );
-				if ( $state === '' || $state === null ) {
-					$state = get_post_meta( $vid, '_VenueState', true );
-				}
-				$bits = array_filter(
-					array_map(
-						'trim',
-						[
-							(string) get_post_meta( $vid, '_VenueAddress', true ),
-							(string) get_post_meta( $vid, '_VenueCity', true ),
-							trim( (string) $state . ' ' . (string) get_post_meta( $vid, '_VenueZip', true ) ),
-							(string) get_post_meta( $vid, '_VenueCountry', true ),
-						]
-					)
-				);
+				$bits = self::ecbb_build_address_bits_from_venue_meta( $vid );
 				if ( $bits !== [] ) {
 					return implode( ', ', $bits );
 				}
 			}
 
-			return self::ecbb_venue_full_address_text( $event_id );
+			$bits = self::ecbb_build_address_bits_from_event( $event_id );
+			return $bits !== [] ? implode( ', ', $bits ) : '';
 		}
 
 		public static function ecbb_venue_name_addr( $event_id ) {
-			$name    = self::ecbb_venue_name( $event_id );
-			$address = self::ecbb_venue_address( $event_id );
-			if ( $name === '' && $address === '' ) {
-				return '';
-			}
-			if ( $name === '' ) {
-				return $address;
-			}
-			if ( $address === '' ) {
-				return $name;
-			}
-			return $name . ', ' . $address;
+			return self::ecbb_join_name_with(
+				self::ecbb_venue_name( $event_id ),
+				self::ecbb_venue_address( $event_id )
+			);
 		}
 
 		public static function ecbb_venue_name_state( $event_id ) {
-			$name  = trim( (string) self::ecbb_venue_name( $event_id ) );
-			$state = trim( (string) self::ecbb_part_detail_text( $event_id, 'venue_state' ) );
-			if ( $name === '' && $state === '' ) {
-				return '';
-			}
-			if ( $name === '' ) {
-				return $state;
-			}
-			if ( $state === '' ) {
-				return $name;
-			}
-			return $name . ', ' . $state;
+			return self::ecbb_join_name_with(
+				self::ecbb_venue_name( $event_id ),
+				self::ecbb_part_detail_text( $event_id, 'venue_state' )
+			);
 		}
 
 		public static function ecbb_venue_name_city( $event_id ) {
-			$name = trim( (string) self::ecbb_venue_name( $event_id ) );
-			$city = trim( (string) self::ecbb_part_detail_text( $event_id, 'venue_city' ) );
-			if ( $name === '' && $city === '' ) {
-				return '';
-			}
-			if ( $name === '' ) {
-				return $city;
-			}
-			if ( $city === '' ) {
-				return $name;
-			}
-			return $name . ', ' . $city;
+			return self::ecbb_join_name_with(
+				self::ecbb_venue_name( $event_id ),
+				self::ecbb_part_detail_text( $event_id, 'venue_city' )
+			);
 		}
 
 		public static function ecbb_venue_display_key( array $item, $skin = '' ) {
@@ -451,35 +502,13 @@ if ( ! class_exists( 'ECBB_Event_Data', false ) ) {
 				return '';
 			}
 
-			$address_ids = [ $event_id ];
-			$venue_id    = self::ecbb_venue_id( $event_id );
-			if ( $venue_id > 0 ) {
-				array_unshift( $address_ids, $venue_id );
-			}
-			$address_ids = array_values( array_unique( $address_ids ) );
-
-			$address = self::ecbb_resolve_tribe_full_address( $address_ids );
+			$address = self::ecbb_resolve_tribe_full_address( self::ecbb_venue_address_ids( $event_id ) );
 			if ( $address !== '' ) {
 				return $address;
 			}
 
-			$bits = array_filter(
-				array_map(
-					'trim',
-					[
-						self::ecbb_part_detail_text( $event_id, 'venue_street' ),
-						self::ecbb_part_detail_text( $event_id, 'venue_city' ),
-						trim(
-							self::ecbb_part_detail_text( $event_id, 'venue_state' )
-							. ' '
-							. self::ecbb_part_detail_text( $event_id, 'venue_zip' )
-						),
-						self::ecbb_part_detail_text( $event_id, 'venue_country' ),
-					]
-				)
-			);
-
-			return implode( ', ', $bits );
+			$bits = self::ecbb_build_address_bits_from_event( $event_id );
+			return $bits !== [] ? implode( ', ', $bits ) : '';
 		}
 
 		public static function ecbb_organizer_name( $event_id ) {

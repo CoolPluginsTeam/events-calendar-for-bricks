@@ -81,8 +81,7 @@ if ( ! class_exists( 'ECBB_Date_Formatter', false ) ) {
 		}
 
 		/** Day name + time range for the “day & time” part. */
-		public static function ecbb_build_day_time_parts( $post_id, array $item ): array {
-			unset( $item );
+		public static function ecbb_build_day_time_parts( $post_id ): array {
 			$post_id = (int) $post_id;
 			if ( $post_id < 1 ) {
 				return [ 'day' => '', 'time' => '' ];
@@ -177,7 +176,7 @@ if ( ! class_exists( 'ECBB_Date_Formatter', false ) ) {
 				return trim( wp_strip_all_tags( $html ) );
 			}
 
-			$tp = self::ecbb_build_day_time_parts( $post_id, $item );
+			$tp = self::ecbb_build_day_time_parts( $post_id );
 
 			if ( $fmt === 'time' ) {
 				$html = isset( $tp['time'] ) ? trim( (string) $tp['time'] ) : '';

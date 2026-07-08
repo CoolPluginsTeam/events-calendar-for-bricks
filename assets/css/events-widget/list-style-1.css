@@ -8,7 +8,6 @@
 	gap: 0;
 	align-items: stretch;
 	background: var(--ecbb-card-bg, var(--color-card-bg));
-	color: var(--ecbb-card-fg, inherit);
 	border: 1px solid var(--color-border);
 	border-radius: 20px;
 	width: 100%;
@@ -48,7 +47,7 @@
 	flex-direction: column;
 	align-items: center;
 	gap: 5px;
-	background: var(--ecbb-list1-date-bg, transparent);
+	background-color: var(--ecbb-list1-date-bg, transparent);
 	font-size: 11px;
 	font-weight: 500;
 	line-height: 1;

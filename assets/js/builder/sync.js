@@ -120,6 +120,9 @@
 		for (i = 0; i < builder.sync.registry.length; i++) {
 			builder.sync.registry[i].syncAll();
 		}
+		if (builder.syncWidgetShellCssVars) {
+			builder.syncWidgetShellCssVars();
+		}
 		if (!includeDelayed) {
 			return;
 		}

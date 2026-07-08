@@ -13,6 +13,55 @@ if ( ! class_exists( 'ECBB_Shell_Css_Generator', false ) ) {
 
 	final class ECBB_Shell_Css_Generator {
 
+		/**
+		 * Widget setting keys → root CSS custom properties (shared by PHP output and builder preview).
+		 *
+		 * @return array<string,string>
+		 */
+		public static function ecbb_shell_css_var_map( array $settings ) {
+			$layout = class_exists( 'ECBB_Markup', false )
+				? \ECBB_Markup::ecbb_sanitize_layout_template( $settings )
+				: [ 'template' => '', 'item_chrome' => '' ];
+
+			$map = [
+				'ecbb_card_background' => '--ecbb-card-bg',
+			];
+
+			if ( class_exists( 'ECBB_Markup', false ) && \ECBB_Markup::ecbb_show_list1_date_column( $settings ) ) {
+				$map['ecbb_list1_content_background'] = '--ecbb-list1-date-bg';
+			}
+
+			if ( class_exists( 'ECBB_Markup', false ) && \ECBB_Markup::ecbb_show_shell_category_badge( $settings ) ) {
+				if ( $layout['template'] === 'grid' ) {
+					$map['ecbb_shell_category_background_grid']         = '--ecbb-shell-cat-bg';
+					$map['ecbb_shell_category_hover_color_grid']       = '--ecbb-shell-cat-hover-color';
+					$map['ecbb_shell_category_hover_background_grid'] = '--ecbb-shell-cat-hover-bg';
+				} else {
+					$map['ecbb_shell_category_background']         = '--ecbb-shell-cat-bg';
+					$map['ecbb_shell_category_hover_color']       = '--ecbb-shell-cat-hover-color';
+					$map['ecbb_shell_category_hover_background'] = '--ecbb-shell-cat-hover-bg';
+				}
+			}
+
+			if ( class_exists( 'ECBB_Markup', false ) && \ECBB_Markup::ecbb_show_style2_date_badge( $settings ) ) {
+				$map['ecbb_shell_date_background'] = '--ecbb-shell-date-bg';
+			}
+
+			return $map;
+		}
+
+		/** @return string[] */
+		public static function ecbb_shell_css_var_setting_keys() {
+			return [
+				'ecbb_list1_content_background',
+				'ecbb_list1_date_typography',
+				'ecbb_shell_category_hover_color',
+				'ecbb_shell_category_hover_background',
+				'ecbb_shell_category_hover_color_grid',
+				'ecbb_shell_category_hover_background_grid',
+			];
+		}
+
 		private static function ecbb_layout_shell_date_column_rules( array $settings, $root, callable $color_fn ) {
 			$rules = [];
 			if ( ! class_exists( 'ECBB_Markup', false ) || ! \ECBB_Markup::ecbb_show_list1_date_column( $settings ) ) {
@@ -80,46 +129,26 @@ if ( ! class_exists( 'ECBB_Shell_Css_Generator', false ) ) {
 			);
 		}
 
-		private static function ecbb_layout_shell_category_badge_hover_rules( array $settings, array $layout, $root, $show_category_shell, callable $color_fn ) {
+		private static function ecbb_layout_shell_category_badge_hover_rules( array $settings, array $layout, $root, $show_category_shell ) {
 			$rules = [];
 			if ( ! $show_category_shell ) {
 				return $rules;
 			}
 
-			$cat_hover_color_key = $layout['template'] === 'grid'
-				? 'ecbb_shell_category_hover_color_grid'
-				: 'ecbb_shell_category_hover_color';
-			$cat_hover_bg_key = $layout['template'] === 'grid'
-				? 'ecbb_shell_category_hover_background_grid'
-				: 'ecbb_shell_category_hover_background';
 			$cat_hover_td_key = $layout['template'] === 'grid'
 				? 'ecbb_shell_category_hover_text_decoration_grid'
 				: 'ecbb_shell_category_hover_text_decoration';
 			$badge_hover_sel = $root . ' a.event-badge--blue:hover,' . $root . ' .event-badge--blue:hover';
 
 			foreach ( ECBB_Css_Value_Sanitizer::ecbb_breakpoints() as $device => $mq ) {
-				$hover_decls = [];
-
-				$hover_color_raw = ECBB_Css_Value_Sanitizer::ecbb_device_value( $settings[ $cat_hover_color_key ] ?? '', $device );
-				$hover_color     = $hover_color_raw !== '' && $hover_color_raw !== null ? $color_fn( $hover_color_raw ) : '';
-				if ( $hover_color !== '' ) {
-					$hover_decls[] = 'color:' . $hover_color . ' !important';
-				}
-
-				$hover_bg_raw = ECBB_Css_Value_Sanitizer::ecbb_device_value( $settings[ $cat_hover_bg_key ] ?? '', $device );
-				$hover_bg     = $hover_bg_raw !== '' && $hover_bg_raw !== null ? $color_fn( $hover_bg_raw ) : '';
-				if ( $hover_bg !== '' ) {
-					$hover_decls[] = 'background-color:' . $hover_bg . ' !important';
-				}
-
 				$hover_td = (string) ECBB_Css_Value_Sanitizer::ecbb_device_value( $settings[ $cat_hover_td_key ] ?? '', $device );
-				if ( in_array( $hover_td, [ 'none', 'underline', 'overline', 'line-through' ], true ) ) {
-					$hover_decls[] = 'text-decoration:' . $hover_td . ' !important';
+				if ( ! in_array( $hover_td, [ 'none', 'underline', 'overline', 'line-through' ], true ) ) {
+					continue;
 				}
-
-				if ( $hover_decls !== [] ) {
-					$rules[] = ECBB_Parts_Css_Generator::ecbb_mq_css_rule( $mq, $badge_hover_sel . '{' . implode( ';', $hover_decls ) . '}' );
-				}
+				$rules[] = ECBB_Parts_Css_Generator::ecbb_mq_css_rule(
+					$mq,
+					$badge_hover_sel . '{text-decoration:' . $hover_td . ' !important;}'
+				);
 			}
 
 			return $rules;
@@ -139,30 +168,14 @@ if ( ! class_exists( 'ECBB_Shell_Css_Generator', false ) ) {
 				? \ECBB_Markup::ecbb_sanitize_layout_template( $settings )
 				: [ 'template' => '', 'item_chrome' => '' ];
 
-			$var_keys = [
-				'ecbb_card_background' => '--ecbb-card-bg',
-			];
-			if ( class_exists( 'ECBB_Markup', false ) && \ECBB_Markup::ecbb_show_list1_date_column( $settings ) ) {
-				$var_keys['ecbb_list1_content_background'] = '--ecbb-list1-date-bg';
-			}
-			if ( $show_category_shell ) {
-				if ( $layout['template'] === 'grid' ) {
-					$var_keys['ecbb_shell_category_background_grid'] = '--ecbb-shell-cat-bg';
-				} else {
-					$var_keys['ecbb_shell_category_background'] = '--ecbb-shell-cat-bg';
-				}
-			}
-			if ( $show_date_shell ) {
-				$var_keys['ecbb_shell_date_background'] = '--ecbb-shell-date-bg';
-			}
+			$var_keys = self::ecbb_shell_css_var_map( $settings );
 
-			$root       = '.' . $scope_class;
-			$body_sel   = $root . ' .event-list-card__body,' . $root . ' .ecbb-event-card__content,' . $root . ' .event-grid-card__content';
-			$rules      = self::ecbb_layout_shell_root_color_rules( $settings, $var_keys, $root, $body_sel, $color_fn );
-			$rules      = array_merge( $rules, self::ecbb_layout_shell_date_column_rules( $settings, $root, $color_fn ) );
-			$rules      = array_merge(
+			$root  = '.' . $scope_class;
+			$rules = self::ecbb_layout_shell_root_color_rules( $settings, $var_keys, $root, $color_fn );
+			$rules = array_merge( $rules, self::ecbb_layout_shell_date_column_rules( $settings, $root, $color_fn ) );
+			$rules = array_merge(
 				$rules,
-				self::ecbb_layout_shell_category_badge_hover_rules( $settings, $layout, $root, $show_category_shell, $color_fn )
+				self::ecbb_layout_shell_category_badge_hover_rules( $settings, $layout, $root, $show_category_shell )
 			);
 
 			return implode( "\n", $rules );
@@ -196,7 +209,7 @@ if ( ! class_exists( 'ECBB_Shell_Css_Generator', false ) ) {
 			return $rules;
 		}
 
-		private static function ecbb_layout_shell_root_color_rules( array $settings, array $var_keys, $root, $body_sel, callable $color_fn ) {
+		private static function ecbb_layout_shell_root_color_rules( array $settings, array $var_keys, $root, callable $color_fn ) {
 			$rules      = [];
 			$var_values = [];
 
@@ -219,19 +232,9 @@ if ( ! class_exists( 'ECBB_Shell_Css_Generator', false ) ) {
 					}
 				}
 
-				$fg_raw = ECBB_Css_Value_Sanitizer::ecbb_device_value( $settings['ecbb_card_text_color'] ?? '', $device );
-				$fg     = $fg_raw !== '' && $fg_raw !== null ? $color_fn( $fg_raw ) : '';
-				if ( $fg !== '' ) {
-					$decls[] = '--ecbb-card-fg:' . $fg;
-				}
-
 				if ( $decls !== [] ) {
 					$rule    = $root . '{' . implode( ';', $decls ) . '}';
 					$rules[] = $mq !== '' ? $mq . '{' . $rule . '}' : $rule;
-				}
-
-				if ( $fg !== '' ) {
-					$rules[] = ECBB_Parts_Css_Generator::ecbb_mq_css_rule( $mq, $body_sel . '{color:' . $fg . ' !important;}' );
 				}
 			}
 

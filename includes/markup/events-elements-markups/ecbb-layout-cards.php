@@ -20,22 +20,11 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 
 		/** Start and end Unix timestamps for an event. */
 		private static function date_bounds( $post_id ) {
-			$post_id = absint( $post_id );
-			if ( $post_id < 1 ) {
-				return [ false, false ];
-			}
-			if ( class_exists( 'ECBB_List_2', false ) ) {
-				list( $start_ts, $end_ts ) = \ECBB_List_2::ecbb_date_bounds( $post_id );
-				return [
-					$start_ts ? (int) $start_ts : false,
-					$end_ts ? (int) $end_ts : false,
-				];
-			}
-			$start_raw = ECBB_Event_Data::ecbb_event_start_date_raw( $post_id );
-			$end_raw   = ECBB_Event_Data::ecbb_event_end_date_raw( $post_id );
-			$start_ts  = $start_raw ? strtotime( $start_raw ) : false;
-			$end_ts    = $end_raw ? strtotime( $end_raw ) : $start_ts;
-			return [ $start_ts, $end_ts ];
+			list( $start_ts, $end_ts ) = ECBB_Event_Data::ecbb_date_bounds( $post_id );
+			return [
+				$start_ts ? (int) $start_ts : false,
+				$end_ts ? (int) $end_ts : false,
+			];
 		}
 
 		public static function ecbb_list1_date_column( $post, $settings = [] ) {
@@ -113,6 +102,22 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 		}
 
 		/**
+		 * @param \WP_Term[] $terms
+		 */
+		private static function ecbb_term_links_html( array $terms, $anchor_class ) {
+			$links = [];
+			foreach ( $terms as $term ) {
+				$url = get_term_link( $term );
+				if ( is_wp_error( $url ) ) {
+					continue;
+				}
+				$links[] = '<a href="' . esc_url( $url ) . '" class="' . esc_attr( (string) $anchor_class ) . '">'
+					. esc_html( $term->name ) . '</a>';
+			}
+			return $links;
+		}
+
+		/**
 		 * Repeater category row (pill links) for list/grid layouts.
 		 *
 		 * @param string $wrap_prefix Layout wrapper class before part classes.
@@ -135,15 +140,7 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 				)
 			);
 
-			$links = [];
-			foreach ( $terms as $term ) {
-				$url = get_term_link( $term );
-				if ( is_wp_error( $url ) ) {
-					continue;
-				}
-				$links[] = '<a href="' . esc_url( $url ) . '" class="ecbb-event-card__category">'
-					. esc_html( $term->name ) . '</a>';
-			}
+			$links = self::ecbb_term_links_html( $terms, 'ecbb-event-card__category' );
 			if ( $links === [] ) {
 				return '';
 			}
@@ -497,15 +494,7 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 			if ( $terms === [] ) {
 				return '';
 			}
-			$links = [];
-			foreach ( $terms as $term ) {
-				$url = get_term_link( $term );
-				if ( is_wp_error( $url ) ) {
-					continue;
-				}
-				$links[] = '<a href="' . esc_url( $url ) . '" class="event-badge--blue">'
-					. esc_html( $term->name ) . '</a>';
-			}
+			$links = self::ecbb_term_links_html( $terms, 'event-badge--blue' );
 			if ( $links === [] ) {
 				return '';
 			}
@@ -547,17 +536,11 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 				if ( ! is_string( $taxonomy ) || ! taxonomy_exists( $taxonomy ) ) {
 					continue;
 				}
-				$raw = wp_get_object_terms(
-					$post_id,
-					$taxonomy,
-					[
-						'orderby' => 'name',
-						'order'   => 'ASC',
-					]
-				);
-				if ( is_wp_error( $raw ) || ! is_array( $raw ) ) {
+				$raw = get_the_terms( $post_id, $taxonomy );
+				if ( is_wp_error( $raw ) || ! is_array( $raw ) || $raw === [] ) {
 					continue;
 				}
+				$raw = wp_list_sort( $raw, 'name', 'ASC' );
 				foreach ( $raw as $term ) {
 					if ( $term instanceof \WP_Term ) {
 						$by_id[ (int) $term->term_id ] = $term;
@@ -566,7 +549,7 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 			}
 
 			if ( $by_id !== [] ) {
-				return array_values( $by_id );
+				return wp_list_sort( array_values( $by_id ), 'name', 'ASC' );
 			}
 
 			if ( ! function_exists( 'tribe_get_event' ) ) {
@@ -595,7 +578,7 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 			}
 
 			if ( $pending_ids === [] ) {
-				return array_values( $by_id );
+				return wp_list_sort( array_values( $by_id ), 'name', 'ASC' );
 			}
 
 			foreach ( $pending_ids as $taxonomy => $ids ) {
@@ -619,7 +602,7 @@ if ( ! class_exists( 'ECBB_Layout_Shell', false ) ) {
 				}
 			}
 
-			return array_values( $by_id );
+			return wp_list_sort( array_values( $by_id ), 'name', 'ASC' );
 		}
 
 		/**

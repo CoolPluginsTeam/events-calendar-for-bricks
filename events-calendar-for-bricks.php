@@ -115,14 +115,14 @@ if ( ! class_exists( __NAMESPACE__ . '\\EventsCalendarForBricks' ) ) {
 		}
 
 		public function ecbb_activate() {
-			update_option( 'ecbb-installDate', gmdate( 'Y-m-d h:i:s' ) );
+			update_option( 'ecbb_install_date', gmdate( 'Y-m-d H:i:s' ), false );
 
 			if ( ! get_option( 'ecbb_initial_save_version' ) ) {
-				add_option( 'ecbb_initial_save_version', ECBB_VERSION );
+				add_option( 'ecbb_initial_save_version', ECBB_VERSION, '', false );
 			}
 
-			if ( ! get_option( 'ecbb_initial_installDate' ) ) {
-				add_option( 'ecbb_initial_installDate', gmdate( 'Y-m-d h:i:s' ) );
+			if ( ! get_option( 'ecbb_initial_install_date' ) ) {
+				add_option( 'ecbb_initial_install_date', gmdate( 'Y-m-d H:i:s' ), '', false );
 			}
 		}
 	}

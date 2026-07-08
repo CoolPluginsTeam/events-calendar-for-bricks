@@ -69,22 +69,29 @@
 		});
 	}
 
-	builder.syncStyle2ActionButtonTypographyColor = function(repeaterItem, wrapper, preview, surfaces) {
-		var typoColor = builder.readTypographyControlColor(
-			repeaterItem,
-			wrapper,
-			preview,
-			surfaces
-		);
-		var typoOverrides = builder.readTypographyControlSnapshot(
-			repeaterItem,
-			wrapper,
-			preview,
-			surfaces
-		);
-		if (!typoColor && typoOverrides.color) {
-			typoColor = typoOverrides.color;
+	builder.readExplicitRepeaterTypographyColor = function(repeaterItem) {
+		if (document.querySelector(".pcr-app.visible")) {
+			var pickrColor = builder.readActivePickrColor();
+			if (pickrColor) {
+				return builder.normalizeTypographyColor(pickrColor);
+			}
 		}
+
+		var controlInner = builder.getRepeaterControlInner(repeaterItem, "ecbb_typography");
+		if (!controlInner) {
+			return "";
+		}
+
+		var colorWrap = controlInner.querySelector(
+			'[data-control-key="color"], [data-setting="color"], .control-color'
+		);
+		return builder.normalizeTypographyColor(
+			builder.readColorControlValue(colorWrap || controlInner)
+		);
+	}
+
+	builder.syncStyle2ActionButtonTypographyColor = function(repeaterItem, wrapper, preview, surfaces) {
+		var typoColor = builder.readExplicitRepeaterTypographyColor(repeaterItem);
 
 		builder.clearStyle2ActionButtonWrapperMirroredStyles(wrapper);
 		builder.clearStyle2ActionButtonMirroredStyles(surfaces);
@@ -696,8 +703,7 @@ builder.mirrorMetaRowIconColorFromText = function(wrapper, preview) {
 			return;
 		}
 
-		builder.syncStyle1GridMetaListRowPreviewStyle(repeaterItem);
-		setTimeout(function () {
+		builder.runWithSettleRetry(function () {
 			builder.syncStyle1GridMetaListRowPreviewStyle(repeaterItem);
 		}, 120);
 		setTimeout(function () {
@@ -1397,31 +1403,15 @@ builder.readHoverControlColor = function(repeaterItem, key) {
 	}
 
 	builder.buildHoverPreviewSelectors = function(scope) {
-		return (
-			scope +
-			" .ecbb-event__term-chip:hover," +
-			scope +
-			" .ecbb-event__link:hover," +
-			scope +
-			" > .ecbb-event__link:hover," +
-			scope +
-			" a.event-button:hover," +
-			scope +
-			" > a.event-button:hover," +
-			scope +
-			" a.ecbb-event-card__button:hover," +
-			scope +
-			" > a.ecbb-event-card__button:hover," +
-			scope +
-			" .ecbb-event__term:hover," +
-			scope +
-			" .ecbb-event__title-text:hover," +
-			scope +
-			" .ecbb-event-card__category:hover," +
-			"li:has(> " +
-			scope +
-			"):hover > .ecbb-event-card__meta-icon"
-		);
+		var suffixes = builder.config.hoverPreviewSuffixes || [];
+		var liSuffixes = builder.config.hoverPreviewLiHasSuffixes || [];
+		var parts = suffixes.map(function (suffix) {
+			return scope + suffix;
+		});
+		liSuffixes.forEach(function (suffix) {
+			parts.push("li:has(> " + scope + ")" + suffix);
+		});
+		return parts.join(",");
 	}
 
 	builder.getOrCreateHoverPreviewStyleElement = function(preview) {
@@ -1499,7 +1489,8 @@ builder.readHoverControlColor = function(repeaterItem, key) {
 		if (enabled) {
 			if (
 				builder.readRepeaterPartSlug(repeaterItem) === "categories" &&
-				builder.isStyle2LayoutPreview(preview)
+				builder.isStyle2LayoutPreview(preview) &&
+				!builder.repeaterHasCustomHoverColors(repeaterItem)
 			) {
 				rule += builder.buildStyle2CategoryDefaultHoverRule(scope);
 			}
@@ -1540,5 +1531,150 @@ builder.readHoverControlColor = function(repeaterItem, key) {
 			return;
 		}
 		builder.syncHoverPreviewStyleRules(repeaterItem);
+	}
+
+	builder.getPanelControlInner = function(key) {
+		var panel = builder.getEventPartsRepeaterPanelScope
+			? builder.getEventPartsRepeaterPanelScope()
+			: document.querySelector("#bricks-panel-element");
+		if (!panel || !key) {
+			return null;
+		}
+		var control = panel.querySelector(
+			'.control[data-control-key="' + key + '"]:not(.repeater-item .control)'
+		);
+		if (!control) {
+			control = panel.querySelector('[data-control-key="' + key + '"]');
+			if (
+				control &&
+				control.closest(".ecbb-parts-repeater-item, .repeater-item-inner")
+			) {
+				return null;
+			}
+		}
+		if (!control) {
+			return null;
+		}
+		return control.querySelector(".control-inner") || control;
+	}
+
+	builder.getPanelControlKeyFromEvent = function(e) {
+		if (!e || !e.target || !e.target.closest) {
+			return "";
+		}
+		if (e.target.closest(".ecbb-parts-repeater-item, .repeater-item-inner")) {
+			return "";
+		}
+		var control = e.target.closest('.control[data-control-key]');
+		if (control) {
+			return control.getAttribute("data-control-key") || "";
+		}
+		var keyed = e.target.closest("#bricks-panel-element [data-control-key]");
+		if (keyed) {
+			return keyed.getAttribute("data-control-key") || "";
+		}
+		return "";
+	}
+
+	builder.findWidgetPreviewRoot = function(preview) {
+		preview = preview || builder.getBricksPreviewDocument();
+		if (!preview) {
+			return null;
+		}
+		return (
+			preview.querySelector('.ecbb-ev[class*="ecbb-ev--"]') ||
+			preview.querySelector(".ecbb-ev")
+		);
+	}
+
+	builder.syncWidgetShellCssVars = function() {
+		var preview = builder.getBricksPreviewDocument();
+		var root = builder.findWidgetPreviewRoot(preview);
+		if (!preview || !root) {
+			return;
+		}
+
+		var bindings = builder.config.shellCssVarBindings || [];
+		var bindingsByVar = {};
+		var i;
+		var binding;
+
+		for (i = 0; i < bindings.length; i++) {
+			binding = bindings[i];
+			if (!binding || !binding.key || !binding.var) {
+				continue;
+			}
+			if (!bindingsByVar[binding.var]) {
+				bindingsByVar[binding.var] = [];
+			}
+			bindingsByVar[binding.var].push(binding);
+		}
+
+		Object.keys(bindingsByVar).forEach(function (cssVar) {
+			var group = bindingsByVar[cssVar];
+			var color = "";
+			var activeBinding = null;
+			var j;
+
+			for (j = 0; j < group.length; j++) {
+				var inner = builder.getPanelControlInner(group[j].key);
+				var nextColor = builder.readColorControlValue(inner);
+				if (nextColor) {
+					color = nextColor;
+					activeBinding = group[j];
+				}
+			}
+
+			if (color) {
+				root.style.setProperty(cssVar, color);
+				if (activeBinding && activeBinding.targets && activeBinding.targets.length) {
+					activeBinding.targets.forEach(function (target) {
+						if (!target || !target.selector || !target.property) {
+							return;
+						}
+						preview.querySelectorAll(target.selector).forEach(function (node) {
+							node.style.setProperty(target.property, color, "important");
+						});
+					});
+				}
+				return;
+			}
+
+			root.style.removeProperty(cssVar);
+			group.forEach(function (item) {
+				if (item.targets && item.targets.length) {
+					item.targets.forEach(function (target) {
+						if (!target || !target.selector || !target.property) {
+							return;
+						}
+						preview.querySelectorAll(target.selector).forEach(function (node) {
+							node.style.removeProperty(target.property);
+						});
+					});
+				}
+			});
+		});
+	}
+
+	builder.scheduleWidgetShellCssVarSync = function() {
+		if (builder.sync.widgetShellTimer) {
+			clearTimeout(builder.sync.widgetShellTimer);
+		}
+		builder.sync.widgetShellTimer = setTimeout(function () {
+			builder.sync.widgetShellTimer = 0;
+			builder.syncWidgetShellCssVars();
+		}, 60);
+	}
+
+	builder.onPanelShellControlInput = function(e) {
+		var key = builder.getPanelControlKeyFromEvent(e);
+		if (
+			!key ||
+			!builder.config.shellCssVarWatchKeys ||
+			builder.config.shellCssVarWatchKeys.indexOf(key) === -1
+		) {
+			return;
+		}
+		builder.scheduleWidgetShellCssVarSync();
 	}
 })(window.ECBB.builder);

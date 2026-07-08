@@ -43,25 +43,6 @@ if ( ! class_exists( 'ECBB_Card_Style_Controls', false ) ) {
 			],
 		];
 
-		$element->controls['ecbb_card_text_color'] = [
-			'tab'         => 'style',
-			'group'       => 'events_card',
-			'label'       => esc_html__( 'Text color', 'events-calendar-for-bricks' ),
-			'type'        => 'color',
-			'placeholder' => '',
-			'responsive'  => true,
-			'css'         => [
-				[
-					'property' => '--ecbb-card-fg',
-					'selector' => '&',
-				],
-				[
-					'property' => 'color',
-					'selector' => '& .event-list-card__body, & .ecbb-event-card__content, & .event-grid-card__content',
-				],
-			],
-		];
-
 		$element->controls['ecbb_sep_card_border'] = [
 			'tab'   => 'style',
 			'group' => 'events_card',
@@ -247,7 +228,16 @@ if ( ! class_exists( 'ECBB_Card_Style_Controls', false ) ) {
 			'placeholder' => '#ffffff',
 			'responsive'  => true,
 			'required'    => $required,
-			'css'         => ECBB_Part_Fields::ecbb_field_css( 'color', $badge_h ),
+			'css'         => [
+				[
+					'property' => '--ecbb-shell-cat-hover-color',
+					'selector' => '&',
+				],
+				[
+					'property' => 'color',
+					'selector' => $badge_h,
+				],
+			],
 		];
 
 		$element->controls[ self::ecbb_shell_category_setting_key( $c, 'hover_background' ) ] = [
@@ -258,7 +248,16 @@ if ( ! class_exists( 'ECBB_Card_Style_Controls', false ) ) {
 			'placeholder' => '#1a3fc4',
 			'responsive'  => true,
 			'required'    => $required,
-			'css'         => ECBB_Part_Fields::ecbb_field_css( 'background-color', $badge_h ),
+			'css'         => [
+				[
+					'property' => '--ecbb-shell-cat-hover-bg',
+					'selector' => '&',
+				],
+				[
+					'property' => 'background-color',
+					'selector' => $badge_h,
+				],
+			],
 		];
 
 		$element->controls[ self::ecbb_shell_category_setting_key( $c, 'hover_text_decoration' ) ] = [

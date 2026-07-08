@@ -75,8 +75,7 @@ if ( ! class_exists( 'ECBB_Settings_Normalizer', false ) ) {
 		}
 
 		/** Use layout defaults when the parts repeater is empty. */
-		public static function ecbb_upgrade_layout_parts( array $parts, $layout, callable $default_fn ) {
-			unset( $layout );
+		public static function ecbb_upgrade_layout_parts( array $parts, callable $default_fn ) {
 			if ( self::ecbb_parts_is_empty( $parts ) ) {
 				return $default_fn();
 			}

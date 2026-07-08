@@ -14,13 +14,13 @@ if ( ! class_exists( 'ECBB_Part_Renderer', false ) ) {
 	final class ECBB_Part_Renderer {
 
 		/** Cast idx/skin and build wrapper attrs + class list for a part row. */
-		private static function ecbb_part_shell( $part, array $item, $idx, $style, $skin, $class_suffix = '' ) {
+		private static function ecbb_part_shell( $part, array $item, $idx, $skin, $class_suffix = '' ) {
 			$idx  = absint( $idx );
 			$skin = (string) $skin;
 			return [
 				'idx'  => $idx,
 				'skin' => $skin,
-				'attr' => ECBB_Part_Chrome::ecbb_part_wrap_attrs( $item, $idx, $style ),
+				'attr' => ECBB_Part_Chrome::ecbb_part_wrap_attrs( $item, $idx ),
 				'wrap' => esc_attr( ECBB_Part_Chrome::ecbb_part_classes( $part, $idx, $skin, $item ) . $class_suffix ),
 			];
 		}
@@ -34,7 +34,7 @@ if ( ! class_exists( 'ECBB_Part_Renderer', false ) ) {
 			if ( $text === '' ) {
 				return '';
 			}
-			$shell = self::ecbb_part_shell( 'venue', $item, $idx, $style, $skin );
+			$shell = self::ecbb_part_shell( 'venue', $item, $idx, $skin );
 			return '<div class="' . $shell['wrap'] . '"' . $shell['attr'] . '>' . esc_html( $text ) . '</div>';
 		}
 
@@ -47,7 +47,7 @@ if ( ! class_exists( 'ECBB_Part_Renderer', false ) ) {
 			if ( $text === '' ) {
 				return '';
 			}
-			$shell = self::ecbb_part_shell( 'organizer', $item, $idx, $style, $skin );
+			$shell = self::ecbb_part_shell( 'organizer', $item, $idx, $skin );
 			return '<div class="' . $shell['wrap'] . '"' . $shell['attr'] . '>' . esc_html( $text ) . '</div>';
 		}
 
@@ -118,24 +118,16 @@ if ( ! class_exists( 'ECBB_Part_Renderer', false ) ) {
 				return '';
 			}
 
-			$shell = self::ecbb_part_shell( 'date', $item, $idx, $style, $skin );
+			$shell = self::ecbb_part_shell( 'date', $item, $idx, $skin );
 
 			return '<div class="' . $shell['wrap'] . '"' . $shell['attr'] . '>' . esc_html( $html ) . '</div>';
 		}
 
 		public static function ecbb_render_part_event_date( $post, array $item, $idx, $style, $skin = '' ) {
-			$shell  = self::ecbb_part_shell( 'event_date', $item, $idx, $style, $skin );
-			$format = ECBB_Date_Formatter::ecbb_part_date_php_fmt( 'event_date', $item );
-			$php    = $format !== '' ? $format : get_option( 'date_format' );
-
-			if ( function_exists( 'tribe_get_start_date' ) ) {
-				$html = (string) \tribe_get_start_date( $post->ID, false, $php );
-			} else {
-				$raw = ECBB_Event_Data::ecbb_event_start_date_raw( $post->ID );
-				$ts  = $raw ? strtotime( $raw ) : false;
-				$html = $ts ? date_i18n( $php, $ts ) : '';
-			}
-			$html = trim( wp_strip_all_tags( $html ) );
+			unset( $style );
+			$shell     = self::ecbb_part_shell( 'event_date', $item, $idx, $skin );
+			$date_item = array_merge( $item, [ 'date_display' => 'date' ] );
+			$html      = ECBB_Date_Formatter::ecbb_part_visibility_plain_text( $post->ID, $date_item );
 			if ( $html === '' ) {
 				return '';
 			}
@@ -143,7 +135,7 @@ if ( ! class_exists( 'ECBB_Part_Renderer', false ) ) {
 		}
 
 		public static function ecbb_render_part_event_time( $post, array $item, $idx, $style, $skin = '' ) {
-			$shell = self::ecbb_part_shell( 'event_time', $item, $idx, $style, $skin );
+			$shell = self::ecbb_part_shell( 'event_time', $item, $idx, $skin );
 			$html  = self::ecbb_part_time_plain_text( $post, $item );
 			if ( $html === '' ) {
 				return '';
@@ -152,8 +144,8 @@ if ( ! class_exists( 'ECBB_Part_Renderer', false ) ) {
 		}
 
 		public static function ecbb_render_part_event_day( $post, array $item, $idx, $style, $skin = '' ) {
-			$shell = self::ecbb_part_shell( 'event_day', $item, $idx, $style, $skin );
-			$pr   = ECBB_Date_Formatter::ecbb_build_day_time_parts( $post->ID, [] );
+			$shell = self::ecbb_part_shell( 'event_day', $item, $idx, $skin );
+			$pr   = ECBB_Date_Formatter::ecbb_build_day_time_parts( $post->ID );
 			$html = isset( $pr['day'] ) ? trim( (string) $pr['day'] ) : '';
 
 			if ( $html === '' ) {
@@ -173,7 +165,7 @@ if ( ! class_exists( 'ECBB_Part_Renderer', false ) ) {
 			if ( $part === '' || ! in_array( $part, self::detail_slugs(), true ) ) {
 				return '';
 			}
-			$shell = self::ecbb_part_shell( $part, $item, $idx, $style, $skin );
+			$shell = self::ecbb_part_shell( $part, $item, $idx, $skin );
 			$html = ECBB_Event_Data::ecbb_part_detail_text( $post->ID, $part );
 			if ( $html === '' ) {
 				return '';
@@ -212,7 +204,7 @@ if ( ! class_exists( 'ECBB_Part_Renderer', false ) ) {
 			if ( $cost === '' ) {
 				return '';
 			}
-			$shell = self::ecbb_part_shell( 'event_cost', $item, $idx, $style, $skin );
+			$shell = self::ecbb_part_shell( 'event_cost', $item, $idx, $skin );
 			return '<div class="' . $shell['wrap'] . '"' . $shell['attr'] . '>' . esc_html( $cost ) . '</div>';
 		}
 
@@ -353,7 +345,7 @@ if ( ! class_exists( 'ECBB_Part_Renderer', false ) ) {
 				return '';
 			}
 
-			$shell = self::ecbb_part_shell( $part_slug, $item, $idx, $style, $skin );
+			$shell = self::ecbb_part_shell( $part_slug, $item, $idx, $skin );
 			return '<div class="' . $shell['wrap'] . '"' . $shell['attr'] . '>' . $inner . '</div>';
 		}
 
@@ -365,7 +357,7 @@ if ( ! class_exists( 'ECBB_Part_Renderer', false ) ) {
 			$label = isset( $item['tickets_link_text'] ) ? trim( (string) $item['tickets_link_text'] ) : '';
 			$label = $label === '' ? esc_html__( 'Tickets', 'events-calendar-for-bricks' ) : sanitize_text_field( $label );
 
-			$shell    = self::ecbb_part_shell( 'event_tickets', $item, $idx, $style, $skin );
+			$shell    = self::ecbb_part_shell( 'event_tickets', $item, $idx, $skin );
 			$inner_el = ECBB_Part_Chrome::ecbb_action_link_html( $item, $url, $label, '', ' rel="noopener noreferrer" target="_blank"' );
 			return '<div class="' . $shell['wrap'] . '"' . $shell['attr'] . '>' . $inner_el . '</div>';
 		}
@@ -379,7 +371,7 @@ if ( ! class_exists( 'ECBB_Part_Renderer', false ) ) {
 				$url .= '#tribe-tickets__tickets-form';
 			}
 
-			$shell    = self::ecbb_part_shell( 'event_rsvp', $item, $idx, $style, $skin );
+			$shell    = self::ecbb_part_shell( 'event_rsvp', $item, $idx, $skin );
 			$inner_el = ECBB_Part_Chrome::ecbb_action_link_html( $item, $url, $label );
 			return '<div class="' . $shell['wrap'] . '"' . $shell['attr'] . '>' . $inner_el . '</div>';
 		}
@@ -388,7 +380,7 @@ if ( ! class_exists( 'ECBB_Part_Renderer', false ) ) {
 			$label = isset( $item['read_more_text'] ) ? trim( (string) $item['read_more_text'] ) : '';
 			$label = $label === '' ? __( 'View Details', 'events-calendar-for-bricks' ) : sanitize_text_field( $label );
 
-			$shell    = self::ecbb_part_shell( 'read_more', $item, $idx, $style, $skin );
+			$shell    = self::ecbb_part_shell( 'read_more', $item, $idx, $skin );
 			$inner_el = ECBB_Part_Chrome::ecbb_action_link_html( $item, get_permalink( $post->ID ), $label );
 			return '<div class="' . $shell['wrap'] . '"' . $shell['attr'] . '>' . $inner_el . '</div>';
 		}
@@ -406,7 +398,7 @@ if ( ! class_exists( 'ECBB_Part_Renderer', false ) ) {
 			if ( ! isset( $handlers[ $part ] ) ) {
 				return false;
 			}
-			return call_user_func( $handlers[ $part ], $post, $item, $idx, $style, $skin );
+			return call_user_func( $handlers[ $part ], $post, $item, $idx, $skin );
 		}
 	}
 }

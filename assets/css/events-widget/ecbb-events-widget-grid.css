@@ -8,7 +8,6 @@
 	flex-direction: column;
 	height: 100%;
 	background: var(--ecbb-card-bg, var(--color-card-bg));
-	color: var(--ecbb-card-fg, inherit);
 	border: 1px solid var(--color-border);
 	border-radius: 15px;
 	box-shadow: var(--shadow-card);

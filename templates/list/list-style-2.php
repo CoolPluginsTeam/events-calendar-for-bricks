@@ -76,23 +76,6 @@ if ( ! class_exists( 'ECBB_List_2', false ) ) {
 			return $row;
 		}
 
-		public static function ecbb_date_bounds( $post_id ) {
-			$post_id = absint( $post_id );
-			if ( $post_id < 1 ) {
-				return [ false, false ];
-			}
-			$dates    = ECBB_Event_Data::ecbb_event_meta_dates( $post_id );
-			$start_ts = ! empty( $dates['start'] ) ? strtotime( $dates['start'] ) : false;
-			$end_ts   = ! empty( $dates['end'] ) ? strtotime( $dates['end'] ) : $start_ts;
-			if ( ! $start_ts ) {
-				return [ false, false ];
-			}
-			if ( ! $end_ts ) {
-				$end_ts = $start_ts;
-			}
-			return [ $start_ts, $end_ts ];
-		}
-
 		protected static function ecbb_card_base_class() {
 			return 'ecbb-event-card ecbb-style2 ecbb-ev__item-inner ecbb-ev__item-inner--style2';
 		}

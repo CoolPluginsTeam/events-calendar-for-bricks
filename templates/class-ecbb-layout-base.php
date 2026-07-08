@@ -53,7 +53,7 @@ if ( ! class_exists( 'ECBB_Layout_Base', false ) ) {
 	abstract class ECBB_Layout_Base {
 
 		/**
-		 * Layout key for {@see ECBB_Markup::ecbb_upgrade_layout_parts()}.
+		 * Layout key (reserved for layout-specific filters).
 		 *
 		 * @return string grid|style1|style2
 		 */
@@ -193,7 +193,6 @@ if ( ! class_exists( 'ECBB_Layout_Base', false ) ) {
 
 			$upgraded = \ECBB_Markup::ecbb_upgrade_layout_parts(
 				$parts,
-				static::ecbb_layout_key(),
 				static function () {
 					return static::ecbb_default_parts();
 				}

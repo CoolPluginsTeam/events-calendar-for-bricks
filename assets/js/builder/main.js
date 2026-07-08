@@ -91,10 +91,9 @@
 			controlKeys: builder.config.hoverPreviewControlKeys,
 			sync: builder.syncHoverPreviewStyleRules,
 			run: function (item) {
-				builder.syncHoverPreviewStyleRules(item);
-			setTimeout(function () {
+				builder.runWithSettleRetry(function () {
 					builder.syncHoverPreviewStyleRules(item);
-			}, 120);
+				}, 120);
 			},
 		});
 
@@ -106,8 +105,7 @@
 			controlKeys: builder.config.styledButtonControlKeys,
 			sync: builder.syncStyledButtonPreviewPaint,
 			run: function (item) {
-				builder.syncStyledButtonPreviewPaint(item);
-				setTimeout(function () {
+				builder.runWithSettleRetry(function () {
 					builder.syncStyledButtonPreviewPaint(item);
 				}, 120);
 			},
@@ -235,6 +233,7 @@
 			builder.preview.lastTypographyPickerColor = activeColor;
 			builder.preview.lastTypographySyncAt = now;
 			builder.syncOpenRepeaterTypographyPreview();
+			builder.scheduleWidgetShellCssVarSync();
 		}
 		builder.preview.typographyPickerRaf = requestAnimationFrame(
 			builder.watchTypographyColorPickerDrag
@@ -257,6 +256,7 @@
 		builder.preview.lastTypographySyncAt = 0;
 		builder.preview.lastTypographyPickerColor = "";
 		builder.syncOpenRepeaterTypographyPreview();
+		builder.scheduleWidgetShellCssVarSync();
 	}
 
 	builder.schedulePanelRepeaterScan = function() {
@@ -275,6 +275,8 @@
 
 	document.addEventListener("input", builder.onRepeaterControlInput, true);
 	document.addEventListener("change", builder.onRepeaterControlChange, true);
+	document.addEventListener("input", builder.onPanelShellControlInput, true);
+	document.addEventListener("change", builder.onPanelShellControlInput, true);
 
 	document.addEventListener(
 		"pointerdown",

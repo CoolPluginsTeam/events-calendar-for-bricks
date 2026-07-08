@@ -39,7 +39,12 @@ if ( ! class_exists( 'ECBB_Parts_Css_Generator', false ) ) {
 			if ( ! $hover_style_on ) {
 				return [ 'style' => $style_rules, 'hover' => $hover_rules ];
 			}
-			if ( in_array( $list_item_style, [ 'style-2', 'grid' ], true ) && $part_type === 'categories' ) {
+			$has_custom_hover = self::ecbb_part_has_custom_hover_colors( $p );
+			if (
+				in_array( $list_item_style, [ 'style-2', 'grid' ], true )
+				&& $part_type === 'categories'
+				&& ! $has_custom_hover
+			) {
 				$hover_rules = array_merge( $hover_rules, self::ecbb_layout_style2_category_hover_rules( $scope_sel, $p, true ) );
 			}
 			$hover_sel = ECBB_Selector_Factory::ecbb_hover_selectors( $scope_sel, $part_type );
@@ -81,6 +86,62 @@ if ( ! class_exists( 'ECBB_Parts_Css_Generator', false ) ) {
 				}
 			}
 			return [ 'style' => $style_rules, 'hover' => $hover_rules ];
+		}
+
+		private static function ecbb_part_has_custom_hover_colors( array $item ) {
+			if ( class_exists( 'ECBB_Part_Chrome', false ) && ECBB_Part_Chrome::ecbb_hover_has_custom_styles( $item ) ) {
+				return true;
+			}
+
+			foreach ( [ 'ecbb_hover_color', 'hover_color', 'ecbb_hover_background' ] as $key ) {
+				if ( ! array_key_exists( $key, $item ) || $item[ $key ] === '' || $item[ $key ] === null ) {
+					continue;
+				}
+				if (
+					class_exists( 'ECBB_Markup', false )
+					&& \ECBB_Markup::ecbb_norm_hover_paint_color( $item[ $key ] ) !== ''
+				) {
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		private static function ecbb_parts_hover_var_rules( array $ctx ) {
+			if ( ! $ctx['hover_style_on'] ) {
+				return [];
+			}
+
+			$p         = $ctx['part'];
+			$scope_sel = $ctx['scope_sel'];
+			$color_fn  = $ctx['color_fn'];
+			$rules     = [];
+
+			foreach ( ECBB_Css_Value_Sanitizer::ecbb_breakpoints() as $device => $mq ) {
+				$vars      = [];
+				$hover_raw = ECBB_Css_Value_Sanitizer::ecbb_device_value( $p['ecbb_hover_color'] ?? ( $p['hover_color'] ?? '' ), $device );
+				$hover_fg  = class_exists( 'ECBB_Markup', false )
+					? \ECBB_Markup::ecbb_norm_hover_paint_color( $hover_raw )
+					: $color_fn( $hover_raw );
+				if ( $hover_fg !== '' ) {
+					$vars[] = '--ecbb-hover-fg:' . $hover_fg;
+				}
+
+				$hover_bg_raw = ECBB_Css_Value_Sanitizer::ecbb_device_value( $p['ecbb_hover_background'] ?? '', $device );
+				$hover_bg     = class_exists( 'ECBB_Markup', false )
+					? \ECBB_Markup::ecbb_norm_hover_paint_color( $hover_bg_raw )
+					: $color_fn( $hover_bg_raw );
+				if ( $hover_bg !== '' ) {
+					$vars[] = '--ecbb-hover-bg:' . $hover_bg;
+				}
+
+				if ( $vars !== [] ) {
+					$rules[] = self::ecbb_mq_css_rule( $mq, $scope_sel . '{' . implode( ';', $vars ) . ';}' );
+				}
+			}
+
+			return $rules;
 		}
 
 		public static function ecbb_layout_style2_category_hover_rules( $scope_sel, array $item, $hover_style_on ) {
@@ -145,6 +206,7 @@ if ( ! class_exists( 'ECBB_Parts_Css_Generator', false ) ) {
 					'color_fn'        => $color_fn,
 				];
 				$style_css = array_merge( $style_css, self::ecbb_parts_typography_spacing_rules( $ctx ) );
+				$style_css = array_merge( $style_css, self::ecbb_parts_hover_var_rules( $ctx ) );
 				$style_css = array_merge( $style_css, self::ecbb_parts_chip_button_rules( $ctx ) );
 				$hover_bundle = self::ecbb_parts_hover_rules( $ctx );
 				$style_css    = array_merge( $style_css, $hover_bundle['style'] );

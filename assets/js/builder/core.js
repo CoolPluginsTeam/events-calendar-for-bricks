@@ -54,6 +54,18 @@
 			return key === "ecbb_use_hover" || key === "ecbb_hover_color" || key === "ecbb_hover_background";
 		})
 		: ["ecbb_use_hover", "ecbb_hover_color", "ecbb_hover_background"];
+	builder.config.hoverPreviewSuffixes = Array.isArray(fromPhp.hoverPreviewSuffixes)
+		? fromPhp.hoverPreviewSuffixes
+		: [];
+	builder.config.hoverPreviewLiHasSuffixes = Array.isArray(fromPhp.hoverPreviewLiHasSuffixes)
+		? fromPhp.hoverPreviewLiHasSuffixes
+		: [];
+	builder.config.shellCssVarBindings = Array.isArray(fromPhp.shellCssVarBindings)
+		? fromPhp.shellCssVarBindings
+		: [];
+	builder.config.shellCssVarWatchKeys = Array.isArray(fromPhp.shellCssVarWatchKeys)
+		? fromPhp.shellCssVarWatchKeys
+		: [];
 
 	// Shared state buckets (other files read/write these).
 	builder.sync = {
@@ -78,6 +90,14 @@
 	builder.hover = {
 		rulesByRowId: {},
 		layoutBtnTypoRulesByRowId: {},
+	};
+
+	builder.runWithSettleRetry = function(fn, delay) {
+		if (typeof fn !== "function") {
+			return;
+		}
+		fn();
+		setTimeout(fn, delay || 120);
 	};
 
 	builder.clearInlineProps = function(node, props) {

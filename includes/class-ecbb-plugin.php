@@ -151,7 +151,7 @@ if ( ! class_exists( 'ECBB_Plugin', false ) ) {
 				$posted_json = wp_unslash( $_POST[ $area ] );
 				$merged      = $this->ecbb_merge_events_loop_repeaters_into_posted_area( $posted_json, $post_id, $area );
 				if ( is_string( $merged ) ) {
-					$_POST[ $area ] = $merged;
+					$_POST[ $area ] = wp_slash( $merged );
 				}
 			}
 		}
@@ -405,10 +405,29 @@ if ( ! class_exists( 'ECBB_Plugin', false ) ) {
 				'tabStyle'               => __( 'STYLE', 'events-calendar-for-bricks' ),
 				'hoverParts'             => \ECBB_Controls::ecbb_hover_part_types(),
 				'hoverKeys'              => \ECBB_Controls::ecbb_hover_field_keys(),
+				'hoverPreviewSuffixes'   => \ECBB_Styles::ecbb_repeater_hover_surface_suffixes(),
+				'hoverPreviewLiHasSuffixes' => \ECBB_Styles::ecbb_repeater_hover_li_has_suffixes(),
 				'btnBorderKeys'          => \ECBB_Controls::ecbb_btn_border_keys(),
 				'style2MetaIconParts'    => \ECBB_Controls::ecbb_style2_meta_icon_ui_parts(),
 				'style2CategoryHoverFg'  => '#0d55d8',
 				'style2CategoryHoverBg'  => '#d4e4ff',
+				'shellCssVarBindings'    => [
+					[
+						'key'     => 'ecbb_list1_content_background',
+						'var'     => '--ecbb-list1-date-bg',
+						'targets' => [
+							[
+								'selector' => '.event-list-card__date-inner',
+								'property' => 'background-color',
+							],
+						],
+					],
+					[ 'key' => 'ecbb_shell_category_hover_color', 'var' => '--ecbb-shell-cat-hover-color' ],
+					[ 'key' => 'ecbb_shell_category_hover_background', 'var' => '--ecbb-shell-cat-hover-bg' ],
+					[ 'key' => 'ecbb_shell_category_hover_color_grid', 'var' => '--ecbb-shell-cat-hover-color' ],
+					[ 'key' => 'ecbb_shell_category_hover_background_grid', 'var' => '--ecbb-shell-cat-hover-bg' ],
+				],
+				'shellCssVarWatchKeys'   => \ECBB_Shell_Css_Generator::ecbb_shell_css_var_setting_keys(),
 			] );
 		}
 	}

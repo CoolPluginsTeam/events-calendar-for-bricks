@@ -321,8 +321,6 @@
 				return;
 			}
 			builder.ensureRepeaterContentStyleTabs(item);
-			builder.syncRepeaterHoverPanelState(item);
-			builder.initRepeaterPanelAccordions(item);
 		});
 	};
 

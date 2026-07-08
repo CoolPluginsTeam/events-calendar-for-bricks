@@ -133,11 +133,40 @@ if ( ! class_exists( 'ECBB_Selector_Factory', false ) ) {
 			return function_exists( 'bricks_is_builder_call' ) && bricks_is_builder_call();
 		}
 
+		public static function ecbb_repeater_hover_surface_suffixes() {
+			return [
+				' .ecbb-event__term-chip:hover',
+				' .ecbb-event__link:hover',
+				' > .ecbb-event__link:hover',
+				' a.event-button:hover',
+				' > a.event-button:hover',
+				' a.ecbb-event-card__button:hover',
+				' > a.ecbb-event-card__button:hover',
+				' .ecbb-event__term:hover',
+				' .ecbb-event__title-text:hover',
+				' .ecbb-event-card__category:hover',
+			];
+		}
+
+		public static function ecbb_repeater_hover_li_has_suffixes() {
+			return [
+				':hover > .ecbb-event-card__meta-icon',
+				':hover .ecbb-event-card__meta-icon--inline',
+			];
+		}
+
 		public static function ecbb_repeater_hover_selector() {
-			return '& .ecbb-event__term-chip:hover, & .ecbb-event__link:hover, & > .ecbb-event__link:hover, '
-				. '& a.event-button:hover, & > a.event-button:hover, & a.ecbb-event-card__button:hover, & > a.ecbb-event-card__button:hover, '
-				. '& .ecbb-event__term:hover, & .ecbb-event__title-text:hover, & .ecbb-event-card__category:hover, '
-				. 'li:has(> &):hover > .ecbb-event-card__meta-icon, li:has(> &):hover .ecbb-event-card__meta-icon--inline';
+			$parts = array_map(
+				static function ( $suffix ) {
+					return '&' . $suffix;
+				},
+				self::ecbb_repeater_hover_surface_suffixes()
+			);
+			foreach ( self::ecbb_repeater_hover_li_has_suffixes() as $suffix ) {
+				$parts[] = 'li:has(> &)' . $suffix;
+			}
+
+			return implode( ', ', $parts );
 		}
 
 		public static function ecbb_button_inner_selectors( $scope_sel ) {
